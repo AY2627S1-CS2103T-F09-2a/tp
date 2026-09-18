@@ -109,6 +109,20 @@ Examples:
 *  `edit 1 p/91234567 e/johndoe@example.com` Edits the phone number and email address of the 1st person to be `91234567` and `johndoe@example.com` respectively.
 *  `edit 2 n/Betsy Crower t/` Edits the name of the 2nd person to be `Betsy Crower` and clears all existing tags.
 
+### Locating persons by tag: `findtag`
+
+Lists persons who have any of the specified tags.
+
+Format: `findtag TAG [MORE_TAGS]...`
+
+* Matching ignores case but requires a whole tag: `friends` matches `FRIENDS`, not `friend`.
+* Tags must be alphanumeric. At least one tag is required.
+* The search considers the full address book, not only the currently displayed results.
+* Matching persons retain their original order and appear once, even if several tags match.
+* No stored records are changed. Use `list` to restore the full list.
+
+Example: `findtag friends colleagues`
+
 ### Locating persons by name: `find`
 
 Finds persons whose names contain any of the given keywords.
