@@ -28,14 +28,14 @@ You can reach us at the email `seer[at]comp.nus.edu.sg`
 * Role: Developer
 * Responsibilities: Adding students with guardian and fee information (`add`); guardian contact fields; README and UI mock-up.
 
-### Johnny Doe
+### Suvan Handa
 
-<img src="images/johndoe.png" width="200px">
+<img src="images/suvan1911.png" width="200px">
 
-[[github](http://github.com/johndoe)] [[portfolio](team/johndoe.md)]
+[[github](https://github.com/suvan1911)]
 
 * Role: Developer
-* Responsibilities: Data
+* Responsibilities: Outstanding-fee value modelling; persistence of guardian contact and outstanding-fee data; related model and storage tests.
 
 ### Jean Doe
 
