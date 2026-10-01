@@ -28,14 +28,14 @@ You can reach us at the email `seer[at]comp.nus.edu.sg`
 * Role: Developer
 * Responsibilities: Adding students with guardian and fee information (`add`); guardian contact fields; README and UI mock-up.
 
-### Johnny Doe
+### Zhang Yilin
 
-<img src="images/johndoe.png" width="200px">
+<img src="images/yiilinzhang.png" width="200px">
 
-[[github](http://github.com/johndoe)] [[portfolio](team/johndoe.md)]
+[[github](http://github.com/yiilinzhang)]
 
 * Role: Developer
-* Responsibilities: Data
+* Responsibilities: Finding students by name (`find`) and deleting students (`delete`); regression tests for `find` and filtered-list indexes; Update developer Guide target user, value proposition and user stories accordingly.
 
 ### Jean Doe
 
