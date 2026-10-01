@@ -34,7 +34,7 @@ You can reach us at the email `seer[at]comp.nus.edu.sg`
 [[github](https://github.com/suvan1911)]
 
 * Role: Developer
-* Responsibilities: Outstanding-fee value modelling; persistence of guardian contact and outstanding-fee data; related model and storage tests.
+* Responsibilities: Outstanding-fee value modelling; persistence of guardian contact and outstanding-fee data; related model and storage tests; project website settings and repository links.
 
 ### Jean Doe
 
