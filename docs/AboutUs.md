@@ -47,12 +47,11 @@ You can reach us at the email `seer[at]comp.nus.edu.sg`
 * Role: Developer
 * Responsibilities: Dev Ops + Threading
 
-### James Doe
+### Zhao Shizhen
 
-<img src="images/johndoe.png" width="200px">
+<img src="images/shiverin.png" width="200px">
 
-[[github](http://github.com/johndoe)]
-[[portfolio](team/johndoe.md)]
+[[github](https://github.com/shiverin)]
 
 * Role: Developer
-* Responsibilities: UI
+* Responsibilities: Outstanding-fee filtering (`fees`) and payment-status updates (`paid`); related feature specifications, tests, and documentation; Developer Guide non-functional requirements and glossary.
