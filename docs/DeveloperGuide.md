@@ -261,36 +261,49 @@ _{Explain here how the data archiving feature will be implemented}_
 
 **Target user profile**:
 
-* independent private tutor teaching a significant number of students
-* needs to keep track of each student's guardian contacts and outstanding fees
+* independent tutor who teaches a significant number of students locally
+* needs to keep each student's guardian contact details and outstanding fee in one place
+* needs to follow up with guardians on unpaid fees
 * prefers desktop apps over other types of applications
 * can type fast and prefers typing to mouse interactions
 * is reasonably comfortable using CLI apps
 
-**Value proposition**: Manage students, guardian contacts and outstanding fees in one place, faster than with spreadsheets or a mouse-driven GUI app.
+**Value proposition**: Poco Book keeps each student's guardian contact details and outstanding fee in one record, so a tutor can find a student, contact the right guardian and see who still owes fees with a few typed commands, faster than with spreadsheets or a mouse-driven GUI app.
 
 
 ### User stories
 
 Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unlikely to have) - `*`
 
-| Priority | As a …​                                | I want to …​                                           | So that I can…​                                              |
-| -------- | -------------------------------------- | ----------------------------------------------------- | ----------------------------------------------------------- |
-| `* * *`  | new user                               | see usage instructions                                | refer to instructions when I forget how to use the App      |
-| `* * *`  | tutor                                  | add a student with guardian and fee information       | keep all of a student's details in one record               |
-| `* * *`  | tutor                                  | list all students                                     | see my current student intake at a glance                   |
-| `* * *`  | tutor                                  | find a student by name                                | retrieve the student's information quickly                  |
-| `* * *`  | tutor                                  | view a student's complete record                      | check guardian contacts and fees before a lesson            |
-| `* * *`  | tutor                                  | delete a student                                      | keep the app accurate when a student stops lessons          |
-| `* * *`  | tutor                                  | see which students have outstanding fees              | follow up on unpaid fees                                    |
-| `* * *`  | tutor                                  | mark a student's outstanding fee as paid              | keep fee records up to date                                 |
-| `* *`    | tutor                                  | edit a student's details                              | correct mistakes without deleting and re-adding the student |
-| `* *`    | tutor                                  | record more than one guardian for a student           | contact either parent when needed                           |
-| `* *`    | tutor                                  | see the total amount of outstanding fees              | know how much income I am still owed                        |
-| `* *`    | tutor with many students               | sort students by outstanding fee                      | follow up on the largest amounts first                      |
-| `*`      | tutor                                  | record each student's lesson day and time             | plan my weekly schedule                                     |
-| `*`      | tutor                                  | tag students by subject or level                      | group students who share similar lessons                    |
-| `*`      | tutor                                  | export students with outstanding fees                 | send payment reminders to guardians                         |
+| Priority | As a …​                       | I want to …​                                                      | So that I can…​                                                         |
+| -------- | ----------------------------- | ---------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| `* * *`  | new user                      | see usage instructions                                           | refer to instructions when I forget how to use the App                 |
+| `* * *`  | tutor                         | add a student with a guardian's name and phone number            | know whom to contact about the student                                 |
+| `* * *`  | tutor                         | add a student without the student's own phone, email or address  | still record students who can only be reached through a guardian       |
+| `* * *`  | tutor                         | record a student's outstanding fee when adding the student       | know whether payment requires follow-up                                |
+| `* * *`  | tutor                         | list all students                                                | return to my full student intake after a search or filter              |
+| `* * *`  | tutor preparing for a lesson  | find students by name                                            | retrieve a student's information quickly                               |
+| `* * *`  | tutor                         | view a student's complete record                                 | see all stored information about that student                          |
+| `* * *`  | tutor                         | delete a student                                                 | keep the App accurate to my current student intake                     |
+| `* * *`  | tutor                         | see an outstanding-fee label on each student who owes fees       | spot students requiring payment follow-up at a glance                  |
+| `* * *`  | tutor                         | list only students with outstanding fees                         | know whose payment requires follow-up                                  |
+| `* * *`  | tutor                         | set or clear a student's outstanding fee                         | keep fee records up to date when fees change or are paid               |
+| `* * *`  | tutor                         | have my changes saved automatically                              | keep guardian and fee details after closing the App                    |
+| `* *`    | tutor                         | edit a student's details                                         | correct mistakes without deleting and re-adding the student            |
+| `* *`    | tutor                         | record more than one guardian for a student                      | contact another guardian when the first is unavailable                 |
+| `* *`    | tutor                         | find students by guardian name or phone number                   | identify the student when a guardian contacts me                       |
+| `* *`    | tutor                         | see the total amount of outstanding fees                         | know how much income I am still owed                                   |
+| `* *`    | tutor with many students      | sort students by outstanding fee                                 | follow up on the largest amounts first                                 |
+| `* *`    | tutor                         | confirm before a student is deleted                              | avoid deleting the wrong student by mistake                            |
+| `* *`    | tutor                         | undo my last command                                             | recover from an accidental change                                      |
+| `*`      | tutor                         | record a partial payment of a fee                                | track fees paid in instalments                                         |
+| `*`      | tutor                         | see a student's payment history                                  | resolve questions about past payments                                  |
+| `*`      | tutor                         | filter students by how long their fee has been outstanding       | follow up on the oldest unpaid fees first                              |
+| `*`      | tutor                         | send fee reminders to guardians                                  | collect payments without contacting each guardian manually             |
+| `*`      | tutor                         | export the students with outstanding fees                        | keep a record of unpaid fees outside the App                           |
+| `*`      | tutor                         | record an overseas guardian phone number                         | keep in contact with a guardian who is abroad                          |
+| `*`      | tutor                         | find students using part of a name                               | locate a student when I am unsure of the spelling                      |
+| `*`      | tutor                         | archive a student instead of deleting the record                 | keep the details of past students for future reference                 |
 
 ### Use cases
 
