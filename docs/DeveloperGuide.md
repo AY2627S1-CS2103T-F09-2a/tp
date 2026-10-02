@@ -261,29 +261,36 @@ _{Explain here how the data archiving feature will be implemented}_
 
 **Target user profile**:
 
-* has a need to manage a significant number of contacts
+* independent private tutor teaching a significant number of students
+* needs to keep track of each student's guardian contacts and outstanding fees
 * prefers desktop apps over other types of applications
-* can type fast
-* prefers typing to mouse interactions
+* can type fast and prefers typing to mouse interactions
 * is reasonably comfortable using CLI apps
 
-**Value proposition**: Manage contacts faster than with a typical mouse-driven GUI application.
+**Value proposition**: Manage students, guardian contacts and outstanding fees in one place, faster than with spreadsheets or a mouse-driven GUI app.
 
 
 ### User stories
 
 Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unlikely to have) - `*`
 
-| Priority | As a …​                                    | I want to …​                     | So that I can…​                                                        |
-| -------- | ------------------------------------------ | ------------------------------ | ---------------------------------------------------------------------- |
-| `* * *`  | new user                                   | see usage instructions         | refer to instructions when I forget how to use the App                 |
-| `* * *`  | user                                       | add a new person               |                                                                        |
-| `* * *`  | user                                       | delete a person                | remove entries that I no longer need                                   |
-| `* * *`  | user                                       | find a person by name          | locate details of persons without having to go through the entire list |
-| `* *`    | user                                       | hide private contact details   | minimize chance of someone else seeing them by accident                |
-| `*`      | user with many persons in the address book | sort persons by name           | locate a person easily                                                 |
-
-*{More to be added}*
+| Priority | As a …​                                | I want to …​                                           | So that I can…​                                              |
+| -------- | -------------------------------------- | ----------------------------------------------------- | ----------------------------------------------------------- |
+| `* * *`  | new user                               | see usage instructions                                | refer to instructions when I forget how to use the App      |
+| `* * *`  | tutor                                  | add a student with guardian and fee information       | keep all of a student's details in one record               |
+| `* * *`  | tutor                                  | list all students                                     | see my current student intake at a glance                   |
+| `* * *`  | tutor                                  | find a student by name                                | retrieve the student's information quickly                  |
+| `* * *`  | tutor                                  | view a student's complete record                      | check guardian contacts and fees before a lesson            |
+| `* * *`  | tutor                                  | delete a student                                      | keep the app accurate when a student stops lessons          |
+| `* * *`  | tutor                                  | see which students have outstanding fees              | follow up on unpaid fees                                    |
+| `* * *`  | tutor                                  | mark a student's outstanding fee as paid              | keep fee records up to date                                 |
+| `* *`    | tutor                                  | edit a student's details                              | correct mistakes without deleting and re-adding the student |
+| `* *`    | tutor                                  | record more than one guardian for a student           | contact either parent when needed                           |
+| `* *`    | tutor                                  | see the total amount of outstanding fees              | know how much income I am still owed                        |
+| `* *`    | tutor with many students               | sort students by outstanding fee                      | follow up on the largest amounts first                      |
+| `*`      | tutor                                  | record each student's lesson day and time             | plan my weekly schedule                                     |
+| `*`      | tutor                                  | tag students by subject or level                      | group students who share similar lessons                    |
+| `*`      | tutor                                  | export students with outstanding fees                 | send payment reminders to guardians                         |
 
 ### Use cases
 
