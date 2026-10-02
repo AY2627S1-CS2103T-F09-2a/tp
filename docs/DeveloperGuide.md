@@ -372,7 +372,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 **MSS**
 
-1.  Tutor finds the student by name (UC02).
+1.  Tutor <u>finds the student by name (UC02)</u>.
 2.  Tutor requests to view a specific student in the displayed list.
 3.  Poco Book shows the student's complete record, including the guardian's name and phone number and the outstanding fee, if any.
 
@@ -380,7 +380,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 **Extensions**
 
-* 1a. The student is already in the displayed list (e.g., after the tutor lists all students, or lists students with outstanding fees (UC05) to follow up on a payment).
+* 1a. The student is already in the displayed list (e.g., after the tutor lists all students, or <u>lists students with outstanding fees (UC05)</u> to follow up on a payment).
 
   Use case resumes at step 2.
 
@@ -404,7 +404,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 **MSS**
 
-1.  Tutor finds the student by name (UC02).
+1.  Tutor <u>finds the student by name (UC02)</u>.
 2.  Tutor requests to delete a specific student in the displayed list.
 3.  Poco Book deletes the student, together with their guardian contact and outstanding fee, saves the data, and shows the deleted student's details.
 
@@ -412,7 +412,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 **Extensions**
 
-* 1a. The student is already in the displayed list (e.g., after the tutor lists all students, or lists students with outstanding fees (UC05)).
+* 1a. The student is already in the displayed list (e.g., after the tutor lists all students, or <u>lists students with outstanding fees (UC05)</u>).
 
   Use case resumes at step 2.
 
@@ -463,7 +463,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 **MSS**
 
-1.  Tutor finds the student by name (UC02).
+1.  Tutor <u>finds the student by name (UC02)</u>.
 2.  Tutor requests to set the outstanding fee of a specific student in the displayed list to a new amount.
 3.  Poco Book replaces the student's outstanding fee with the new amount, saves the data, and shows the student's new outstanding fee.
 
@@ -471,7 +471,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 **Extensions**
 
-* 1a. The student is already in the displayed list (e.g., after the tutor lists all students, or lists students with outstanding fees (UC05)).
+* 1a. The student is already in the displayed list (e.g., after the tutor lists all students, or <u>lists students with outstanding fees (UC05)</u>).
 
   Use case resumes at step 2.
 
