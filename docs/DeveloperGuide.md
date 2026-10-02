@@ -287,32 +287,123 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 ### Use cases
 
-(For all use cases below, the **System** is the `AddressBook` and the **Actor** is the `user`, unless specified otherwise)
+(For all use cases below, the **System** is Poco Book and the **Actor** is the tutor.)
 
-**Use case: Delete a person**
+#### Use case: Add a student record
 
-**MSS**
+**Preconditions:** Poco Book is running.
 
-1.  User requests to list persons
-2.  AddressBook shows a list of persons
-3.  User requests to delete a specific person in the list
-4.  AddressBook deletes the person
+**Guarantees:** A valid new student record is saved with its guardian contact and optional outstanding fee. If the request is invalid, no student record is changed.
+
+**Main Success Scenario**
+
+1. Tutor enters the student's details, the student's guardian contact, and optionally an outstanding fee.
+2. Poco Book validates the supplied details.
+3. Poco Book adds and saves the student record.
+4. Poco Book shows the full displayed list and confirms the added record.
 
     Use case ends.
 
 **Extensions**
 
-* 2a. The list is empty.
+* 2a. A required detail is missing, repeated, or invalid.
+  * 2a1. Poco Book shows an error explaining the invalid input.
+  * 2a2. Tutor corrects the input.
+  * Use case resumes at step 2.
+* 2b. The student's normalized name and phone match an existing student record.
+  * 2b1. Poco Book reports that the student already exists.
+  * Use case ends.
 
-  Use case ends.
+#### Use case: Locate and view a student's complete record
 
-* 3a. The given index is invalid.
+**Preconditions:** Poco Book is running and contains at least one student record.
 
-    * 3a1. AddressBook shows an error message.
+**Guarantees:** The selected student's complete record is shown. Stored student data and the current displayed list are not changed.
 
-      Use case resumes at step 2.
+**Main Success Scenario**
 
-*{More to be added}*
+1. Tutor requests to find a student using one or more name keywords.
+2. Poco Book shows matching students in the displayed list.
+3. Tutor identifies the student's displayed index.
+4. Tutor requests to view the student at that displayed index.
+5. Poco Book selects the student and shows the student's complete record.
+
+    Use case ends.
+
+**Extensions**
+
+* 1a. The tutor supplies no valid name keyword.
+  * 1a1. Poco Book shows an error explaining the invalid input and leaves the displayed list unchanged.
+  * 1a2. Tutor enters one or more valid keywords.
+  * Use case resumes at step 2.
+* 2a. No student name matches the keywords.
+  * 2a1. Poco Book shows an empty displayed list.
+  * Use case ends.
+* 4a. The displayed index is missing, malformed, or outside the displayed list.
+  * 4a1. Poco Book shows an error and keeps the current selection unchanged.
+  * 4a2. Tutor enters a valid displayed index.
+  * Use case resumes at step 5.
+
+#### Use case: Record payment of an outstanding fee
+
+**Preconditions:** Poco Book is running and contains at least one student with an outstanding fee.
+
+**Guarantees:** The selected student's complete outstanding fee is cleared and saved. No partial payment or payment history is recorded. If the request is invalid, no student record is changed.
+
+**Main Success Scenario**
+
+1. Tutor requests the list of students with outstanding fees.
+2. Poco Book shows those students in the displayed list.
+3. Tutor identifies the student's displayed index.
+4. Tutor requests to mark the student at that displayed index as paid.
+5. Poco Book clears and saves the student's outstanding fee.
+6. Poco Book removes the student from the fee-filtered displayed list and confirms the student and amount marked paid.
+
+    Use case ends.
+
+**Extensions**
+
+* 2a. No student has an outstanding fee.
+  * 2a1. Poco Book shows an empty displayed list.
+  * Use case ends.
+* 4a. The displayed index is missing, malformed, or outside the displayed list.
+  * 4a1. Poco Book shows an error and does not change any outstanding fee.
+  * 4a2. Tutor enters a valid displayed index.
+  * Use case resumes at step 5.
+* 5a. The selected student no longer has an outstanding fee.
+  * 5a1. Poco Book reports that the student has no outstanding fee and does not change the record.
+  * Use case ends.
+
+#### Use case: Locate and delete a student record
+
+**Preconditions:** Poco Book is running and contains at least one student record.
+
+**Guarantees:** The selected student record, including its guardian and fee data, is deleted and the deletion is saved. If the request is invalid, no student record is changed.
+
+**Main Success Scenario**
+
+1. Tutor requests to find a student using one or more name keywords.
+2. Poco Book shows matching students in the displayed list.
+3. Tutor identifies the student's displayed index.
+4. Tutor requests to delete the student at that displayed index.
+5. Poco Book deletes and saves the complete student record.
+6. Poco Book refreshes and re-indexes the displayed list, then confirms the deleted record.
+
+    Use case ends.
+
+**Extensions**
+
+* 1a. The tutor supplies no valid name keyword.
+  * 1a1. Poco Book shows an error explaining the invalid input and leaves the displayed list unchanged.
+  * 1a2. Tutor enters one or more valid keywords.
+  * Use case resumes at step 2.
+* 2a. No student name matches the keywords.
+  * 2a1. Poco Book shows an empty displayed list.
+  * Use case ends.
+* 4a. The displayed index is missing, malformed, or outside the displayed list.
+  * 4a1. Poco Book shows an error and does not delete any student.
+  * 4a2. Tutor enters a valid displayed index.
+  * Use case resumes at step 5.
 
 ### Non-Functional Requirements
 
