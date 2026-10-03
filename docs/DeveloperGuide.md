@@ -307,32 +307,221 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 ### Use cases
 
-(For all use cases below, the **System** is the `AddressBook` and the **Actor** is the `user`, unless specified otherwise)
+(For all use cases below, the **System** is `Poco Book` and the **Actor** is the `tutor`, unless specified otherwise)
 
-**Use case: Delete a person**
+**Use case: UC01 - Add a student**
+
+**Guarantees:**
+
+* A student is added only if all given details are valid and no existing student has the same name and guardian phone number. Otherwise, no student data is changed.
+* If the data is saved successfully, the new student, with their guardian contact and outstanding fee, is still there after Poco Book restarts.
 
 **MSS**
 
-1.  User requests to list persons
-2.  AddressBook shows a list of persons
-3.  User requests to delete a specific person in the list
-4.  AddressBook deletes the person
+1.  Tutor requests to add a student, giving the student's name and the guardian's name and phone number. The tutor can also give the student's phone number, email, address and outstanding fee.
+2.  Poco Book adds the student, saves the data, and shows the new student's complete record.
 
     Use case ends.
 
 **Extensions**
 
-* 2a. The list is empty.
+* 1a. Poco Book detects an error in the given details (e.g., a required detail is missing, or a phone number, email or outstanding fee is invalid).
 
-  Use case ends.
+    * 1a1. Poco Book shows an error message describing the problem.
 
-* 3a. The given index is invalid.
+    * 1a2. Tutor requests to add the student again with corrected details.
 
-    * 3a1. AddressBook shows an error message.
+      Steps 1a1-1a2 are repeated until the details given are valid.
 
       Use case resumes at step 2.
 
-*{More to be added}*
+* 1b. Poco Book detects that a student with the same name (ignoring letter case and extra spaces) and the same guardian phone number already exists.
+
+    * 1b1. Poco Book shows an error message that the student already exists.
+
+      Use case ends.
+
+* 2a. Poco Book is unable to save the data.
+
+    * 2a1. Poco Book shows an error message that the data could not be saved. The change is kept only until Poco Book is closed.
+
+      Use case ends.
+
+**Use case: UC02 - Find a student by name**
+
+**Guarantees:**
+
+* No student data is changed. Only the displayed list changes.
+
+**MSS**
+
+1.  Tutor requests to find students using one or more words from their names.
+2.  Poco Book shows every student whose name contains any of the given words as a whole word (ignoring letter case), each with their outstanding fee, if any, and the number of students found.
+
+    Use case ends.
+
+**Extensions**
+
+* 1a. The tutor gives no search words, or a word that cannot appear in a student's name.
+
+    * 1a1. Poco Book shows an error message. The displayed list is unchanged.
+
+    * 1a2. Tutor requests to find students using new words.
+
+      Steps 1a1-1a2 are repeated until the words given are valid.
+
+      Use case resumes at step 2.
+
+* 2a. No student's name matches the given words (e.g., only part of a word was given, such as `ale` for `Alex`, or a guardian's name was given).
+
+    * 2a1. Poco Book shows an empty list, stating that no students were found.
+
+      Use case ends.
+
+* 2b. Several of the students shown have the same name.
+
+    * 2b1. Tutor tells them apart using their other details shown, such as their guardian's name.
+
+      Use case ends.
+
+**Use case: UC03 - View a student's complete record**
+
+**Guarantees:**
+
+* No student data is changed, and the displayed list stays the same.
+
+**MSS**
+
+1.  Tutor <u>finds the student by name (UC02)</u>.
+2.  Tutor requests to view a specific student in the displayed list.
+3.  Poco Book shows the student's complete record, including the guardian's name and phone number and the outstanding fee, if any.
+
+    Use case ends.
+
+**Extensions**
+
+* 1a. The student is already in the displayed list (e.g., after the tutor lists all students, or <u>lists students with outstanding fees (UC05)</u> to follow up on a payment).
+
+  Use case resumes at step 2.
+
+* 1b. The displayed list is empty.
+
+  Use case ends.
+
+* 2a. The index given by the tutor in the list of students displayed is invalid.
+
+    * 2a1. Poco Book shows an error message.
+
+      Use case resumes at step 2.
+
+**Use case: UC04 - Delete a student**
+
+**Guarantees:**
+
+* Only the specified student in the displayed list is deleted, together with their guardian contact and outstanding fee. Students not in the displayed list are never deleted.
+* If the request is invalid, no student data is changed.
+* If the data is saved successfully, the deletion still applies after Poco Book restarts.
+
+**MSS**
+
+1.  Tutor <u>finds the student by name (UC02)</u>.
+2.  Tutor requests to delete a specific student in the displayed list.
+3.  Poco Book deletes the student, together with their guardian contact and outstanding fee, saves the data, and shows the deleted student's details.
+
+    Use case ends.
+
+**Extensions**
+
+* 1a. The student is already in the displayed list (e.g., after the tutor lists all students, or <u>lists students with outstanding fees (UC05)</u>).
+
+  Use case resumes at step 2.
+
+* 1b. The displayed list is empty.
+
+  Use case ends.
+
+* 2a. The index given by the tutor in the list of students displayed is invalid.
+
+    * 2a1. Poco Book shows an error message.
+
+      Use case resumes at step 2.
+
+* 3a. Poco Book is unable to save the data.
+
+    * 3a1. Poco Book shows an error message that the data could not be saved. The change is kept only until Poco Book is closed.
+
+      Use case ends.
+
+**Use case: UC05 - List students with outstanding fees**
+
+**Guarantees:**
+
+* No student data is changed. Only the displayed list changes.
+
+**MSS**
+
+1.  Tutor requests to list students with outstanding fees.
+2.  Poco Book shows only the students who have an outstanding fee, each with the amount owed, and the number of such students.
+
+    Use case ends.
+
+**Extensions**
+
+* 2a. No student has an outstanding fee.
+
+    * 2a1. Poco Book shows an empty list, stating that no students have outstanding fees.
+
+      Use case ends.
+
+**Use case: UC06 - Set the outstanding fee of a student**
+
+**Guarantees:**
+
+* Only the specified student's outstanding fee is changed. The new amount replaces the previous fee and is never added to or subtracted from it.
+* If the request is invalid, no student data is changed.
+* If the data is saved successfully, the new outstanding fee, or its absence after a fee is cleared, still applies after Poco Book restarts.
+
+**MSS**
+
+1.  Tutor <u>finds the student by name (UC02)</u>.
+2.  Tutor requests to set the outstanding fee of a specific student in the displayed list to a new amount.
+3.  Poco Book replaces the student's outstanding fee with the new amount, saves the data, and shows the student's new outstanding fee.
+
+    Use case ends.
+
+**Extensions**
+
+* 1a. The student is already in the displayed list (e.g., after the tutor lists all students, or <u>lists students with outstanding fees (UC05)</u>).
+
+  Use case resumes at step 2.
+
+* 1b. The displayed list is empty.
+
+  Use case ends.
+
+* 2a. The index given by the tutor in the list of students displayed is invalid.
+
+    * 2a1. Poco Book shows an error message.
+
+      Use case resumes at step 2.
+
+* 2b. The amount is missing or invalid (e.g., negative, above S$99999.99, or with more than two decimal places).
+
+    * 2b1. Poco Book shows an error message describing valid amounts.
+
+      Use case resumes at step 2.
+
+* 3a. The new amount is zero (e.g., the student has paid the fee in full).
+
+    * 3a1. Poco Book clears the student's outstanding fee, if any, saves the data, and shows that the student no longer has an outstanding fee.
+
+      Use case ends.
+
+* 3b. Poco Book is unable to save the data.
+
+    * 3b1. Poco Book shows an error message that the data could not be saved. The change is kept only until Poco Book is closed.
+
+      Use case ends.
 
 ### Non-Functional Requirements
 
