@@ -10,7 +10,7 @@ Poco Book is a desktop app that helps independent tutors manage their students, 
 
 * Add a student with guardian contact details and an optional outstanding fee
 * List, find and view students
-* See which students owe fees and mark fees as paid
+* See which students owe fees, then set or clear their outstanding amounts
 * Delete students who have left
 
 ## Documentation
