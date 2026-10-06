@@ -52,4 +52,4 @@ You can reach us at the email `seer[at]comp.nus.edu.sg`
 [[github](https://github.com/shiverin)]
 
 * Role: Developer
-* Responsibilities: Outstanding-fee filtering (`fees`) and payment-status updates (`paid`); related feature specifications, tests, and documentation; Developer Guide non-functional requirements and glossary.
+* Responsibilities: Outstanding-fee filtering (`fees`) and setting or clearing outstanding fees (`setoutstanding`); related feature specifications, tests, and documentation; Developer Guide non-functional requirements and glossary.
