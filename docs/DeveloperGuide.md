@@ -36,7 +36,7 @@ The following provides a quick overview of the main components and their interac
 
 **Main components of the architecture**
 
-**`Main`** (consisting of classes [`Main`](https://github.com/se-edu/addressbook-level3/tree/master/src/main/java/seedu/address/Main.java) and [`MainApp`](https://github.com/se-edu/addressbook-level3/tree/master/src/main/java/seedu/address/MainApp.java)) is in charge of the app launch and shut down.
+**`Main`** (consisting of classes [`Main`](https://github.com/AY2627S1-CS2103T-F09-2a/tp/tree/master/src/main/java/seedu/address/Main.java) and [`MainApp`](https://github.com/AY2627S1-CS2103T-F09-2a/tp/tree/master/src/main/java/seedu/address/MainApp.java)) is in charge of the app launch and shut down.
 * At app launch, it initializes the other components in the correct sequence, and connects them up with each other.
 * At shut down, it shuts down the other components and invokes cleanup methods where necessary.
 
@@ -68,13 +68,13 @@ The sections below give more details of each component.
 
 ### UI component
 
-The **API** of this component is specified in [`Ui.java`](https://github.com/se-edu/addressbook-level3/tree/master/src/main/java/seedu/address/ui/Ui.java)
+The **API** of this component is specified in [`Ui.java`](https://github.com/AY2627S1-CS2103T-F09-2a/tp/tree/master/src/main/java/seedu/address/ui/Ui.java)
 
 ![Structure of the UI Component](images/UiClassDiagram.png)
 
 The UI consists of a `MainWindow` and its parts, such as `CommandBox`, `ResultDisplay`, `PersonListPanel`, and `StatusBarFooter`. All of these, including `MainWindow`, inherit from the abstract `UiPart` class, which captures common behavior among classes that represent visible GUI parts.
 
-The `UI` component uses the JavaFX UI framework. The layouts of these UI parts are defined in matching `.fxml` files in `src/main/resources/view`. For example, [`MainWindow.fxml`](https://github.com/se-edu/addressbook-level3/tree/master/src/main/resources/view/MainWindow.fxml) specifies the layout of [`MainWindow`](https://github.com/se-edu/addressbook-level3/tree/master/src/main/java/seedu/address/ui/MainWindow.java).
+The `UI` component uses the JavaFX UI framework. The layouts of these UI parts are defined in matching `.fxml` files in `src/main/resources/view`. For example, [`MainWindow.fxml`](https://github.com/AY2627S1-CS2103T-F09-2a/tp/tree/master/src/main/resources/view/MainWindow.fxml) specifies the layout of [`MainWindow`](https://github.com/AY2627S1-CS2103T-F09-2a/tp/tree/master/src/main/java/seedu/address/ui/MainWindow.java).
 
 The `UI` component,
 
@@ -85,7 +85,7 @@ The `UI` component,
 
 ### Logic component
 
-**API** : [`Logic.java`](https://github.com/se-edu/addressbook-level3/tree/master/src/main/java/seedu/address/logic/Logic.java)
+**API** : [`Logic.java`](https://github.com/AY2627S1-CS2103T-F09-2a/tp/tree/master/src/main/java/seedu/address/logic/Logic.java)
 
 Here's a (partial) class diagram of the `Logic` component:
 
@@ -115,7 +115,7 @@ How the parsing works:
 * All `XYZCommandParser` classes, such as `AddCommandParser` and `DeleteCommandParser`, implement the `Parser` interface so they can be treated similarly where appropriate, for example during testing.
 
 ### Model component
-**API** : [`Model.java`](https://github.com/se-edu/addressbook-level3/tree/master/src/main/java/seedu/address/model/Model.java)
+**API** : [`Model.java`](https://github.com/AY2627S1-CS2103T-F09-2a/tp/tree/master/src/main/java/seedu/address/model/Model.java)
 
 <img src="images/ModelClassDiagram.png" width="450" />
 
@@ -136,7 +136,7 @@ The `Model` component,
 
 ### Storage component
 
-**API** : [`Storage.java`](https://github.com/se-edu/addressbook-level3/tree/master/src/main/java/seedu/address/storage/Storage.java)
+**API** : [`Storage.java`](https://github.com/AY2627S1-CS2103T-F09-2a/tp/tree/master/src/main/java/seedu/address/storage/Storage.java)
 
 <img src="images/StorageClassDiagram.png" width="550" />
 
@@ -261,71 +261,294 @@ _{Explain here how the data archiving feature will be implemented}_
 
 **Target user profile**:
 
-* has a need to manage a significant number of contacts
+* independent tutor who teaches a significant number of students locally
+* needs to keep each student's guardian contact details and outstanding fee in one place
+* needs to follow up with guardians on unpaid fees
 * prefers desktop apps over other types of applications
-* can type fast
-* prefers typing to mouse interactions
+* can type fast and prefers typing to mouse interactions
 * is reasonably comfortable using CLI apps
 
-**Value proposition**: Manage contacts faster than with a typical mouse-driven GUI application.
+**Value proposition**: Poco Book keeps each student's guardian contact details and outstanding fee in one record, so a tutor can find a student, contact the right guardian and see who still owes fees with a few typed commands, faster than with spreadsheets or a mouse-driven GUI app.
 
 
 ### User stories
 
 Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unlikely to have) - `*`
 
-| Priority | As a …​                                    | I want to …​                     | So that I can…​                                                        |
-| -------- | ------------------------------------------ | ------------------------------ | ---------------------------------------------------------------------- |
-| `* * *`  | new user                                   | see usage instructions         | refer to instructions when I forget how to use the App                 |
-| `* * *`  | user                                       | add a new person               |                                                                        |
-| `* * *`  | user                                       | delete a person                | remove entries that I no longer need                                   |
-| `* * *`  | user                                       | find a person by name          | locate details of persons without having to go through the entire list |
-| `* *`    | user                                       | hide private contact details   | minimize chance of someone else seeing them by accident                |
-| `*`      | user with many persons in the address book | sort persons by name           | locate a person easily                                                 |
-
-*{More to be added}*
+| Priority | As a …​                       | I want to …​                                                      | So that I can…​                                                         |
+| -------- | ----------------------------- | ---------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| `* * *`  | new user                      | see usage instructions                                           | refer to instructions when I forget how to use the App                 |
+| `* * *`  | tutor                         | add a student with a guardian's name and phone number            | know whom to contact about the student                                 |
+| `* * *`  | tutor                         | add a student without the student's own phone, email or address  | still record students who can only be reached through a guardian       |
+| `* * *`  | tutor                         | record a student's outstanding fee when adding the student       | know whether payment requires follow-up                                |
+| `* * *`  | tutor                         | list all students                                                | return to my full student intake after a search or filter              |
+| `* * *`  | tutor preparing for a lesson  | find students by name                                            | retrieve a student's information quickly                               |
+| `* * *`  | tutor                         | view a student's complete record                                 | see all stored information about that student                          |
+| `* * *`  | tutor                         | delete a student                                                 | keep the App accurate to my current student intake                     |
+| `* * *`  | tutor                         | see an outstanding-fee label on each student who owes fees       | spot students requiring payment follow-up at a glance                  |
+| `* * *`  | tutor                         | list only students with outstanding fees                         | know whose payment requires follow-up                                  |
+| `* * *`  | tutor                         | set or clear a student's outstanding fee                         | keep fee records up to date when fees change or are paid               |
+| `* * *`  | tutor                         | have my changes saved automatically                              | keep guardian and fee details after closing the App                    |
+| `* *`    | tutor                         | edit a student's details                                         | correct mistakes without deleting and re-adding the student            |
+| `* *`    | tutor                         | record more than one guardian for a student                      | contact another guardian when the first is unavailable                 |
+| `* *`    | tutor                         | find students by guardian name or phone number                   | identify the student when a guardian contacts me                       |
+| `* *`    | tutor                         | see the total amount of outstanding fees                         | know how much income I am still owed                                   |
+| `* *`    | tutor with many students      | sort students by outstanding fee                                 | follow up on the largest amounts first                                 |
+| `* *`    | tutor                         | confirm before a student is deleted                              | avoid deleting the wrong student by mistake                            |
+| `* *`    | tutor                         | undo my last command                                             | recover from an accidental change                                      |
+| `*`      | tutor                         | record a partial payment of a fee                                | track fees paid in instalments                                         |
+| `*`      | tutor                         | see a student's payment history                                  | resolve questions about past payments                                  |
+| `*`      | tutor                         | filter students by how long their fee has been outstanding       | follow up on the oldest unpaid fees first                              |
+| `*`      | tutor                         | send fee reminders to guardians                                  | collect payments without contacting each guardian manually             |
+| `*`      | tutor                         | export the students with outstanding fees                        | keep a record of unpaid fees outside the App                           |
+| `*`      | tutor                         | record an overseas guardian phone number                         | keep in contact with a guardian who is abroad                          |
+| `*`      | tutor                         | find students using part of a name                               | locate a student when I am unsure of the spelling                      |
+| `*`      | tutor                         | archive a student instead of deleting the record                 | keep the details of past students for future reference                 |
 
 ### Use cases
 
-(For all use cases below, the **System** is the `AddressBook` and the **Actor** is the `user`, unless specified otherwise)
+(For all use cases below, the **System** is `Poco Book` and the **Actor** is the `tutor`, unless specified otherwise)
 
-**Use case: Delete a person**
+**Use case: UC01 - Add a student**
+
+**Guarantees:**
+
+* A student is added only if all given details are valid and no existing student has the same name and guardian phone number. Otherwise, no student data is changed.
+* If the data is saved successfully, the new student, with their guardian contact and outstanding fee, is still there after Poco Book restarts.
 
 **MSS**
 
-1.  User requests to list persons
-2.  AddressBook shows a list of persons
-3.  User requests to delete a specific person in the list
-4.  AddressBook deletes the person
+1.  Tutor requests to add a student, giving the student's name and the guardian's name and phone number. The tutor can also give the student's phone number, email, address and outstanding fee.
+2.  Poco Book adds the student, saves the data, and shows the new student's complete record.
 
     Use case ends.
 
 **Extensions**
 
-* 2a. The list is empty.
+* 1a. Poco Book detects an error in the given details (e.g., a required detail is missing, or a phone number, email or outstanding fee is invalid).
 
-  Use case ends.
+    * 1a1. Poco Book shows an error message describing the problem.
 
-* 3a. The given index is invalid.
+    * 1a2. Tutor requests to add the student again with corrected details.
 
-    * 3a1. AddressBook shows an error message.
+      Steps 1a1-1a2 are repeated until the details given are valid.
 
       Use case resumes at step 2.
 
-*{More to be added}*
+* 1b. Poco Book detects that a student with the same name (ignoring letter case and extra spaces) and the same guardian phone number already exists.
+
+    * 1b1. Poco Book shows an error message that the student already exists.
+
+      Use case ends.
+
+* 2a. Poco Book is unable to save the data.
+
+    * 2a1. Poco Book shows an error message that the data could not be saved. The change is kept only until Poco Book is closed.
+
+      Use case ends.
+
+**Use case: UC02 - Find a student by name**
+
+**Guarantees:**
+
+* No student data is changed. Only the displayed list changes.
+
+**MSS**
+
+1.  Tutor requests to find students using one or more words from their names.
+2.  Poco Book shows every student whose name contains any of the given words as a whole word (ignoring letter case), each with their outstanding fee, if any, and the number of students found.
+
+    Use case ends.
+
+**Extensions**
+
+* 1a. The tutor gives no search words, or a word that cannot appear in a student's name.
+
+    * 1a1. Poco Book shows an error message. The displayed list is unchanged.
+
+    * 1a2. Tutor requests to find students using new words.
+
+      Steps 1a1-1a2 are repeated until the words given are valid.
+
+      Use case resumes at step 2.
+
+* 2a. No student's name matches the given words (e.g., only part of a word was given, such as `ale` for `Alex`, or a guardian's name was given).
+
+    * 2a1. Poco Book shows an empty list, stating that no students were found.
+
+      Use case ends.
+
+* 2b. Several of the students shown have the same name.
+
+    * 2b1. Tutor tells them apart using their other details shown, such as their guardian's name.
+
+      Use case ends.
+
+**Use case: UC03 - View a student's complete record**
+
+**Guarantees:**
+
+* No student data is changed, and the displayed list stays the same.
+
+**MSS**
+
+1.  Tutor <u>finds the student by name (UC02)</u>.
+2.  Tutor requests to view a specific student in the displayed list.
+3.  Poco Book shows the student's complete record, including the guardian's name and phone number and the outstanding fee, if any.
+
+    Use case ends.
+
+**Extensions**
+
+* 1a. The student is already in the displayed list (e.g., after the tutor lists all students, or <u>lists students with outstanding fees (UC05)</u> to follow up on a payment).
+
+  Use case resumes at step 2.
+
+* 1b. The displayed list is empty.
+
+  Use case ends.
+
+* 2a. The index given by the tutor in the list of students displayed is invalid.
+
+    * 2a1. Poco Book shows an error message.
+
+      Use case resumes at step 2.
+
+**Use case: UC04 - Delete a student**
+
+**Guarantees:**
+
+* Only the specified student in the displayed list is deleted, together with their guardian contact and outstanding fee. Students not in the displayed list are never deleted.
+* If the request is invalid, no student data is changed.
+* If the data is saved successfully, the deletion still applies after Poco Book restarts.
+
+**MSS**
+
+1.  Tutor <u>finds the student by name (UC02)</u>.
+2.  Tutor requests to delete a specific student in the displayed list.
+3.  Poco Book deletes the student, together with their guardian contact and outstanding fee, saves the data, and shows the deleted student's details.
+
+    Use case ends.
+
+**Extensions**
+
+* 1a. The student is already in the displayed list (e.g., after the tutor lists all students, or <u>lists students with outstanding fees (UC05)</u>).
+
+  Use case resumes at step 2.
+
+* 1b. The displayed list is empty.
+
+  Use case ends.
+
+* 2a. The index given by the tutor in the list of students displayed is invalid.
+
+    * 2a1. Poco Book shows an error message.
+
+      Use case resumes at step 2.
+
+* 3a. Poco Book is unable to save the data.
+
+    * 3a1. Poco Book shows an error message that the data could not be saved. The change is kept only until Poco Book is closed.
+
+      Use case ends.
+
+**Use case: UC05 - List students with outstanding fees**
+
+**Guarantees:**
+
+* No student data is changed. Only the displayed list changes.
+
+**MSS**
+
+1.  Tutor requests to list students with outstanding fees.
+2.  Poco Book shows only the students who have an outstanding fee, each with the amount owed, and the number of such students.
+
+    Use case ends.
+
+**Extensions**
+
+* 2a. No student has an outstanding fee.
+
+    * 2a1. Poco Book shows an empty list, stating that no students have outstanding fees.
+
+      Use case ends.
+
+**Use case: UC06 - Set the outstanding fee of a student**
+
+**Guarantees:**
+
+* Only the specified student's outstanding fee is changed. The new amount replaces the previous fee and is never added to or subtracted from it.
+* If the request is invalid, no student data is changed.
+* If the data is saved successfully, the new outstanding fee, or its absence after a fee is cleared, still applies after Poco Book restarts.
+
+**MSS**
+
+1.  Tutor <u>finds the student by name (UC02)</u>.
+2.  Tutor requests to set the outstanding fee of a specific student in the displayed list to a new amount.
+3.  Poco Book replaces the student's outstanding fee with the new amount, saves the data, and shows the student's new outstanding fee.
+
+    Use case ends.
+
+**Extensions**
+
+* 1a. The student is already in the displayed list (e.g., after the tutor lists all students, or <u>lists students with outstanding fees (UC05)</u>).
+
+  Use case resumes at step 2.
+
+* 1b. The displayed list is empty.
+
+  Use case ends.
+
+* 2a. The index given by the tutor in the list of students displayed is invalid.
+
+    * 2a1. Poco Book shows an error message.
+
+      Use case resumes at step 2.
+
+* 2b. The amount is missing or invalid (e.g., negative, above S$99999.99, or with more than two decimal places).
+
+    * 2b1. Poco Book shows an error message describing valid amounts.
+
+      Use case resumes at step 2.
+
+* 3a. The new amount is zero (e.g., the student has paid the fee in full).
+
+    * 3a1. Poco Book clears the student's outstanding fee, if any, saves the data, and shows that the student no longer has an outstanding fee.
+
+      Use case ends.
+
+* 3b. Poco Book is unable to save the data.
+
+    * 3b1. Poco Book shows an error message that the data could not be saved. The change is kept only until Poco Book is closed.
+
+      Use case ends.
 
 ### Non-Functional Requirements
 
-1.  Should work on any _mainstream OS_ as long as it has Java `25` or above installed.
-2.  Should be able to hold up to 1000 persons without noticeable sluggishness in performance for typical usage.
-3.  A user with above average typing speed for regular English text (i.e. not code, not system admin commands) should be able to accomplish most of the tasks faster using commands than using the mouse.
+These are quality targets for the intended Poco Book MVP, not claims that every target has already been achieved.
 
-*{More to be added}*
+1. **Portability:** The same executable JAR should launch and support the core student-management workflow on Windows, macOS, and Linux with Java 25 installed, without recompilation for each operating system.
+2. **Performance:** With up to 1,000 student records, at least 95% of valid `add`, `delete`, `find`, `list`, `view`, `fees`, and `paid` commands should update the result area and displayed list within 1 second on a reference laptop with at least 8 GB RAM and SSD storage. Measure 20 executions per command after startup; exclude deliberate debugger pauses.
+3. **Usability:** After completing the User Guide's quick-start instructions, a first-time user should be able to add a student, find that student, list outstanding fees, and mark a fee as paid using only the keyboard. Invalid input should produce an explanatory message without terminating the application.
+4. **Offline operation:** All core student-management commands should work without an Internet connection. The MVP should not require a remote account, remote database, or online payment service.
+5. **Reliability:** Following a successful data save and normal shutdown, restarting the application should restore the same student details, guardian contacts, and outstanding-fee values. Invalid commands should not modify student records. If a save fails, the application should report the failure rather than claim that the change is durably saved.
+6. **Data integrity:** Outstanding fees should be represented and persisted without binary floating-point rounding errors. Supported positive amounts are S$0.01 to S$999999.99 inclusive and should be displayed with exactly two decimal places; no outstanding fee is a separate state, not a negative amount.
+7. **Local data handling:** Student and guardian records should remain in local application storage and should not be transmitted to third-party services by core MVP commands. Users remain responsible for access to their computer and backups; the MVP does not claim to encrypt its local data file.
 
 ### Glossary
 
-* **Mainstream OS**: Windows, Linux, Unix, or macOS
-* **Private contact detail**: A contact detail that is not meant to be shared with others
+* **Student**: A learner whose tuition-related record is managed by the tutor in Poco Book. Each record represents one student, not a guardian or tuition group.
+* **Tutor**: The intended user: an independent small-group tutor who personally manages student records and fee follow-up using typed commands.
+* **Guardian**: A parent or other responsible adult whose contact details are associated with a student record. A guardian is not a separately indexed student record.
+* **Outstanding fee**: The positive amount in Singapore dollars currently recorded as owed for a student. It is not a payment history, invoice, or proof of a financial transaction.
+* **Paid**: The recorded state after the tutor clears a student's complete outstanding fee. The `paid` command records the tutor's confirmation; it does not transfer money or verify a bank payment. Partial payments are outside the MVP.
+* **Displayed list**: The ordered student records currently visible in the GUI, including results of `find` or `fees`. Hidden records remain stored even when they are not shown.
+* **Displayed index**: A one-based position in the current displayed list. Indices can change after filtering, deletion, or a fee update; they are not permanent student identifiers.
+* **MVP (Minimum Viable Product)**: The smallest coherent set of features without which the intended tutor cannot perform the essential student-management and outstanding-fee workflow.
+* **Core workflow**: Add and retrieve student information, inspect outstanding fees, record a complete fee payment, and save and reload the resulting records.
+* **SGD / S$**: Singapore dollars, the currency used for outstanding fees in the MVP.
+* **Mainstream OS**: Windows, macOS, or Linux, subject to the portability requirement above.
+* **Private contact detail**: A student or guardian contact detail intended for the tutor's own use rather than public sharing.
 
 --------------------------------------------------------------------------------------------------------------------
 
