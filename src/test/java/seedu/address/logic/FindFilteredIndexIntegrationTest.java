@@ -3,7 +3,6 @@ package seedu.address.logic;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static seedu.address.logic.Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX;
 import static seedu.address.logic.Messages.MESSAGE_PERSONS_LISTED_OVERVIEW;
 import static seedu.address.testutil.Assert.assertThrows;
 import static seedu.address.testutil.TypicalPersons.BENSON;
@@ -69,8 +68,9 @@ public class FindFilteredIndexIntegrationTest {
         logic.execute("find meier");
         int fullListSize = model.getAddressBook().getPersonList().size();
 
-        // Index 3 exists in the full list (7 persons) but not in the filtered list (2 persons)
-        assertThrows(CommandException.class, MESSAGE_INVALID_PERSON_DISPLAYED_INDEX, () -> logic.execute("delete 3"));
+        // Index 3 exists in the full list (7 persons) but not in the filtered list (2 persons).
+        // Only the exception type is checked; the exact error text is covered by DeleteCommandTest.
+        assertThrows(CommandException.class, () -> logic.execute("delete 3"));
         assertEquals(fullListSize, model.getAddressBook().getPersonList().size());
     }
 
@@ -79,7 +79,10 @@ public class FindFilteredIndexIntegrationTest {
         CommandResult findResult = logic.execute("find zelda");
         assertEquals(String.format(MESSAGE_PERSONS_LISTED_OVERVIEW, 0), findResult.getFeedbackToUser());
 
-        assertThrows(CommandException.class, MESSAGE_INVALID_PERSON_DISPLAYED_INDEX, () -> logic.execute("delete 1"));
+        int fullListSize = model.getAddressBook().getPersonList().size();
+
+        assertThrows(CommandException.class, () -> logic.execute("delete 1"));
+        assertEquals(fullListSize, model.getAddressBook().getPersonList().size());
     }
 
 }
