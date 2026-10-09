@@ -28,8 +28,19 @@ jobs:
           java-version: '25'
           java-package: jdk+fx
 
+      # JavaFX UI tests start the glass toolkit, which needs a display. Linux CI
+      # runners are headless, so provide a virtual framebuffer for them.
+      - name: Install Xvfb and GTK libraries (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y xvfb libgtk-3-0
+
       - name: Build and check with Gradle
+        if: runner.os != 'Linux'
         run: ./gradlew check coverage
+
+      - name: Build and check with Gradle under a virtual display (Linux)
+        if: runner.os == 'Linux'
+        run: xvfb-run -a -s "-screen 0 1280x1024x24" ./gradlew check coverage
 
       - name: Upload coverage reports to Codecov
         if: runner.os == 'Linux'
