@@ -3,6 +3,7 @@ package seedu.address.logic.commands;
 import static java.util.Objects.requireNonNull;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import seedu.address.commons.core.index.Index;
 import seedu.address.commons.util.ToStringBuilder;
@@ -45,7 +46,26 @@ public class ViewCommand extends Command {
         }
 
         Person personToView = lastShownList.get(targetIndex.getZeroBased());
-        return new CommandResult(String.format(MESSAGE_VIEW_STUDENT_SUCCESS, personToView.getName()));
+        return new CommandResult(String.format(MESSAGE_VIEW_STUDENT_SUCCESS, formatRecord(personToView)));
+    }
+
+    /**
+     * Returns every student field in a stable, readable order.
+     */
+    public static String formatRecord(Person person) {
+        String tags = person.getTags().stream().map(tag -> tag.tagName).sorted()
+                .collect(Collectors.joining(", "));
+        return person.getName() + "\nPhone: " + displayOptional(person.getPhone().value)
+                + "\nEmail: " + displayOptional(person.getEmail().value)
+                + "\nAddress: " + displayOptional(person.getAddress().value)
+                + "\nGuardian name: " + person.getGuardianName()
+                + "\nGuardian phone: " + person.getGuardianPhone()
+                + "\nOutstanding fee: " + (person.getOutstandingFee() == null ? "None" : person.getOutstandingFee())
+                + "\nTags: " + displayOptional(tags);
+    }
+
+    private static String displayOptional(String value) {
+        return value.isEmpty() ? "None" : value;
     }
 
     @Override

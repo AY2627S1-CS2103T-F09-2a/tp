@@ -50,6 +50,15 @@ public class JsonAdaptedPersonTest {
             .collect(Collectors.toList());
 
     @Test
+    public void toModelType_optionalStudentFieldsAbsent_roundTrips() throws Exception {
+        seedu.address.model.person.Person student = new seedu.address.model.person.Person(
+                new seedu.address.model.person.Name("John Doe"), Phone.empty(), Email.empty(),
+                Address.empty(), new GuardianName("Jane Doe"), new GuardianPhone("91234567"), null,
+                java.util.Set.of());
+        assertEquals(student, new JsonAdaptedPerson(student).toModelType());
+    }
+
+    @Test
     public void toModelType_validPersonDetails_returnsPerson() throws Exception {
         JsonAdaptedPerson person = new JsonAdaptedPerson(BENSON);
         assertEquals(BENSON, person.toModelType());

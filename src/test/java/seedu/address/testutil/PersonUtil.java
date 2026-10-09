@@ -31,9 +31,20 @@ public class PersonUtil {
     public static String getPersonDetails(Person person) {
         StringBuilder sb = new StringBuilder();
         sb.append(PREFIX_NAME + person.getName().fullName + " ");
-        sb.append(PREFIX_PHONE + person.getPhone().value + " ");
-        sb.append(PREFIX_EMAIL + person.getEmail().value + " ");
-        sb.append(PREFIX_ADDRESS + person.getAddress().value + " ");
+        if (!person.getPhone().value.isEmpty()) {
+            sb.append(PREFIX_PHONE + person.getPhone().value + " ");
+        }
+        if (!person.getEmail().value.isEmpty()) {
+            sb.append(PREFIX_EMAIL + person.getEmail().value + " ");
+        }
+        if (!person.getAddress().value.isEmpty()) {
+            sb.append(PREFIX_ADDRESS + person.getAddress().value + " ");
+        }
+        sb.append("g/" + person.getGuardianName() + " ");
+        sb.append("gp/" + person.getGuardianPhone() + " ");
+        if (person.getOutstandingFee() != null) {
+            sb.append("f/" + person.getOutstandingFee() + " ");
+        }
         person.getTags().stream().forEach(
             s -> sb.append(PREFIX_TAG + s.tagName + " ")
         );

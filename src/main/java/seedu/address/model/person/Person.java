@@ -86,7 +86,7 @@ public class Person {
 
     /**
      * Returns true if both persons have the same name.
-     * This defines a weaker notion of equality between two persons.
+     * Identity uses the normalized student name and guardian phone.
      */
     public boolean isSamePerson(Person otherPerson) {
         if (otherPerson == this) {
@@ -94,7 +94,13 @@ public class Person {
         }
 
         return otherPerson != null
-                && otherPerson.getName().equals(getName());
+                && normalizeName(otherPerson.getName()).equals(normalizeName(getName()))
+                && otherPerson.getGuardianPhone().equals(getGuardianPhone());
+    }
+
+    private static String normalizeName(Name name) {
+        return java.text.Normalizer.normalize(name.fullName, java.text.Normalizer.Form.NFC)
+                .trim().replaceAll(" +", " ").toLowerCase(java.util.Locale.ROOT);
     }
 
     /**

@@ -28,7 +28,7 @@ Poco Book is a **desktop application for independent tutors to manage students, 
 
    * `list` : Lists all contacts.
 
-   * `add n/John Doe p/98765432 e/johnd@example.com a/John street, block 123, #01-01` : Adds a contact named `John Doe` to the Address Book.
+   * `add n/John Doe p/98765432 e/johnd@example.com a/John street, block 123, #01-01 g/Jane Doe gp/91234567` : Adds a contact named `John Doe` to the Address Book.
 
    * `delete 3` : Deletes the 3rd contact shown in the current list.
 
@@ -73,19 +73,35 @@ Shows a message explaining how to access the help page.
 Format: `help`
 
 
-### Adding a person: `add`
+### Adding a student: `add`
 
-Adds a person to the address book.
+Adds a student with a required guardian contact.
 
-Format: `add n/NAME p/PHONE_NUMBER e/EMAIL a/ADDRESS [t/TAG]…​`
+Format: `add n/NAME [p/PHONE_NUMBER] [e/EMAIL] [a/ADDRESS] g/GUARDIAN_NAME gp/GUARDIAN_PHONE [f/AMOUNT] [t/TAG]…​`
 
 <div markdown="span" class="alert alert-primary">:bulb: **Tip:**
-A person can have any number of tags, including zero.
+A student can have any number of tags, including zero. Name, guardian name, and guardian phone are required. Student phone, email, address, and outstanding fee are optional. Each single-valued prefix can occur once; unknown prefixes are rejected.
+
+Guardian names accept 1–70 characters including letters, numbers, spaces, apostrophes, hyphens, periods, and parentheses, with at least one letter. Guardian phone numbers contain eight digits beginning with 6, 8, or 9; spaces and hyphens are normalized. Fees range from `0.01` to `99999.99` with at most two decimal places. Omit `f/` when there is no outstanding fee. Blank supplied values are rejected.
+
+Two students with the same name (ignoring case and repeated spaces) and guardian phone are duplicates. Students with the same name and different guardian phones can coexist.
 </div>
 
 Examples:
-* `add n/John Doe p/98765432 e/johnd@example.com a/John street, block 123, #01-01`
-* `add n/Betsy Crowe t/friend e/betsycrowe@example.com a/Newgate Prison p/1234567 t/criminal`
+* `add n/John Doe p/98765432 e/johnd@example.com a/John street, block 123, #01-01 g/Jane Doe gp/91234567`
+* `add n/Betsy Crowe t/friend e/betsycrowe@example.com a/Newgate Prison p/1234567 g/Mary Crowe gp/81234567 f/25.50 t/criminal`
+
+### Viewing a student: `view`
+
+Displays every field of a student, including guardian details, outstanding fee, and tags.
+
+Format: `view INDEX`
+
+* Use the positive index shown in the current list, including a filtered list.
+* Optional details without values display as `None`. Tags display alphabetically.
+* Viewing a student does not change the record or the list.
+
+Example: `view 1` displays the complete record for the first student in the current list.
 
 ### Listing all persons: `list`
 
@@ -189,7 +205,7 @@ _Details coming soon ..._
 
 Action | Format, Examples
 --------|------------------
-**Add** | `add n/NAME p/PHONE_NUMBER e/EMAIL a/ADDRESS [t/TAG]…​` <br> e.g., `add n/James Ho p/22224444 e/jamesho@example.com a/123, Clementi Rd, 1234665 t/friend t/colleague`
+**Add** | `add n/NAME [p/PHONE_NUMBER] [e/EMAIL] [a/ADDRESS] g/GUARDIAN_NAME gp/GUARDIAN_PHONE [f/AMOUNT] [t/TAG]…​` <br> e.g., `add n/James Ho p/22224444 e/jamesho@example.com a/123, Clementi Rd, 1234665 g/Jane Ho gp/91234567 t/friend t/colleague`
 **Clear** | `clear`
 **Delete** | `delete INDEX`<br> e.g., `delete 3`
 **Edit** | `edit INDEX [n/NAME] [p/PHONE_NUMBER] [e/EMAIL] [a/ADDRESS] [t/TAG]…​`<br> e.g., `edit 2 n/James Lee e/jameslee@example.com`

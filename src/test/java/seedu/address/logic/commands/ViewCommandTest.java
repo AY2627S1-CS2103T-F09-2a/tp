@@ -30,6 +30,30 @@ public class ViewCommandTest {
     private Model model = new ModelManager(getTypicalAddressBook(), new UserPrefs());
 
     @Test
+    public void execute_fullRecord_displaysEveryField() throws Exception {
+        Person student = new seedu.address.testutil.PersonBuilder().withName("John Doe")
+                .withGuardianName("Jane Doe").withGuardianPhone("91234567").withOutstandingFee("25.5")
+                .withTags("music", "advanced").build();
+        Model isolatedModel = new ModelManager();
+        isolatedModel.addPerson(student);
+        String expected = "Viewing student: John Doe\nPhone: 85355255\nEmail: amy@gmail.com"
+                + "\nAddress: 123, Jurong West Ave 6, #08-111\nGuardian name: Jane Doe"
+                + "\nGuardian phone: 91234567\nOutstanding fee: 25.50\nTags: advanced, music";
+        assertEquals(expected, new ViewCommand(INDEX_FIRST_PERSON).execute(isolatedModel).getFeedbackToUser());
+        assertEquals(student, isolatedModel.getFilteredPersonList().getFirst());
+    }
+
+    @Test
+    public void formatRecord_optionalFieldsMissing_displaysNone() {
+        Person student = new Person(new seedu.address.model.person.Name("John Doe"),
+                seedu.address.model.person.Phone.empty(), seedu.address.model.person.Email.empty(),
+                seedu.address.model.person.Address.empty(), new seedu.address.model.person.GuardianName("Jane Doe"),
+                new seedu.address.model.person.GuardianPhone("91234567"), null, java.util.Set.of());
+        assertEquals("John Doe\nPhone: None\nEmail: None\nAddress: None\nGuardian name: Jane Doe"
+                + "\nGuardian phone: 91234567\nOutstanding fee: None\nTags: None", ViewCommand.formatRecord(student));
+    }
+
+    @Test
     public void constructor_nullIndex_throwsNullPointerException() {
         assertThrows(NullPointerException.class, () -> new ViewCommand(null));
     }
@@ -39,7 +63,8 @@ public class ViewCommandTest {
         Person personToView = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
         ViewCommand viewCommand = new ViewCommand(INDEX_FIRST_PERSON);
 
-        String expectedMessage = String.format(ViewCommand.MESSAGE_VIEW_STUDENT_SUCCESS, personToView.getName());
+        String expectedMessage = String.format(ViewCommand.MESSAGE_VIEW_STUDENT_SUCCESS,
+                ViewCommand.formatRecord(personToView));
 
         Model expectedModel = new ModelManager(model.getAddressBook(), new UserPrefs());
 
@@ -52,7 +77,8 @@ public class ViewCommandTest {
         Person personToView = model.getFilteredPersonList().get(lastIndex.getZeroBased());
         ViewCommand viewCommand = new ViewCommand(lastIndex);
 
-        String expectedMessage = String.format(ViewCommand.MESSAGE_VIEW_STUDENT_SUCCESS, personToView.getName());
+        String expectedMessage = String.format(ViewCommand.MESSAGE_VIEW_STUDENT_SUCCESS,
+                ViewCommand.formatRecord(personToView));
 
         Model expectedModel = new ModelManager(model.getAddressBook(), new UserPrefs());
 
@@ -74,7 +100,8 @@ public class ViewCommandTest {
         // the first index in the filtered list refers to the second person in the address book
         ViewCommand viewCommand = new ViewCommand(INDEX_FIRST_PERSON);
 
-        String expectedMessage = String.format(ViewCommand.MESSAGE_VIEW_STUDENT_SUCCESS, BENSON.getName());
+        String expectedMessage = String.format(ViewCommand.MESSAGE_VIEW_STUDENT_SUCCESS,
+                ViewCommand.formatRecord(BENSON));
 
         Model expectedModel = new ModelManager(model.getAddressBook(), new UserPrefs());
         showPersonAtIndex(expectedModel, INDEX_SECOND_PERSON);

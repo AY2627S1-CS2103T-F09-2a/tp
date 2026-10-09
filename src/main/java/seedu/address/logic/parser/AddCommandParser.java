@@ -3,11 +3,16 @@ package seedu.address.logic.parser;
 import static seedu.address.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_ADDRESS;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_EMAIL;
+import static seedu.address.logic.parser.CliSyntax.PREFIX_GUARDIAN_NAME;
+import static seedu.address.logic.parser.CliSyntax.PREFIX_GUARDIAN_PHONE;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_NAME;
+import static seedu.address.logic.parser.CliSyntax.PREFIX_OUTSTANDING_FEE;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_PHONE;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_TAG;
 
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import seedu.address.logic.commands.AddCommand;
@@ -17,6 +22,7 @@ import seedu.address.model.person.Email;
 import seedu.address.model.person.GuardianName;
 import seedu.address.model.person.GuardianPhone;
 import seedu.address.model.person.Name;
+import seedu.address.model.person.OutstandingFee;
 import seedu.address.model.person.Person;
 import seedu.address.model.person.Phone;
 import seedu.address.model.tag.Tag;
@@ -26,10 +32,6 @@ import seedu.address.model.tag.Tag;
  */
 public class AddCommandParser implements Parser<AddCommand> {
 
-    // Temporary defaults until the add command syntax supports guardian prefixes (issue #1).
-    private static final String DEFAULT_GUARDIAN_NAME = "Parent Guardian";
-    private static final String DEFAULT_GUARDIAN_PHONE = "80000000";
-
     /**
      * Parses the given {@code String} of arguments in the context of the AddCommand
      * and returns an AddCommand object for execution.
@@ -37,27 +39,58 @@ public class AddCommandParser implements Parser<AddCommand> {
      */
     public AddCommand parse(String args) throws ParseException {
         ArgumentMultimap argMultimap =
-                ArgumentTokenizer.tokenize(args, PREFIX_NAME, PREFIX_PHONE, PREFIX_EMAIL, PREFIX_ADDRESS, PREFIX_TAG);
+                ArgumentTokenizer.tokenize(" " + args, PREFIX_NAME, PREFIX_PHONE, PREFIX_EMAIL, PREFIX_ADDRESS,
+                        PREFIX_GUARDIAN_NAME, PREFIX_GUARDIAN_PHONE, PREFIX_OUTSTANDING_FEE, PREFIX_TAG);
 
-        if (!arePrefixesPresent(argMultimap, PREFIX_NAME, PREFIX_ADDRESS, PREFIX_PHONE, PREFIX_EMAIL)
+        if (!arePrefixesPresent(argMultimap, PREFIX_NAME, PREFIX_GUARDIAN_NAME, PREFIX_GUARDIAN_PHONE)
                 || !argMultimap.getPreamble().isEmpty()) {
             throw new ParseException(String.format(MESSAGE_INVALID_COMMAND_FORMAT, AddCommand.MESSAGE_USAGE));
         }
 
-        argMultimap.verifyNoDuplicatePrefixesFor(PREFIX_NAME, PREFIX_PHONE, PREFIX_EMAIL, PREFIX_ADDRESS);
+        rejectUnexpectedPrefixes(args);
+        argMultimap.verifyNoDuplicatePrefixesFor(PREFIX_NAME, PREFIX_PHONE, PREFIX_EMAIL, PREFIX_ADDRESS,
+                PREFIX_GUARDIAN_NAME, PREFIX_GUARDIAN_PHONE, PREFIX_OUTSTANDING_FEE);
         Name name = ParserUtil.parseName(argMultimap.getValue(PREFIX_NAME).get());
-        Phone phone = ParserUtil.parsePhone(argMultimap.getValue(PREFIX_PHONE).get());
-        Email email = ParserUtil.parseEmail(argMultimap.getValue(PREFIX_EMAIL).get());
-        Address address = ParserUtil.parseAddress(argMultimap.getValue(PREFIX_ADDRESS).get());
+        Phone phone = argMultimap.getValue(PREFIX_PHONE).isPresent()
+                ? ParserUtil.parsePhone(argMultimap.getValue(PREFIX_PHONE).get()) : Phone.empty();
+        Email email = argMultimap.getValue(PREFIX_EMAIL).isPresent()
+                ? ParserUtil.parseEmail(argMultimap.getValue(PREFIX_EMAIL).get()) : Email.empty();
+        Address address = argMultimap.getValue(PREFIX_ADDRESS).isPresent()
+                ? ParserUtil.parseAddress(argMultimap.getValue(PREFIX_ADDRESS).get()) : Address.empty();
         Set<Tag> tagList = ParserUtil.parseTags(argMultimap.getAllValues(PREFIX_TAG));
 
-        // Guardian details are required on every person; the add command does not accept them yet (issue #1).
-        GuardianName guardianName = new GuardianName(DEFAULT_GUARDIAN_NAME);
-        GuardianPhone guardianPhone = new GuardianPhone(DEFAULT_GUARDIAN_PHONE);
+        String guardianNameValue = argMultimap.getValue(PREFIX_GUARDIAN_NAME).get();
+        if (!GuardianName.isValidName(guardianNameValue)) {
+            throw new ParseException(GuardianName.MESSAGE_CONSTRAINTS);
+        }
+        String guardianPhoneValue = argMultimap.getValue(PREFIX_GUARDIAN_PHONE).get();
+        if (!GuardianPhone.isValidPhone(guardianPhoneValue)) {
+            throw new ParseException(GuardianPhone.MESSAGE_CONSTRAINTS);
+        }
+        GuardianName guardianName = new GuardianName(guardianNameValue);
+        GuardianPhone guardianPhone = new GuardianPhone(guardianPhoneValue);
+        OutstandingFee outstandingFee = null;
+        if (argMultimap.getValue(PREFIX_OUTSTANDING_FEE).isPresent()) {
+            String fee = argMultimap.getValue(PREFIX_OUTSTANDING_FEE).get();
+            if (!OutstandingFee.isValidOutstandingFee(fee)) {
+                throw new ParseException(OutstandingFee.MESSAGE_CONSTRAINTS);
+            }
+            outstandingFee = new OutstandingFee(fee);
+        }
 
-        Person person = new Person(name, phone, email, address, guardianName, guardianPhone, null, tagList);
+        Person person = new Person(name, phone, email, address, guardianName, guardianPhone, outstandingFee, tagList);
 
         return new AddCommand(person);
+    }
+
+    private static void rejectUnexpectedPrefixes(String args) throws ParseException {
+        Set<String> acceptedPrefixes = Set.of("n/", "p/", "e/", "a/", "g/", "gp/", "f/", "t/");
+        Matcher matcher = Pattern.compile("(?:^|\\s)([A-Za-z]+/)").matcher(args);
+        while (matcher.find()) {
+            if (!acceptedPrefixes.contains(matcher.group(1))) {
+                throw new ParseException(String.format(MESSAGE_INVALID_COMMAND_FORMAT, AddCommand.MESSAGE_USAGE));
+            }
+        }
     }
 
     /**
