@@ -18,6 +18,7 @@ import javafx.application.Platform;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.image.WritableImage;
+import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import seedu.address.testutil.PersonBuilder;
@@ -36,7 +37,8 @@ public class PersonCardFeeTest {
                 PersonCard absent = new PersonCard(new PersonBuilder().build(), 1);
                 PersonCard typical = new PersonCard(new PersonBuilder().withOutstandingFee("180").build(), 2);
                 PersonCard maximum = new PersonCard(new PersonBuilder().withOutstandingFee("99999.99").build(), 3);
-                VBox cards = new VBox(absent.getRoot(), typical.getRoot(), maximum.getRoot());
+                PersonCard tagged = new PersonCard(new PersonBuilder().withTags("friends", "sec3").build(), 4);
+                VBox cards = new VBox(absent.getRoot(), typical.getRoot(), maximum.getRoot(), tagged.getRoot());
                 cards.getStyleClass().add("list-cell");
                 cards.setStyle("-fx-background-color: #3c3e3f;");
                 Scene scene = new Scene(cards, 340, 600);
@@ -54,6 +56,10 @@ public class PersonCardFeeTest {
                 assertTrue(maximumFee.isManaged());
                 assertEquals(Color.web("#ffd166"), maximumFee.getTextFill());
                 assertTrue(maximumFee.getWidth() >= maximumFee.prefWidth(-1));
+                FlowPane taggedTags = (FlowPane) tagged.getRoot().lookup("#tags");
+                assertEquals(2, taggedTags.getChildren().size());
+                assertEquals("friends", ((Label) taggedTags.getChildren().get(0)).getText());
+                assertEquals("sec3", ((Label) taggedTags.getChildren().get(1)).getText());
                 WritableImage snapshot = cards.snapshot(null, null);
                 BufferedImage image = new BufferedImage((int) snapshot.getWidth(), (int) snapshot.getHeight(),
                         BufferedImage.TYPE_INT_ARGB);
