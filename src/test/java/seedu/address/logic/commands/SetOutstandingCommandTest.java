@@ -1,7 +1,9 @@
 package seedu.address.logic.commands;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.testutil.Assert.assertThrows;
 
 import java.util.List;
@@ -48,6 +50,17 @@ public class SetOutstandingCommandTest {
         assertNull(model.getFilteredPersonList().get(0).getOutstandingFee());
         storage.saveAddressBook(model.getAddressBook());
         assertNull(storage.readAddressBook().orElseThrow().getPersonList().get(0).getOutstandingFee());
+    }
+
+    @Test
+    public void equals_distinguishesIndexAndFee() {
+        SetOutstandingCommand clearFirst = new SetOutstandingCommand(Index.fromOneBased(1), null);
+        assertTrue(clearFirst.equals(clearFirst));
+        assertTrue(clearFirst.equals(new SetOutstandingCommand(Index.fromOneBased(1), null)));
+        assertFalse(clearFirst.equals(new SetOutstandingCommand(Index.fromOneBased(2), null)));
+        assertFalse(clearFirst.equals(new SetOutstandingCommand(Index.fromOneBased(1), new OutstandingFee("1.00"))));
+        assertFalse(clearFirst.equals(null));
+        assertFalse(clearFirst.equals("not a command"));
     }
 
     @Test
