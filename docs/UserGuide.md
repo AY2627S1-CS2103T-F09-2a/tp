@@ -103,6 +103,20 @@ Format: `view INDEX`
 
 Example: `view 1` displays the complete record for the first student in the current list.
 
+### Filtering students with outstanding fees: `fees`
+
+Format: `fees`
+
+Shows only students with a positive outstanding fee, in their stored order, with indexes starting from 1. Each card displays `S$AMOUNT outstanding` with two decimal places. The result reports `N student(s) with outstanding fees.` An empty result is successful. Extra arguments are rejected. This command does not change stored records; use `list` to restore all students.
+
+### Setting or clearing an outstanding fee: `setoutstanding`
+
+Format: `setoutstanding INDEX AMOUNT`
+
+The index identifies a student in the displayed list. The amount replaces the existing fee; use `0` to clear it. Positive amounts range from `0.01` to `99999.99`, with at most two decimal places. For example, `setoutstanding 1 150.50` records S$150.50 and `setoutstanding 1 0` clears it. The result names the student and the replacement amount. Changes are saved automatically and survive restarting.
+
+When clearing a fee in the `fees` list, that student disappears and the remaining students are re-indexed. In a `find` or full list, the student remains visible. Missing or extra arguments, malformed amounts, and invalid indexes leave the data and displayed list unchanged. Fee recording does not transfer money; partial payments and payment history are outside the MVP.
+
 ### Listing all persons: `list`
 
 Shows a list of all persons in the address book.
@@ -210,5 +224,8 @@ Action | Format, Examples
 **Delete** | `delete INDEX`<br> e.g., `delete 3`
 **Edit** | `edit INDEX [n/NAME] [p/PHONE_NUMBER] [e/EMAIL] [a/ADDRESS] [t/TAG]…​`<br> e.g., `edit 2 n/James Lee e/jameslee@example.com`
 **Find** | `find KEYWORD [MORE_KEYWORDS]`<br> e.g., `find James Jake`
+**Fees** | `fees`
+**Set outstanding** | `setoutstanding INDEX AMOUNT`
+**View** | `view INDEX`
 **List** | `list`
 **Help** | `help`

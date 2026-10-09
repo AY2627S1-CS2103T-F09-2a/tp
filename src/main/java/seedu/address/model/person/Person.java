@@ -85,8 +85,7 @@ public class Person {
     }
 
     /**
-     * Returns true if both persons have the same name.
-     * Identity uses the normalized student name and guardian phone.
+     * Returns true if both persons share the normalized student name and guardian phone.
      */
     public boolean isSamePerson(Person otherPerson) {
         if (otherPerson == this) {

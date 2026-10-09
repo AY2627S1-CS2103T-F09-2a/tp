@@ -101,7 +101,7 @@ public class EditCommand extends Command {
         Phone updatedPhone = editPersonDescriptor.getPhone().orElse(personToEdit.getPhone());
         Email updatedEmail = editPersonDescriptor.getEmail().orElse(personToEdit.getEmail());
         Address updatedAddress = editPersonDescriptor.getAddress().orElse(personToEdit.getAddress());
-        // Guardian details and outstanding fee are not editable yet (issue #7); carry them over unchanged.
+        // Editing student contact details preserves guardian information and the outstanding fee.
         GuardianName updatedGuardianName = personToEdit.getGuardianName();
         GuardianPhone updatedGuardianPhone = personToEdit.getGuardianPhone();
         Set<Tag> updatedTags = editPersonDescriptor.getTags().orElse(personToEdit.getTags());

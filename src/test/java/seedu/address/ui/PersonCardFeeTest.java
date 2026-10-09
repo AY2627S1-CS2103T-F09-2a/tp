@@ -4,16 +4,22 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.awt.image.BufferedImage;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import javax.imageio.ImageIO;
 
 import org.junit.jupiter.api.Test;
 
 import javafx.application.Platform;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
+import javafx.scene.image.WritableImage;
 import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
 import seedu.address.testutil.PersonBuilder;
 
 /**
@@ -31,7 +37,9 @@ public class PersonCardFeeTest {
                 PersonCard typical = new PersonCard(new PersonBuilder().withOutstandingFee("180").build(), 2);
                 PersonCard maximum = new PersonCard(new PersonBuilder().withOutstandingFee("99999.99").build(), 3);
                 VBox cards = new VBox(absent.getRoot(), typical.getRoot(), maximum.getRoot());
-                Scene scene = new Scene(cards, 300, 600);
+                cards.getStyleClass().add("list-cell");
+                cards.setStyle("-fx-background-color: #3c3e3f;");
+                Scene scene = new Scene(cards, 340, 600);
                 scene.getStylesheets().add(getClass().getResource("/view/DarkTheme.css").toExternalForm());
                 cards.applyCss();
                 cards.layout();
@@ -44,7 +52,19 @@ public class PersonCardFeeTest {
                 assertEquals("S$99999.99 outstanding", maximumFee.getText());
                 assertTrue(maximumFee.isVisible());
                 assertTrue(maximumFee.isManaged());
+                assertEquals(Color.web("#ffd166"), maximumFee.getTextFill());
                 assertTrue(maximumFee.getWidth() >= maximumFee.prefWidth(-1));
+                WritableImage snapshot = cards.snapshot(null, null);
+                BufferedImage image = new BufferedImage((int) snapshot.getWidth(), (int) snapshot.getHeight(),
+                        BufferedImage.TYPE_INT_ARGB);
+                for (int y = 0; y < image.getHeight(); y++) {
+                    for (int x = 0; x < image.getWidth(); x++) {
+                        image.setRGB(x, y, snapshot.getPixelReader().getArgb(x, y));
+                    }
+                }
+                Path output = Path.of("build", "reports", "ui-fees.png");
+                Files.createDirectories(output.getParent());
+                ImageIO.write(image, "png", output.toFile());
             } catch (Throwable error) {
                 failure.set(error);
             } finally {
