@@ -15,6 +15,10 @@ public class Phone {
     public static final String VALIDATION_REGEX = "\\d{3,}";
     public final String value;
 
+    private Phone() {
+        value = "";
+    }
+
     /**
      * Constructs a {@code Phone}.
      *
@@ -24,6 +28,13 @@ public class Phone {
         requireNonNull(phone);
         checkArgument(isValidPhone(phone), MESSAGE_CONSTRAINTS);
         value = phone;
+    }
+
+    /**
+     * Returns an absent optional student detail without accepting blank user input.
+     */
+    public static Phone empty() {
+        return new Phone();
     }
 
     /**

@@ -44,8 +44,14 @@ public class Messages {
                 .append(person.getEmail())
                 .append("; Address: ")
                 .append(person.getAddress())
+                .append("; Guardian name: ")
+                .append(person.getGuardianName())
+                .append("; Guardian phone: ")
+                .append(person.getGuardianPhone())
+                .append("; Outstanding fee: ")
+                .append(person.getOutstandingFee() == null ? "None" : person.getOutstandingFee())
                 .append("; Tags: ");
-        person.getTags().forEach(builder::append);
+        person.getTags().stream().sorted(java.util.Comparator.comparing(tag -> tag.tagName)).forEach(builder::append);
         return builder.toString();
     }
 

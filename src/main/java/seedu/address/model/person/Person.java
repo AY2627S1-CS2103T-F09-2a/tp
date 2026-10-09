@@ -23,17 +23,25 @@ public class Person {
 
     // Data fields
     private final Address address;
+    private final GuardianName guardianName;
+    private final GuardianPhone guardianPhone;
+    private final OutstandingFee outstandingFee;
     private final Set<Tag> tags = new HashSet<>();
 
     /**
-     * Every field must be present and not null.
+     * Every field must be present and not null, except {@code outstandingFee} which is
+     * null when the person has no outstanding fee.
      */
-    public Person(Name name, Phone phone, Email email, Address address, Set<Tag> tags) {
-        requireAllNonNull(name, phone, email, address, tags);
+    public Person(Name name, Phone phone, Email email, Address address, GuardianName guardianName,
+            GuardianPhone guardianPhone, OutstandingFee outstandingFee, Set<Tag> tags) {
+        requireAllNonNull(name, phone, email, address, guardianName, guardianPhone, tags);
         this.name = name;
         this.phone = phone;
         this.email = email;
         this.address = address;
+        this.guardianName = guardianName;
+        this.guardianPhone = guardianPhone;
+        this.outstandingFee = outstandingFee;
         this.tags.addAll(tags);
     }
 
@@ -53,6 +61,21 @@ public class Person {
         return address;
     }
 
+    public GuardianName getGuardianName() {
+        return guardianName;
+    }
+
+    public GuardianPhone getGuardianPhone() {
+        return guardianPhone;
+    }
+
+    /**
+     * Returns the outstanding fee, or null if the person has no outstanding fee.
+     */
+    public OutstandingFee getOutstandingFee() {
+        return outstandingFee;
+    }
+
     /**
      * Returns an immutable tag set, which throws {@code UnsupportedOperationException}
      * if modification is attempted.
@@ -63,7 +86,7 @@ public class Person {
 
     /**
      * Returns true if both persons have the same name.
-     * This defines a weaker notion of equality between two persons.
+     * Identity uses the normalized student name and guardian phone.
      */
     public boolean isSamePerson(Person otherPerson) {
         if (otherPerson == this) {
@@ -71,7 +94,13 @@ public class Person {
         }
 
         return otherPerson != null
-                && otherPerson.getName().equals(getName());
+                && normalizeName(otherPerson.getName()).equals(normalizeName(getName()))
+                && otherPerson.getGuardianPhone().equals(getGuardianPhone());
+    }
+
+    private static String normalizeName(Name name) {
+        return java.text.Normalizer.normalize(name.fullName, java.text.Normalizer.Form.NFC)
+                .trim().replaceAll(" +", " ").toLowerCase(java.util.Locale.ROOT);
     }
 
     /**
@@ -93,13 +122,16 @@ public class Person {
                 && phone.equals(otherPerson.phone)
                 && email.equals(otherPerson.email)
                 && address.equals(otherPerson.address)
+                && guardianName.equals(otherPerson.guardianName)
+                && guardianPhone.equals(otherPerson.guardianPhone)
+                && Objects.equals(outstandingFee, otherPerson.outstandingFee)
                 && tags.equals(otherPerson.tags);
     }
 
     @Override
     public int hashCode() {
         // use this method for custom fields hashing instead of implementing your own
-        return Objects.hash(name, phone, email, address, tags);
+        return Objects.hash(name, phone, email, address, guardianName, guardianPhone, outstandingFee, tags);
     }
 
     @Override
@@ -109,6 +141,9 @@ public class Person {
                 .add("phone", phone)
                 .add("email", email)
                 .add("address", address)
+                .add("guardian name", guardianName)
+                .add("guardian phone", guardianPhone)
+                .add("outstanding fee", outstandingFee)
                 .add("tags", tags)
                 .toString();
     }
