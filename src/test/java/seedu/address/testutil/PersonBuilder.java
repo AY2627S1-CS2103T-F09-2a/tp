@@ -5,7 +5,10 @@ import java.util.Set;
 
 import seedu.address.model.person.Address;
 import seedu.address.model.person.Email;
+import seedu.address.model.person.GuardianName;
+import seedu.address.model.person.GuardianPhone;
 import seedu.address.model.person.Name;
+import seedu.address.model.person.OutstandingFee;
 import seedu.address.model.person.Person;
 import seedu.address.model.person.Phone;
 import seedu.address.model.tag.Tag;
@@ -20,11 +23,16 @@ public class PersonBuilder {
     public static final String DEFAULT_PHONE = "85355255";
     public static final String DEFAULT_EMAIL = "amy@gmail.com";
     public static final String DEFAULT_ADDRESS = "123, Jurong West Ave 6, #08-111";
+    public static final String DEFAULT_GUARDIAN_NAME = "Parent Guardian";
+    public static final String DEFAULT_GUARDIAN_PHONE = "80000000";
 
     private Name name;
     private Phone phone;
     private Email email;
     private Address address;
+    private GuardianName guardianName;
+    private GuardianPhone guardianPhone;
+    private OutstandingFee outstandingFee;
     private Set<Tag> tags;
 
     /**
@@ -35,6 +43,9 @@ public class PersonBuilder {
         phone = new Phone(DEFAULT_PHONE);
         email = new Email(DEFAULT_EMAIL);
         address = new Address(DEFAULT_ADDRESS);
+        guardianName = new GuardianName(DEFAULT_GUARDIAN_NAME);
+        guardianPhone = new GuardianPhone(DEFAULT_GUARDIAN_PHONE);
+        outstandingFee = null;
         tags = new HashSet<>();
     }
 
@@ -46,6 +57,9 @@ public class PersonBuilder {
         phone = personToCopy.getPhone();
         email = personToCopy.getEmail();
         address = personToCopy.getAddress();
+        guardianName = personToCopy.getGuardianName();
+        guardianPhone = personToCopy.getGuardianPhone();
+        outstandingFee = personToCopy.getOutstandingFee();
         tags = new HashSet<>(personToCopy.getTags());
     }
 
@@ -89,8 +103,32 @@ public class PersonBuilder {
         return this;
     }
 
+    /**
+     * Sets the {@code GuardianName} of the {@code Person} that we are building.
+     */
+    public PersonBuilder withGuardianName(String guardianName) {
+        this.guardianName = new GuardianName(guardianName);
+        return this;
+    }
+
+    /**
+     * Sets the {@code GuardianPhone} of the {@code Person} that we are building.
+     */
+    public PersonBuilder withGuardianPhone(String guardianPhone) {
+        this.guardianPhone = new GuardianPhone(guardianPhone);
+        return this;
+    }
+
+    /**
+     * Sets the {@code OutstandingFee} of the {@code Person} that we are building.
+     */
+    public PersonBuilder withOutstandingFee(String outstandingFee) {
+        this.outstandingFee = new OutstandingFee(outstandingFee);
+        return this;
+    }
+
     public Person build() {
-        return new Person(name, phone, email, address, tags);
+        return new Person(name, phone, email, address, guardianName, guardianPhone, outstandingFee, tags);
     }
 
 }
