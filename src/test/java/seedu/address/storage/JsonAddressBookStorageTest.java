@@ -2,6 +2,7 @@ package seedu.address.storage;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.testutil.Assert.assertThrows;
 import static seedu.address.testutil.TypicalPersons.ALICE;
 import static seedu.address.testutil.TypicalPersons.HOON;
@@ -18,6 +19,9 @@ import org.junit.jupiter.api.io.TempDir;
 import seedu.address.commons.exceptions.DataLoadingException;
 import seedu.address.model.AddressBook;
 import seedu.address.model.ReadOnlyAddressBook;
+import seedu.address.model.person.OutstandingFee;
+import seedu.address.model.person.Person;
+import seedu.address.testutil.PersonBuilder;
 
 public class JsonAddressBookStorageTest {
     private static final Path TEST_DATA_FOLDER = Paths.get("src", "test", "data", "JsonAddressBookStorageTest");
@@ -58,6 +62,38 @@ public class JsonAddressBookStorageTest {
     @Test
     public void readAddressBook_invalidAndValidPersonAddressBook_throwDataLoadingException() {
         assertThrows(DataLoadingException.class, () -> readAddressBook("invalidAndValidPersonAddressBook.json"));
+    }
+
+    @Test
+    public void readAddressBook_invalidOutstandingFeeAddressBook_throwDataLoadingException() {
+        assertThrows(DataLoadingException.class, () -> readAddressBook("invalidOutstandingFeeAddressBook.json"));
+    }
+
+    @Test
+    public void readAndSaveAddressBook_feeBoundariesAndOrdering_success() throws Exception {
+        Path filePath = testFolder.resolve("TempFeeBoundariesAddressBook.json");
+        AddressBook original = new AddressBook();
+        Person minimumFeePerson = new PersonBuilder().withName("Amy Bee").withOutstandingFee("0.01").build();
+        Person maximumFeePerson = new PersonBuilder().withName("Bob Tan").withOutstandingFee("99999.99").build();
+        original.addPerson(minimumFeePerson);
+        original.addPerson(maximumFeePerson);
+
+        JsonAddressBookStorage jsonAddressBookStorage = new JsonAddressBookStorage(filePath);
+        jsonAddressBookStorage.saveAddressBook(original, filePath);
+        ReadOnlyAddressBook readBack = jsonAddressBookStorage.readAddressBook(filePath).get();
+
+        assertEquals(original, new AddressBook(readBack));
+        assertEquals(original.getPersonList(), readBack.getPersonList());
+        assertEquals(new OutstandingFee("0.01"), readBack.getPersonList().get(0).getOutstandingFee());
+        assertEquals(new OutstandingFee("99999.99"), readBack.getPersonList().get(1).getOutstandingFee());
+    }
+
+    @Test
+    public void saveAddressBook_filePathIsDirectory_throwsIoException() {
+        Path filePath = testFolder.resolve("directoryThatCannotBeAFile");
+        assertTrue(filePath.toFile().mkdir());
+        assertThrows(IOException.class, () -> new JsonAddressBookStorage(filePath)
+                .saveAddressBook(getTypicalAddressBook(), filePath));
     }
 
     @Test

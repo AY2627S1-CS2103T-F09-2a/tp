@@ -14,6 +14,8 @@ import seedu.address.logic.commands.AddCommand;
 import seedu.address.logic.parser.exceptions.ParseException;
 import seedu.address.model.person.Address;
 import seedu.address.model.person.Email;
+import seedu.address.model.person.GuardianName;
+import seedu.address.model.person.GuardianPhone;
 import seedu.address.model.person.Name;
 import seedu.address.model.person.Person;
 import seedu.address.model.person.Phone;
@@ -23,6 +25,10 @@ import seedu.address.model.tag.Tag;
  * Parses input arguments and creates a new AddCommand object
  */
 public class AddCommandParser implements Parser<AddCommand> {
+
+    // Temporary defaults until the add command syntax supports guardian prefixes (issue #1).
+    private static final String DEFAULT_GUARDIAN_NAME = "Parent Guardian";
+    private static final String DEFAULT_GUARDIAN_PHONE = "80000000";
 
     /**
      * Parses the given {@code String} of arguments in the context of the AddCommand
@@ -45,7 +51,11 @@ public class AddCommandParser implements Parser<AddCommand> {
         Address address = ParserUtil.parseAddress(argMultimap.getValue(PREFIX_ADDRESS).get());
         Set<Tag> tagList = ParserUtil.parseTags(argMultimap.getAllValues(PREFIX_TAG));
 
-        Person person = new Person(name, phone, email, address, tagList);
+        // Guardian details are required on every person; the add command does not accept them yet (issue #1).
+        GuardianName guardianName = new GuardianName(DEFAULT_GUARDIAN_NAME);
+        GuardianPhone guardianPhone = new GuardianPhone(DEFAULT_GUARDIAN_PHONE);
+
+        Person person = new Person(name, phone, email, address, guardianName, guardianPhone, null, tagList);
 
         return new AddCommand(person);
     }

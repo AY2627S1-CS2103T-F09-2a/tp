@@ -1,0 +1,11 @@
+{
+  "persons": [ {
+    "name": "Person With Invalid Outstanding Fee",
+    "phone": "9482424",
+    "email": "hans@example.com",
+    "address": "4th street",
+    "guardianName": "Parent Guardian",
+    "guardianPhone": "80000000",
+    "outstandingFee": "0"
+  } ]
+}
