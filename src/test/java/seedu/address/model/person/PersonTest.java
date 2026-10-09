@@ -18,6 +18,10 @@ import seedu.address.testutil.PersonBuilder;
 
 public class PersonTest {
 
+    private static final String VALID_GUARDIAN_NAME_BOB = "Grace Yeoh";
+    private static final String VALID_GUARDIAN_PHONE_BOB = "87654321";
+    private static final String VALID_FEE = "45.50";
+
     @Test
     public void asObservableList_modifyList_throwsUnsupportedOperationException() {
         Person person = new PersonBuilder().build();
@@ -85,6 +89,18 @@ public class PersonTest {
         editedAlice = new PersonBuilder(ALICE).withAddress(VALID_ADDRESS_BOB).build();
         assertFalse(ALICE.equals(editedAlice));
 
+        // different guardian name -> returns false
+        editedAlice = new PersonBuilder(ALICE).withGuardianName(VALID_GUARDIAN_NAME_BOB).build();
+        assertFalse(ALICE.equals(editedAlice));
+
+        // different guardian phone -> returns false
+        editedAlice = new PersonBuilder(ALICE).withGuardianPhone(VALID_GUARDIAN_PHONE_BOB).build();
+        assertFalse(ALICE.equals(editedAlice));
+
+        // different outstanding fee -> returns false
+        editedAlice = new PersonBuilder(ALICE).withOutstandingFee(VALID_FEE).build();
+        assertFalse(ALICE.equals(editedAlice));
+
         // different tags -> returns false
         editedAlice = new PersonBuilder(ALICE).withTags(VALID_TAG_HUSBAND).build();
         assertFalse(ALICE.equals(editedAlice));
@@ -93,7 +109,9 @@ public class PersonTest {
     @Test
     public void toStringMethod() {
         String expected = Person.class.getCanonicalName() + "{name=" + ALICE.getName() + ", phone=" + ALICE.getPhone()
-                + ", email=" + ALICE.getEmail() + ", address=" + ALICE.getAddress() + ", tags=" + ALICE.getTags() + "}";
+                + ", email=" + ALICE.getEmail() + ", address=" + ALICE.getAddress()
+                + ", guardian name=" + ALICE.getGuardianName() + ", guardian phone=" + ALICE.getGuardianPhone()
+                + ", outstanding fee=" + ALICE.getOutstandingFee() + ", tags=" + ALICE.getTags() + "}";
         assertEquals(expected, ALICE.toString());
     }
 }
