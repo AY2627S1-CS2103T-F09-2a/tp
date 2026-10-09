@@ -13,6 +13,7 @@ import org.junit.jupiter.api.Test;
 import javafx.application.Platform;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
+import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.VBox;
 import seedu.address.testutil.PersonBuilder;
 
@@ -30,7 +31,8 @@ public class PersonCardFeeTest {
                 PersonCard absent = new PersonCard(new PersonBuilder().build(), 1);
                 PersonCard typical = new PersonCard(new PersonBuilder().withOutstandingFee("180").build(), 2);
                 PersonCard maximum = new PersonCard(new PersonBuilder().withOutstandingFee("99999.99").build(), 3);
-                VBox cards = new VBox(absent.getRoot(), typical.getRoot(), maximum.getRoot());
+                PersonCard tagged = new PersonCard(new PersonBuilder().withTags("friends", "sec3").build(), 4);
+                VBox cards = new VBox(absent.getRoot(), typical.getRoot(), maximum.getRoot(), tagged.getRoot());
                 Scene scene = new Scene(cards, 300, 600);
                 scene.getStylesheets().add(getClass().getResource("/view/DarkTheme.css").toExternalForm());
                 cards.applyCss();
@@ -45,6 +47,10 @@ public class PersonCardFeeTest {
                 assertTrue(maximumFee.isVisible());
                 assertTrue(maximumFee.isManaged());
                 assertTrue(maximumFee.getWidth() >= maximumFee.prefWidth(-1));
+                FlowPane taggedTags = (FlowPane) tagged.getRoot().lookup("#tags");
+                assertEquals(2, taggedTags.getChildren().size());
+                assertEquals("friends", ((Label) taggedTags.getChildren().get(0)).getText());
+                assertEquals("sec3", ((Label) taggedTags.getChildren().get(1)).getText());
             } catch (Throwable error) {
                 failure.set(error);
             } finally {

@@ -107,6 +107,15 @@ public class PersonTest {
     }
 
     @Test
+    public void hashCode_equalPersonsHaveEqualHashCode() {
+        // covers hashing with and without an outstanding fee
+        Person aliceWithFee = new PersonBuilder(ALICE).withOutstandingFee(VALID_FEE).build();
+        Person aliceWithFeeCopy = new PersonBuilder(ALICE).withOutstandingFee(VALID_FEE).build();
+        assertEquals(aliceWithFee.hashCode(), aliceWithFeeCopy.hashCode());
+        assertEquals(ALICE.hashCode(), new PersonBuilder(ALICE).build().hashCode());
+    }
+
+    @Test
     public void toStringMethod() {
         String expected = Person.class.getCanonicalName() + "{name=" + ALICE.getName() + ", phone=" + ALICE.getPhone()
                 + ", email=" + ALICE.getEmail() + ", address=" + ALICE.getAddress()
