@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.lang.reflect.Field;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -15,6 +16,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.VBox;
+import seedu.address.model.person.Person;
 import seedu.address.testutil.PersonBuilder;
 
 /**
@@ -32,7 +34,9 @@ public class PersonCardFeeTest {
                 PersonCard typical = new PersonCard(new PersonBuilder().withOutstandingFee("180").build(), 2);
                 PersonCard maximum = new PersonCard(new PersonBuilder().withOutstandingFee("99999.99").build(), 3);
                 PersonCard tagged = new PersonCard(new PersonBuilder().withTags("friends", "sec3").build(), 4);
-                VBox cards = new VBox(absent.getRoot(), typical.getRoot(), maximum.getRoot(), tagged.getRoot());
+                PersonCard sparse = new PersonCard(personWithBlankContactText(), 5);
+                VBox cards = new VBox(absent.getRoot(), typical.getRoot(), maximum.getRoot(), tagged.getRoot(),
+                        sparse.getRoot());
                 Scene scene = new Scene(cards, 300, 600);
                 scene.getStylesheets().add(getClass().getResource("/view/DarkTheme.css").toExternalForm());
                 cards.applyCss();
@@ -51,6 +55,15 @@ public class PersonCardFeeTest {
                 assertEquals(2, taggedTags.getChildren().size());
                 assertEquals("friends", ((Label) taggedTags.getChildren().get(0)).getText());
                 assertEquals("sec3", ((Label) taggedTags.getChildren().get(1)).getText());
+                Label sparsePhone = (Label) sparse.getRoot().lookup("#phone");
+                Label sparseAddress = (Label) sparse.getRoot().lookup("#address");
+                Label sparseEmail = (Label) sparse.getRoot().lookup("#email");
+                assertFalse(sparsePhone.isVisible());
+                assertFalse(sparsePhone.isManaged());
+                assertFalse(sparseAddress.isVisible());
+                assertFalse(sparseAddress.isManaged());
+                assertFalse(sparseEmail.isVisible());
+                assertFalse(sparseEmail.isManaged());
             } catch (Throwable error) {
                 failure.set(error);
             } finally {
@@ -61,5 +74,20 @@ public class PersonCardFeeTest {
         if (failure.get() != null) {
             throw new AssertionError(failure.get());
         }
+    }
+
+    /**
+     * Validation never permits blank phone, address, and email values, so the
+     * card's hide-empty-field branches are only reachable with values blanked
+     * in tests.
+     */
+    private static Person personWithBlankContactText() throws ReflectiveOperationException {
+        Person person = new PersonBuilder().build();
+        for (Object valueHolder : new Object[] {person.getPhone(), person.getAddress(), person.getEmail()}) {
+            Field value = valueHolder.getClass().getField("value");
+            value.setAccessible(true);
+            value.set(valueHolder, "");
+        }
+        return person;
     }
 }
