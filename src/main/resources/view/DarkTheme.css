@@ -350,3 +350,9 @@
     -fx-background-radius: 2;
     -fx-font-size: 11;
 }
+
+.list-cell .outstanding_fee_label, .outstanding_fee_label {
+    -fx-text-fill: #ffd166;
+    -fx-font-weight: bold;
+    -fx-padding: 3 0 3 0;
+}

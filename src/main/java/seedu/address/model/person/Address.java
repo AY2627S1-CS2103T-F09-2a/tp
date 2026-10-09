@@ -19,6 +19,10 @@ public class Address {
 
     public final String value;
 
+    private Address() {
+        value = "";
+    }
+
     /**
      * Constructs an {@code Address}.
      *
@@ -28,6 +32,13 @@ public class Address {
         requireNonNull(address);
         checkArgument(isValidAddress(address), MESSAGE_CONSTRAINTS);
         value = address;
+    }
+
+    /**
+     * Returns an absent optional student detail without accepting blank user input.
+     */
+    public static Address empty() {
+        return new Address();
     }
 
     /**
