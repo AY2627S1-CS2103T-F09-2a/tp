@@ -1,13 +1,13 @@
 package seedu.address.logic.parser;
 
 import static java.util.Objects.requireNonNull;
+import static seedu.address.logic.Messages.MESSAGE_INVALID_STUDENT_DISPLAYED_INDEX;
 
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
 import seedu.address.commons.core.index.Index;
-import seedu.address.commons.util.StringUtil;
 import seedu.address.logic.parser.exceptions.ParseException;
 import seedu.address.model.person.Address;
 import seedu.address.model.person.Email;
@@ -24,15 +24,32 @@ public class ParserUtil {
 
     /**
      * Parses {@code oneBasedIndex} into an {@code Index} and returns it. Leading and trailing whitespaces will be
-     * trimmed.
-     * @throws ParseException if the specified index is invalid (not a non-zero unsigned integer).
+     * trimmed. Leading zeros and non-ASCII digits are not accepted.
+     *
+     * @throws ParseException if the index has invalid syntax or exceeds {@code Integer.MAX_VALUE}.
      */
     public static Index parseIndex(String oneBasedIndex) throws ParseException {
+        return parseIndex(oneBasedIndex, MESSAGE_INVALID_INDEX);
+    }
+
+    /**
+     * Parses an index using {@code invalidFormatMessage} for malformed input. Positive integers exceeding
+     * {@code Integer.MAX_VALUE} produce the invalid-student-index message instead.
+     *
+     * @throws ParseException if the index has invalid syntax or exceeds {@code Integer.MAX_VALUE}.
+     */
+    public static Index parseIndex(String oneBasedIndex, String invalidFormatMessage) throws ParseException {
+        requireNonNull(oneBasedIndex);
+        requireNonNull(invalidFormatMessage);
         String trimmedIndex = oneBasedIndex.trim();
-        if (!StringUtil.isNonZeroUnsignedInteger(trimmedIndex)) {
-            throw new ParseException(MESSAGE_INVALID_INDEX);
+        if (!trimmedIndex.matches("[1-9][0-9]*")) {
+            throw new ParseException(invalidFormatMessage);
         }
-        return Index.fromOneBased(Integer.parseInt(trimmedIndex));
+        try {
+            return Index.fromOneBased(Integer.parseInt(trimmedIndex));
+        } catch (NumberFormatException nfe) {
+            throw new ParseException(MESSAGE_INVALID_STUDENT_DISPLAYED_INDEX, nfe);
+        }
     }
 
     /**

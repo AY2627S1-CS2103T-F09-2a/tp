@@ -1,6 +1,7 @@
 package seedu.address.logic.parser;
 
 import static seedu.address.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
+import static seedu.address.logic.Messages.MESSAGE_INVALID_STUDENT_DISPLAYED_INDEX;
 import static seedu.address.logic.parser.CommandParserTestUtil.assertParseFailure;
 import static seedu.address.logic.parser.CommandParserTestUtil.assertParseSuccess;
 import static seedu.address.testutil.TypicalIndexes.INDEX_FIRST_PERSON;
@@ -47,6 +48,9 @@ public class ViewCommandParserTest {
 
     @Test
     public void parse_malformedIndex_throwsParseException() {
+        // leading zero
+        assertParseFailure(parser, "01", MESSAGE_INVALID_FORMAT);
+
         // signed number
         assertParseFailure(parser, "+1", MESSAGE_INVALID_FORMAT);
 
@@ -65,6 +69,7 @@ public class ViewCommandParserTest {
 
     @Test
     public void parse_indexTooLargeForInt_throwsParseException() {
-        assertParseFailure(parser, Long.toString(Integer.MAX_VALUE + 1L), MESSAGE_INVALID_FORMAT);
+        assertParseFailure(parser, Long.toString(Integer.MAX_VALUE + 1L), MESSAGE_INVALID_STUDENT_DISPLAYED_INDEX);
+        assertParseFailure(parser, "999999999999999999999999999999", MESSAGE_INVALID_STUDENT_DISPLAYED_INDEX);
     }
 }

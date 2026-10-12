@@ -52,7 +52,8 @@ public class StringUtil {
      * Returns true if {@code s} represents a non-zero unsigned integer
      * e.g. 1, 2, 3, ..., {@code Integer.MAX_VALUE} <br>
      * Will return false for any other non-null string input
-     * e.g. empty string, "-1", "0", "+1", and " 2 " (untrimmed), "3 0" (contains whitespace), "1 a" (contains letters)
+     * e.g. empty string, "-1", "0", "01", "+1", " 2 " (untrimmed), "3 0" (whitespace), "1 a" (letters).
+     * Only ASCII digits are accepted, without leading zeros.
      * @throws NullPointerException if {@code s} is null.
      */
     public static boolean isNonZeroUnsignedInteger(String s) {
@@ -60,7 +61,7 @@ public class StringUtil {
 
         try {
             int value = Integer.parseInt(s);
-            return value > 0 && !s.startsWith("+"); // "+1" is successfully parsed by Integer#parseInt(String)
+            return value > 0 && s.matches("[1-9][0-9]*");
         } catch (NumberFormatException nfe) {
             return false;
         }
