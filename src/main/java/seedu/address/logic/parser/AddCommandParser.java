@@ -14,6 +14,8 @@ import seedu.address.logic.commands.AddCommand;
 import seedu.address.logic.parser.exceptions.ParseException;
 import seedu.address.model.person.Address;
 import seedu.address.model.person.Email;
+import seedu.address.model.person.GuardianName;
+import seedu.address.model.person.GuardianPhone;
 import seedu.address.model.person.Name;
 import seedu.address.model.person.Person;
 import seedu.address.model.person.Phone;
@@ -23,6 +25,10 @@ import seedu.address.model.tag.Tag;
  * Parses input arguments and creates a new AddCommand object
  */
 public class AddCommandParser implements Parser<AddCommand> {
+
+    // Guardian arguments are introduced by the add-student feature; retain legacy add behavior until then.
+    private static final GuardianName DEFAULT_GUARDIAN_NAME = new GuardianName("Guardian");
+    private static final GuardianPhone DEFAULT_GUARDIAN_PHONE = new GuardianPhone("91234567");
 
     /**
      * Parses the given {@code String} of arguments in the context of the AddCommand
@@ -45,7 +51,8 @@ public class AddCommandParser implements Parser<AddCommand> {
         Address address = ParserUtil.parseAddress(argMultimap.getValue(PREFIX_ADDRESS).get());
         Set<Tag> tagList = ParserUtil.parseTags(argMultimap.getAllValues(PREFIX_TAG));
 
-        Person person = new Person(name, phone, email, address, tagList);
+        Person person = new Person(name, phone, email, address, DEFAULT_GUARDIAN_NAME,
+                DEFAULT_GUARDIAN_PHONE, null, tagList);
 
         return new AddCommand(person);
     }

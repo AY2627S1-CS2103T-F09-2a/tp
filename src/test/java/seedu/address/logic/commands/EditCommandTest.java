@@ -37,8 +37,15 @@ public class EditCommandTest {
 
     @Test
     public void execute_allFieldsSpecifiedUnfilteredList_success() {
-        Person editedPerson = new PersonBuilder().build();
-        EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder(editedPerson).build();
+        Person editedLegacyFields = new PersonBuilder().build();
+        Person originalPerson = model.getFilteredPersonList().get(0);
+        Person editedPerson = new PersonBuilder(editedLegacyFields)
+                .withGuardianName(originalPerson.getGuardianName().toString())
+                .withGuardianPhone(originalPerson.getGuardianPhone().toString())
+                .withOutstandingFee(originalPerson.getOutstandingFee() == null
+                        ? null : originalPerson.getOutstandingFee().toString())
+                .build();
+        EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder(editedLegacyFields).build();
         EditCommand editCommand = new EditCommand(INDEX_FIRST_PERSON, descriptor);
 
         String expectedMessage = String.format(EditCommand.MESSAGE_EDIT_PERSON_SUCCESS, Messages.format(editedPerson));
