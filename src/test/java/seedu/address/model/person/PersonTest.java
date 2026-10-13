@@ -5,6 +5,9 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.logic.commands.CommandTestUtil.VALID_ADDRESS_BOB;
 import static seedu.address.logic.commands.CommandTestUtil.VALID_EMAIL_BOB;
+import static seedu.address.logic.commands.CommandTestUtil.VALID_FEE_BOB;
+import static seedu.address.logic.commands.CommandTestUtil.VALID_GUARDIAN_NAME_BOB;
+import static seedu.address.logic.commands.CommandTestUtil.VALID_GUARDIAN_PHONE_BOB;
 import static seedu.address.logic.commands.CommandTestUtil.VALID_NAME_BOB;
 import static seedu.address.logic.commands.CommandTestUtil.VALID_PHONE_BOB;
 import static seedu.address.logic.commands.CommandTestUtil.VALID_TAG_HUSBAND;
@@ -32,25 +35,35 @@ public class PersonTest {
         // null -> returns false
         assertFalse(ALICE.isSamePerson(null));
 
-        // same name, all other attributes different -> returns true
+        // same name and guardian phone, all other attributes different -> returns true
         Person editedAlice = new PersonBuilder(ALICE).withPhone(VALID_PHONE_BOB).withEmail(VALID_EMAIL_BOB)
-                .withAddress(VALID_ADDRESS_BOB).withGuardianName("Different Guardian")
-                .withGuardianPhone("83456789").withOutstandingFee("42.00")
-                .withTags(VALID_TAG_HUSBAND).build();
+                .withAddress(VALID_ADDRESS_BOB).withGuardianName(VALID_GUARDIAN_NAME_BOB)
+                .withOutstandingFee(VALID_FEE_BOB).withTags(VALID_TAG_HUSBAND).build();
         assertTrue(ALICE.isSamePerson(editedAlice));
 
         // different name, all other attributes same -> returns false
         editedAlice = new PersonBuilder(ALICE).withName(VALID_NAME_BOB).build();
         assertFalse(ALICE.isSamePerson(editedAlice));
 
-        // name differs in case, all other attributes same -> returns false
-        Person editedBob = new PersonBuilder(BOB).withName(VALID_NAME_BOB.toLowerCase()).build();
-        assertFalse(BOB.isSamePerson(editedBob));
+        // same name, different guardian phone (e.g. two students sharing a name) -> returns false
+        editedAlice = new PersonBuilder(ALICE).withGuardianPhone(VALID_GUARDIAN_PHONE_BOB).build();
+        assertFalse(ALICE.isSamePerson(editedAlice));
 
-        // name has trailing spaces, all other attributes same -> returns false
-        String nameWithTrailingSpaces = VALID_NAME_BOB + " ";
-        editedBob = new PersonBuilder(BOB).withName(nameWithTrailingSpaces).build();
-        assertFalse(BOB.isSamePerson(editedBob));
+        // same guardian phone, different name (e.g. siblings) -> returns false
+        Person sibling = new PersonBuilder(ALICE).withName("Alicia Pauline").build();
+        assertFalse(ALICE.isSamePerson(sibling));
+
+        // name differs in case -> returns true
+        Person editedBob = new PersonBuilder(BOB).withName(VALID_NAME_BOB.toLowerCase()).build();
+        assertTrue(BOB.isSamePerson(editedBob));
+
+        // name has extra spaces -> returns true
+        editedBob = new PersonBuilder(BOB).withName(" Bob   Choo ").build();
+        assertTrue(BOB.isSamePerson(editedBob));
+
+        // guardian phone written with separators -> returns true
+        editedBob = new PersonBuilder(BOB).withGuardianPhone("6222-2223").build();
+        assertTrue(BOB.isSamePerson(editedBob));
     }
 
     @Test
@@ -87,20 +100,24 @@ public class PersonTest {
         editedAlice = new PersonBuilder(ALICE).withAddress(VALID_ADDRESS_BOB).build();
         assertFalse(ALICE.equals(editedAlice));
 
+        // missing contact details -> returns false
+        editedAlice = new PersonBuilder(ALICE).withoutContactDetails().build();
+        assertFalse(ALICE.equals(editedAlice));
+
         // different guardian name -> returns false
-        editedAlice = new PersonBuilder(ALICE).withGuardianName("Different Guardian").build();
+        editedAlice = new PersonBuilder(ALICE).withGuardianName(VALID_GUARDIAN_NAME_BOB).build();
         assertFalse(ALICE.equals(editedAlice));
 
         // different guardian phone -> returns false
-        editedAlice = new PersonBuilder(ALICE).withGuardianPhone("83456789").build();
+        editedAlice = new PersonBuilder(ALICE).withGuardianPhone(VALID_GUARDIAN_PHONE_BOB).build();
         assertFalse(ALICE.equals(editedAlice));
 
         // different outstanding fee -> returns false
-        editedAlice = new PersonBuilder(ALICE).withOutstandingFee("1.00").build();
+        editedAlice = new PersonBuilder(ALICE).withOutstandingFee(VALID_FEE_BOB).build();
         assertFalse(ALICE.equals(editedAlice));
 
         // absent outstanding fee -> returns false
-        editedAlice = new PersonBuilder(ALICE).withOutstandingFee(null).build();
+        editedAlice = new PersonBuilder(ALICE).withoutOutstandingFee().build();
         assertFalse(ALICE.equals(editedAlice));
 
         // different tags -> returns false
@@ -117,10 +134,11 @@ public class PersonTest {
 
     @Test
     public void toStringMethod() {
-        String expected = Person.class.getCanonicalName() + "{name=" + ALICE.getName() + ", phone=" + ALICE.getPhone()
-                + ", email=" + ALICE.getEmail() + ", address=" + ALICE.getAddress() + ", guardianName="
-                + ALICE.getGuardianName() + ", guardianPhone=" + ALICE.getGuardianPhone() + ", outstandingFee="
-                + ALICE.getOutstandingFee().get() + ", tags=" + ALICE.getTags() + "}";
+        String expected = Person.class.getCanonicalName() + "{name=" + ALICE.getName()
+                + ", phone=" + ALICE.getPhone().get() + ", email=" + ALICE.getEmail().get()
+                + ", address=" + ALICE.getAddress().get() + ", guardianName=" + ALICE.getGuardianName()
+                + ", guardianPhone=" + ALICE.getGuardianPhone() + ", outstandingFee=" + ALICE.getOutstandingFee().get()
+                + ", tags=" + ALICE.getTags() + "}";
         assertEquals(expected, ALICE.toString());
     }
 }

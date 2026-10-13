@@ -11,7 +11,10 @@ import seedu.address.commons.core.index.Index;
 import seedu.address.logic.parser.exceptions.ParseException;
 import seedu.address.model.person.Address;
 import seedu.address.model.person.Email;
+import seedu.address.model.person.GuardianName;
+import seedu.address.model.person.GuardianPhone;
 import seedu.address.model.person.Name;
+import seedu.address.model.person.OutstandingFee;
 import seedu.address.model.person.Phone;
 import seedu.address.model.tag.Tag;
 
@@ -110,6 +113,51 @@ public class ParserUtil {
             throw new ParseException(Email.MESSAGE_CONSTRAINTS);
         }
         return new Email(trimmedEmail);
+    }
+
+    /**
+     * Parses a {@code String guardianName} into a {@code GuardianName}.
+     * Leading and trailing whitespaces will be trimmed.
+     *
+     * @throws ParseException if the given {@code guardianName} is invalid.
+     */
+    public static GuardianName parseGuardianName(String guardianName) throws ParseException {
+        requireNonNull(guardianName);
+        String trimmedGuardianName = guardianName.trim();
+        if (!GuardianName.isValidName(trimmedGuardianName)) {
+            throw new ParseException(GuardianName.MESSAGE_CONSTRAINTS);
+        }
+        return new GuardianName(trimmedGuardianName);
+    }
+
+    /**
+     * Parses a {@code String guardianPhone} into a {@code GuardianPhone}.
+     * Leading and trailing whitespaces will be trimmed.
+     *
+     * @throws ParseException if the given {@code guardianPhone} is invalid.
+     */
+    public static GuardianPhone parseGuardianPhone(String guardianPhone) throws ParseException {
+        requireNonNull(guardianPhone);
+        String trimmedGuardianPhone = guardianPhone.trim();
+        if (!GuardianPhone.isValidPhone(trimmedGuardianPhone)) {
+            throw new ParseException(GuardianPhone.MESSAGE_CONSTRAINTS);
+        }
+        return new GuardianPhone(trimmedGuardianPhone);
+    }
+
+    /**
+     * Parses a {@code String outstandingFee} into an {@code OutstandingFee}.
+     * Leading and trailing whitespaces will be trimmed.
+     *
+     * @throws ParseException if the given {@code outstandingFee} is invalid.
+     */
+    public static OutstandingFee parseOutstandingFee(String outstandingFee) throws ParseException {
+        requireNonNull(outstandingFee);
+        String trimmedOutstandingFee = outstandingFee.trim();
+        if (!OutstandingFee.isValidOutstandingFee(trimmedOutstandingFee)) {
+            throw new ParseException(OutstandingFee.MESSAGE_CONSTRAINTS);
+        }
+        return new OutstandingFee(trimmedOutstandingFee);
     }
 
     /**
