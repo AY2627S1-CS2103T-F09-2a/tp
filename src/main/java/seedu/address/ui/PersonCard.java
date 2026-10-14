@@ -1,6 +1,7 @@
 package seedu.address.ui;
 
 import java.util.Comparator;
+import java.util.Optional;
 
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
@@ -51,9 +52,9 @@ public class PersonCard extends UiPart<Region> {
         this.person = person;
         id.setText(displayedIndex + ". ");
         name.setText(person.getName().fullName);
-        phone.setText(person.getPhone().value);
-        address.setText(person.getAddress().value);
-        email.setText(person.getEmail().value);
+        setOptionalText(phone, person.getPhone().map(p -> p.value));
+        setOptionalText(address, person.getAddress().map(a -> a.value));
+        setOptionalText(email, person.getEmail().map(e -> e.value));
         person.getOutstandingFee().ifPresent(fee -> {
             outstandingFee.setText("S$" + fee + " outstanding");
             outstandingFee.setVisible(true);
@@ -62,5 +63,14 @@ public class PersonCard extends UiPart<Region> {
         person.getTags().stream()
                 .sorted(Comparator.comparing(tag -> tag.tagName))
                 .forEach(tag -> tags.getChildren().add(new Label(tag.tagName)));
+    }
+
+    /**
+     * Shows {@code text} in {@code label}, or hides the label when the student did not provide that detail.
+     */
+    private static void setOptionalText(Label label, Optional<String> text) {
+        label.setText(text.orElse(""));
+        label.setVisible(text.isPresent());
+        label.setManaged(text.isPresent());
     }
 }

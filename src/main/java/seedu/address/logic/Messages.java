@@ -17,6 +17,8 @@ public class Messages {
     public static final String MESSAGE_INVALID_PERSON_DISPLAYED_INDEX = "The person index provided is invalid.";
     public static final String MESSAGE_INVALID_STUDENT_DISPLAYED_INDEX = "The student index provided is invalid.";
     public static final String MESSAGE_PERSONS_LISTED_OVERVIEW = "%1$d student(s) listed!";
+    public static final String NOT_PROVIDED = "Not provided";
+    public static final String NO_FEE = "None";
     public static final String MESSAGE_DUPLICATE_FIELDS =
                 "Multiple values specified for the following single-valued field(s): ";
 
@@ -33,25 +35,17 @@ public class Messages {
     }
 
     /**
-     * Formats the {@code person} for display to the user.
+     * Formats the complete record of {@code person} for display to the user, one field per line.
+     * Missing contact fields are shown as {@value #NOT_PROVIDED} and an absent fee as {@value #NO_FEE}.
      */
     public static String format(Person person) {
-        final StringBuilder builder = new StringBuilder();
-        builder.append(person.getName())
-                .append("; Phone: ")
-                .append(person.getPhone())
-                .append("; Email: ")
-                .append(person.getEmail())
-                .append("; Address: ")
-                .append(person.getAddress())
-                .append("; Guardian: ")
-                .append(person.getGuardianName())
-                .append("; Guardian Phone: ")
-                .append(person.getGuardianPhone());
-        person.getOutstandingFee().ifPresent(fee -> builder.append("; Outstanding Fee: S$").append(fee));
-        builder.append("; Tags: ");
-        person.getTags().forEach(builder::append);
-        return builder.toString();
+        return "Name: " + person.getName()
+                + "\nPhone: " + person.getPhone().map(Object::toString).orElse(NOT_PROVIDED)
+                + "\nEmail: " + person.getEmail().map(Object::toString).orElse(NOT_PROVIDED)
+                + "\nAddress: " + person.getAddress().map(Object::toString).orElse(NOT_PROVIDED)
+                + "\nGuardian: " + person.getGuardianName()
+                + "\nGuardian phone: " + person.getGuardianPhone()
+                + "\nOutstanding fee: " + person.getOutstandingFee().map(fee -> "S$" + fee).orElse(NO_FEE);
     }
 
 }

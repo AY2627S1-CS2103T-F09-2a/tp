@@ -3,41 +3,64 @@ package seedu.address.model.person;
 import static java.util.Objects.requireNonNull;
 import static seedu.address.commons.util.AppUtil.checkArgument;
 
+import java.text.Normalizer;
+
 /**
- * Represents a Person's name in the address book.
- * Guarantees: immutable; is valid as declared in {@link #isValidName(String)}
+ * Represents a student's name.
+ * Guarantees: immutable; normalized to NFC with single ASCII spaces; valid as declared in
+ * {@link #isValidName(String)}. Capitalization is preserved for display.
  */
 public class Name {
 
     public static final String MESSAGE_CONSTRAINTS =
-            "Names should only contain alphanumeric characters and spaces, and should not be blank";
+            "Names must be 1-70 characters long, contain at least one letter, and use only letters, numbers, "
+            + "spaces, apostrophes, hyphens, periods, or parentheses.";
+    public static final String VALIDATION_REGEX = "[\\p{L}\\p{M}0-9 '.()\\-]+";
 
-    /*
-     * The first character of the name must not be a whitespace,
-     * otherwise " " (a blank string) becomes a valid input.
-     */
-    public static final String VALIDATION_REGEX = "[\\p{Alnum}][\\p{Alnum} ]*";
+    private static final int MIN_NAME_LENGTH = 1;
+    private static final int MAX_NAME_LENGTH = 70;
 
     public final String fullName;
 
     /**
-     * Constructs a {@code Name}.
+     * Constructs a {@code Name}, normalizing Unicode and ASCII spaces.
      *
      * @param name A valid name.
      */
     public Name(String name) {
         requireNonNull(name);
         checkArgument(isValidName(name), MESSAGE_CONSTRAINTS);
-        fullName = name;
+        fullName = normalize(name);
     }
 
     /**
-     * Returns true if a given string is a valid name.
+     * Returns true if the name is valid after normalization, with 1-70 Unicode code points
+     * and at least one letter. Non-ASCII whitespace and control characters are rejected.
      */
     public static boolean isValidName(String test) {
-        return test.matches(VALIDATION_REGEX);
+        requireNonNull(test);
+        String normalized = normalize(test);
+        int length = normalized.codePointCount(0, normalized.length());
+        return length >= MIN_NAME_LENGTH && length <= MAX_NAME_LENGTH
+                && normalized.matches(VALIDATION_REGEX)
+                && normalized.codePoints().anyMatch(Character::isLetter);
     }
 
+    /**
+     * Returns the NFC name with surrounding ASCII spaces removed and internal ASCII spaces collapsed.
+     */
+    private static String normalize(String name) {
+        return Normalizer.normalize(name, Normalizer.Form.NFC)
+                .replaceAll("^ +| +$", "")
+                .replaceAll(" +", " ");
+    }
+
+    /**
+     * Returns true if both names are the same, ignoring case.
+     */
+    public boolean isSameNameIgnoreCase(Name otherName) {
+        return otherName != null && fullName.equalsIgnoreCase(otherName.fullName);
+    }
 
     @Override
     public String toString() {

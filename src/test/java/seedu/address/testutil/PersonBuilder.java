@@ -53,9 +53,9 @@ public class PersonBuilder {
      */
     public PersonBuilder(Person personToCopy) {
         name = personToCopy.getName();
-        phone = personToCopy.getPhone();
-        email = personToCopy.getEmail();
-        address = personToCopy.getAddress();
+        phone = personToCopy.getPhone().orElse(null);
+        email = personToCopy.getEmail().orElse(null);
+        address = personToCopy.getAddress().orElse(null);
         guardianName = personToCopy.getGuardianName();
         guardianPhone = personToCopy.getGuardianPhone();
         outstandingFee = personToCopy.getOutstandingFee().orElse(null);
@@ -103,6 +103,17 @@ public class PersonBuilder {
     }
 
     /**
+     * Removes the student's {@code Phone}, {@code Email} and {@code Address} from the {@code Person} that we are
+     * building, as when only the required details are given.
+     */
+    public PersonBuilder withoutContactDetails() {
+        this.phone = null;
+        this.email = null;
+        this.address = null;
+        return this;
+    }
+
+    /**
      * Sets the {@code GuardianName} of the {@code Person} that we are building.
      */
     public PersonBuilder withGuardianName(String guardianName) {
@@ -123,6 +134,14 @@ public class PersonBuilder {
      */
     public PersonBuilder withOutstandingFee(String outstandingFee) {
         this.outstandingFee = outstandingFee == null ? null : new OutstandingFee(outstandingFee);
+        return this;
+    }
+
+    /**
+     * Removes the {@code OutstandingFee} of the {@code Person} that we are building.
+     */
+    public PersonBuilder withoutOutstandingFee() {
+        this.outstandingFee = null;
         return this;
     }
 

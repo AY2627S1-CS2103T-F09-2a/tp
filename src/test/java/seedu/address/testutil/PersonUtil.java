@@ -2,7 +2,10 @@ package seedu.address.testutil;
 
 import static seedu.address.logic.parser.CliSyntax.PREFIX_ADDRESS;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_EMAIL;
+import static seedu.address.logic.parser.CliSyntax.PREFIX_GUARDIAN_NAME;
+import static seedu.address.logic.parser.CliSyntax.PREFIX_GUARDIAN_PHONE;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_NAME;
+import static seedu.address.logic.parser.CliSyntax.PREFIX_OUTSTANDING_FEE;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_PHONE;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_TAG;
 
@@ -26,17 +29,18 @@ public class PersonUtil {
     }
 
     /**
-     * Returns the part of command string for the given {@code person}'s details.
+     * Returns the part of the add command string for the given {@code person}'s details.
+     * Tags are not accepted by the add command and are left out.
      */
     public static String getPersonDetails(Person person) {
         StringBuilder sb = new StringBuilder();
         sb.append(PREFIX_NAME + person.getName().fullName + " ");
-        sb.append(PREFIX_PHONE + person.getPhone().value + " ");
-        sb.append(PREFIX_EMAIL + person.getEmail().value + " ");
-        sb.append(PREFIX_ADDRESS + person.getAddress().value + " ");
-        person.getTags().stream().forEach(
-            s -> sb.append(PREFIX_TAG + s.tagName + " ")
-        );
+        sb.append(PREFIX_GUARDIAN_NAME + person.getGuardianName().getFullName() + " ");
+        sb.append(PREFIX_GUARDIAN_PHONE + person.getGuardianPhone().getValue() + " ");
+        person.getPhone().ifPresent(phone -> sb.append(PREFIX_PHONE + phone.value + " "));
+        person.getEmail().ifPresent(email -> sb.append(PREFIX_EMAIL + email.value + " "));
+        person.getAddress().ifPresent(address -> sb.append(PREFIX_ADDRESS + address.value + " "));
+        person.getOutstandingFee().ifPresent(fee -> sb.append(PREFIX_OUTSTANDING_FEE + fee.toString() + " "));
         return sb.toString();
     }
 
