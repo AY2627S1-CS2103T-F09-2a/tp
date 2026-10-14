@@ -1,41 +1,42 @@
 package seedu.address.logic.commands;
 
-import static seedu.address.logic.commands.CommandTestUtil.assertCommandSuccess;
-import static seedu.address.logic.commands.CommandTestUtil.showPersonAtIndex;
-import static seedu.address.testutil.TypicalIndexes.INDEX_FIRST_PERSON;
-import static seedu.address.testutil.TypicalPersons.getTypicalAddressBook;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import org.junit.jupiter.api.BeforeEach;
+import java.util.List;
+
 import org.junit.jupiter.api.Test;
 
 import seedu.address.model.Model;
 import seedu.address.model.ModelManager;
-import seedu.address.model.UserPrefs;
+import seedu.address.model.person.Person;
+import seedu.address.testutil.PersonBuilder;
 
 /**
- * Contains integration tests for FeesCommand.
+ * Tests filtering, list restoration and data preservation.
  */
 public class FeesCommandTest {
 
-    private Model model;
-
-    @BeforeEach
-    public void setUp() {
-        model = new ModelManager(getTypicalAddressBook(), new UserPrefs());
+    @Test
+    public void execute_multipleFees_filtersWithoutChangingData() throws Exception {
+        Model model = new ModelManager();
+        Person first = new PersonBuilder().withName("First Student").withOutstandingFee("180").build();
+        Person paid = new PersonBuilder().withName("Paid Student").build();
+        Person last = new PersonBuilder().withName("Last Student").withOutstandingFee("99999.99").build();
+        model.addPerson(first);
+        model.addPerson(paid);
+        model.addPerson(last);
+        assertEquals("2 student(s) with outstanding fees.", new FeesCommand().execute(model).getFeedbackToUser());
+        assertEquals(List.of(first, last), model.getFilteredPersonList());
+        assertEquals(List.of(first, paid, last), model.getAddressBook().getPersonList());
+        new ListCommand().execute(model);
+        assertEquals(List.of(first, paid, last), model.getFilteredPersonList());
     }
 
     @Test
-    public void execute_listIsNotFiltered_showsSameList() {
-        Model expectedModel = new ModelManager(model.getAddressBook(), new UserPrefs());
-        assertCommandSuccess(new FeesCommand(), model, FeesCommand.MESSAGE_SUCCESS, expectedModel);
-    }
-
-    @Test
-    public void execute_listIsFiltered_showsSameList() {
-        showPersonAtIndex(model, INDEX_FIRST_PERSON);
-        Model expectedModel = new ModelManager(model.getAddressBook(), new UserPrefs());
-        showPersonAtIndex(expectedModel, INDEX_FIRST_PERSON);
-
-        assertCommandSuccess(new FeesCommand(), model, FeesCommand.MESSAGE_SUCCESS, expectedModel);
+    public void execute_noFees_showsEmptyList() {
+        Model model = new ModelManager();
+        model.addPerson(new PersonBuilder().build());
+        assertEquals("0 student(s) with outstanding fees.", new FeesCommand().execute(model).getFeedbackToUser());
+        assertEquals(List.of(), model.getFilteredPersonList());
     }
 }

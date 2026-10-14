@@ -100,6 +100,28 @@ Students without an outstanding fee do not display this label. The label also ap
 
 Format: `list`
 
+### Listing students with outstanding fees: `fees`
+
+Format: `fees`
+
+Shows only students with an outstanding fee, in their existing order, with new displayed indexes.
+The result states `N student(s) with outstanding fees.` An empty result is successful.
+This command takes no arguments and does not change student records. Use `list` to restore the full list.
+
+### Setting or clearing an outstanding fee: `setoutstanding`
+
+Format: `setoutstanding INDEX AMOUNT`
+
+* `INDEX` identifies a student in the current displayed list, starting from 1. Signs and leading zeros are rejected.
+* `AMOUNT` replaces the full outstanding fee. Use a value from `0.01` to `99999.99`, with at most two decimal places.
+* Use `0` to clear the fee. A student whose fee is cleared disappears from a `fees` result.
+* Feedback shows `Set outstanding fee for NAME: S$AMOUNT`, with exactly two decimal places, including
+  `S$0.00` when clearing a fee. Clearing an already-cleared fee succeeds with the same `S$0.00` feedback.
+* Other student details and the current filter are preserved. Invalid input leaves records and the list unchanged.
+* Successful changes use the application's normal saving behaviour. A save error means persistence is not confirmed.
+
+Examples: `setoutstanding 1 150.50`, `setoutstanding 1 0`.
+
 ### Editing a person: `edit`
 
 Edits an existing person in the address book.
@@ -124,8 +146,9 @@ Format: `find KEYWORD [MORE_KEYWORDS]`
 
 * The search is case-insensitive; for example, `hans` matches `Hans`.
 * Keyword order does not matter; for example, `Hans Bo` matches `Bo Hans`.
-* The search considers only names.
+* The search considers only student names. Guardian details, contact details and fees are not searched.
 * Only full words match; for example, `Han` does not match `Hans`.
+* Each keyword must be something that can appear in a name; for example, `find @@@` shows an error and keeps the current list.
 * Students matching at least one keyword are returned (an `OR` search); for example, `Hans Bo` returns `Hans Gruber` and `Bo Yang`.
 
 Examples:
@@ -202,4 +225,6 @@ Action | Format, Examples
 **Edit** | `edit INDEX [n/NAME] [p/PHONE_NUMBER] [e/EMAIL] [a/ADDRESS] [t/TAG]…​`<br> e.g., `edit 2 n/James Lee e/jameslee@example.com`
 **Find** | `find KEYWORD [MORE_KEYWORDS]`<br> e.g., `find James Jake`
 **List** | `list`
+**Fees** | `fees`
+**Set outstanding fee** | `setoutstanding INDEX AMOUNT`<br> e.g., `setoutstanding 1 150.50`; `setoutstanding 1 0` clears it
 **Help** | `help`
