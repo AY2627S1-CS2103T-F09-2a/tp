@@ -10,6 +10,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
 
+import seedu.address.commons.util.ApplicationPaths;
+
 /**
  * Configures and manages loggers and handlers, including their logging level.
  * Named {@link Logger}s can be obtained from this class.<br>
@@ -86,12 +88,16 @@ public class LogsCenter {
 
         // add a FileHandler to log to a file
         try {
-            FileHandler fileHandler = new FileHandler(LOG_FILE, MAX_FILE_SIZE_IN_BYTES, MAX_FILE_COUNT, true);
+            for (int generation = 0; generation < MAX_FILE_COUNT; generation++) {
+                ApplicationPaths.resolve(LOG_FILE + "." + generation);
+            }
+            FileHandler fileHandler = new FileHandler(ApplicationPaths.resolve(LOG_FILE).toString().replace("%", "%%"),
+                    MAX_FILE_SIZE_IN_BYTES, MAX_FILE_COUNT, true);
             fileHandler.setFormatter(new SimpleFormatter());
             fileHandler.setLevel(Level.ALL);
             baseLogger.addHandler(fileHandler);
-        } catch (IOException e) {
-            logger.warning("Error adding file handler for logger.");
+        } catch (IOException | IllegalArgumentException | IllegalStateException e) {
+            baseLogger.warning("Error adding file handler for logger: " + e.getMessage());
         }
     }
 

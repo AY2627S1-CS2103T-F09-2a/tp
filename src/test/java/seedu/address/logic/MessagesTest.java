@@ -10,19 +10,19 @@ import seedu.address.testutil.PersonBuilder;
 public class MessagesTest {
 
     @Test
-    public void format_withOutstandingFee_includesAllFields() {
+    public void format_withOutstandingFee_includesStudentGuardianAndFee() {
         Person person = new PersonBuilder().withGuardianName("Margaret Tan").withGuardianPhone("98765432")
                 .withOutstandingFee("120.50").withTags("sec3").build();
-        assertEquals("Amy Bee; Phone: 85355255; Email: amy@gmail.com; Address: 123, Jurong West Ave 6, #08-111; "
-                + "Guardian: Margaret Tan; Guardian Phone: 98765432; Outstanding Fee: S$120.50; Tags: [sec3]",
+        assertEquals("Name: Amy Bee\nPhone: 85355255\nEmail: amy@gmail.com\nAddress: 123, Jurong West Ave 6, #08-111"
+                + "\nGuardian: Margaret Tan\nGuardian phone: 98765432\nOutstanding fee: S$120.50",
                 Messages.format(person));
     }
 
     @Test
-    public void format_withoutOutstandingFee_omitsFee() {
+    public void format_withoutOutstandingFee_showsNone() {
         Person person = new PersonBuilder().build();
-        assertEquals("Amy Bee; Phone: 85355255; Email: amy@gmail.com; Address: 123, Jurong West Ave 6, #08-111; "
-                + "Guardian: Guardian; Guardian Phone: 91234567; Tags: ",
+        assertEquals("Name: Amy Bee\nPhone: 85355255\nEmail: amy@gmail.com\nAddress: 123, Jurong West Ave 6, #08-111"
+                + "\nGuardian: Guardian\nGuardian phone: 91234567\nOutstanding fee: None",
                 Messages.format(person));
     }
 }
