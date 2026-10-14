@@ -1,6 +1,7 @@
 package seedu.address.logic.commands;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import java.util.List;
 
@@ -38,5 +39,10 @@ public class FeesCommandTest {
         model.addPerson(new PersonBuilder().build());
         assertEquals("0 student(s) with outstanding fees.", new FeesCommand().execute(model).getFeedbackToUser());
         assertEquals(List.of(), model.getFilteredPersonList());
+    }
+
+    @Test
+    public void shouldSaveAddressBook_feesCommand_returnsFalse() {
+        assertFalse(new FeesCommand().shouldSaveAddressBook());
     }
 }

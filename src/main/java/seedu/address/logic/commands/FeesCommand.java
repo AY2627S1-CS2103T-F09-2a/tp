@@ -33,4 +33,9 @@ public class FeesCommand extends Command {
     public boolean equals(Object other) {
         return other == this || other instanceof FeesCommand;
     }
+
+    @Override
+    public boolean shouldSaveAddressBook() {
+        return false;
+    }
 }

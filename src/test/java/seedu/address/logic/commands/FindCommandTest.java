@@ -136,4 +136,9 @@ public class FindCommandTest {
     private NameContainsKeywordsPredicate preparePredicate(String userInput) {
         return new NameContainsKeywordsPredicate(List.of(userInput.split("\\s+")));
     }
+
+    @Test
+    public void shouldSaveAddressBook_findCommand_returnsFalse() {
+        assertFalse(new FindCommand(new NameContainsKeywordsPredicate(List.of("Alice"))).shouldSaveAddressBook());
+    }
 }
