@@ -27,7 +27,11 @@ public class StringUtilTest {
         assertFalse(StringUtil.isNonZeroUnsignedInteger("0"));
 
         // EP: zero as prefix
-        assertTrue(StringUtil.isNonZeroUnsignedInteger("01"));
+        assertFalse(StringUtil.isNonZeroUnsignedInteger("01"));
+        assertFalse(StringUtil.isNonZeroUnsignedInteger("0001"));
+
+        // EP: non-ASCII digits
+        assertFalse(StringUtil.isNonZeroUnsignedInteger("\u0661"));
 
         // EP: signed numbers
         assertFalse(StringUtil.isNonZeroUnsignedInteger("-1"));
@@ -38,11 +42,12 @@ public class StringUtilTest {
         assertFalse(StringUtil.isNonZeroUnsignedInteger("1 0")); // Spaces in the middle
 
         // EP: number larger than Integer.MAX_VALUE
-        assertFalse(StringUtil.isNonZeroUnsignedInteger(Long.toString(Integer.MAX_VALUE + 1)));
+        assertFalse(StringUtil.isNonZeroUnsignedInteger(Long.toString(Integer.MAX_VALUE + 1L)));
 
         // EP: valid numbers, should return true
         assertTrue(StringUtil.isNonZeroUnsignedInteger("1")); // Boundary value
         assertTrue(StringUtil.isNonZeroUnsignedInteger("10"));
+        assertTrue(StringUtil.isNonZeroUnsignedInteger(Integer.toString(Integer.MAX_VALUE)));
     }
 
 
