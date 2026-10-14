@@ -14,7 +14,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import seedu.address.logic.commands.AddCommand;
@@ -64,7 +63,7 @@ public class AddCommandParser implements Parser<AddCommand> {
         Prefix[] prefixes = PARAMETER_NAMES.keySet().toArray(Prefix[]::new);
         ArgumentMultimap argMultimap = ArgumentTokenizer.tokenize(args, prefixes);
 
-        if (!argMultimap.getPreamble().isEmpty() || hasUnknownPrefix(args)) {
+        if (!argMultimap.getPreamble().isEmpty() || hasUnknownPrefix(argMultimap)) {
             throw new ParseException(String.format(MESSAGE_INVALID_COMMAND_FORMAT, AddCommand.MESSAGE_USAGE));
         }
         verifyRequiredPrefixesPresent(argMultimap);
@@ -87,17 +86,15 @@ public class AddCommandParser implements Parser<AddCommand> {
     }
 
     /**
-     * Returns true if {@code args} contains a prefix-like token that {@code add} does not accept,
-     * such as {@code t/} or an upper-case {@code N/}.
+     * Returns true if a parameter value other than the address contains a prefix-like token that {@code add}
+     * does not accept, such as {@code t/}. Addresses may contain such text, for example {@code c/o} or
+     * {@code Blk A/B}.
      */
-    private static boolean hasUnknownPrefix(String args) {
-        Matcher matcher = PREFIX_LIKE_TOKEN.matcher(args);
-        while (matcher.find()) {
-            if (!PARAMETER_NAMES.containsKey(new Prefix(matcher.group(1)))) {
-                return true;
-            }
-        }
-        return false;
+    private static boolean hasUnknownPrefix(ArgumentMultimap argMultimap) {
+        return PARAMETER_NAMES.keySet().stream()
+                .filter(prefix -> !prefix.equals(PREFIX_ADDRESS))
+                .flatMap(prefix -> argMultimap.getAllValues(prefix).stream())
+                .anyMatch(value -> PREFIX_LIKE_TOKEN.matcher(value).find());
     }
 
     /**

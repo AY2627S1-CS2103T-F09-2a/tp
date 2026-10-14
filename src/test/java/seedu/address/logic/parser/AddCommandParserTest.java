@@ -170,6 +170,15 @@ public class AddCommandParserTest {
     }
 
     @Test
+    public void parse_addressWithSlashes_success() {
+        for (String address : new String[]{"c/o Mr Lim, Blk 5", "Blk A/B Clementi Ave 3", "N/A"}) {
+            Person expectedPerson = new PersonBuilder(BOB).withoutContactDetails().withoutOutstandingFee()
+                    .withAddress(address).withTags().build();
+            assertParseSuccess(parser, REQUIRED_DESC_BOB + " a/" + address, new AddCommand(expectedPerson));
+        }
+    }
+
+    @Test
     public void parse_unexpectedText_failure() {
         // non-empty preamble
         assertParseFailure(parser, PREAMBLE_NON_EMPTY + ALL_DESC_BOB, MESSAGE_INVALID_FORMAT);
@@ -181,8 +190,9 @@ public class AddCommandParserTest {
         assertParseFailure(parser, " N/Alex Tan" + GUARDIAN_NAME_DESC_BOB + GUARDIAN_PHONE_DESC_BOB,
                 MESSAGE_INVALID_FORMAT);
 
-        // prefix-like text inside a value
-        assertParseFailure(parser, REQUIRED_DESC_BOB + " a/Blk 5 c/o Mr Lim", MESSAGE_INVALID_FORMAT);
+        // prefix-like text inside a name
+        assertParseFailure(parser, " n/Alex x/Tan" + GUARDIAN_NAME_DESC_BOB + GUARDIAN_PHONE_DESC_BOB,
+                MESSAGE_INVALID_FORMAT);
     }
 
     @Test
