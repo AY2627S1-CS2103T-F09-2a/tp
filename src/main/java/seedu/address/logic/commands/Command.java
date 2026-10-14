@@ -17,4 +17,11 @@ public abstract class Command {
      */
     public abstract CommandResult execute(Model model) throws CommandException;
 
+    /**
+     * Returns whether the address book should be saved after this command succeeds.
+     */
+    public boolean shouldSaveAddressBook() {
+        return true;
+    }
+
 }

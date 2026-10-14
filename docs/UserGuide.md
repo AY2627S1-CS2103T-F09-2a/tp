@@ -131,6 +131,21 @@ Examples:
 * `find alex david` returns `Alex Yeoh`, `David Li`<br>
   ![result for 'find alex david'](images/findAlexDavidResult.png)
 
+### Viewing a student's complete record: `view`
+
+Shows the selected student's full record beside the displayed list.
+
+Format: `view INDEX`
+
+* `INDEX` refers to the current displayed list, including results from `find`.
+* The record shows the student's name, phone, email, address, guardian name, guardian phone, outstanding fee, and tags. If there is no outstanding fee, it shows `Outstanding fee: None`.
+* The selected list card is highlighted. The result message names the student being viewed.
+* Viewing does not change the displayed list or saved data. An invalid index leaves the previous selection unchanged.
+* If a later search still includes the selected student, the selection stays on that student. If the search excludes them, the selection and details pane clear.
+
+Example:
+* `list` followed by `view 2` shows the second student's record.
+
 ### Deleting a student: `delete`
 
 Deletes the specified student from the address book.
@@ -159,15 +174,15 @@ Format: `exit`
 
 ### Saving the data
 
-AddressBook automatically saves data after every command. You do not need to save manually.
+Poco Book saves student data automatically. You do not need to save manually.
 
 ### Editing the data file
 
-AddressBook data is saved automatically as a JSON file `[JAR file location]/data/addressbook.json`. Advanced users are welcome to update data directly by editing that data file.
+Poco Book data is saved automatically as a JSON file `[JAR file location]/data/addressbook.json`. Advanced users are welcome to update data directly by editing that data file.
 
 <div markdown="span" class="alert alert-warning">:exclamation: **Caution:**
-If your changes make the data file invalid, AddressBook starts with an empty address book at the next run. The invalid file remains on disk until you run a command (AddressBook saves after every command). Still, we recommend backing up the file before editing it.<br>
-Furthermore, certain edits can cause the AddressBook to behave in unexpected ways (e.g., if a value entered is outside of the acceptable range). Therefore, edit the data file only if you are confident that you can update it correctly.
+If an edit makes the data file invalid, Poco Book starts with an empty address book next time. The invalid file stays on disk at first, but a later command such as `list` may overwrite it. Back up the file before editing it.<br>
+Furthermore, certain edits can cause Poco Book to behave in unexpected ways (e.g., if a value entered is outside of the acceptable range). Therefore, edit the data file only if you are confident that you can update it correctly.
 </div>
 
 ### Archiving data files `[coming in v2.0]`
@@ -200,4 +215,5 @@ Action | Format, Examples
 **Edit** | `edit INDEX [n/NAME] [p/PHONE_NUMBER] [e/EMAIL] [a/ADDRESS] [t/TAG]…​`<br> e.g., `edit 2 n/James Lee e/jameslee@example.com`
 **Find** | `find KEYWORD [MORE_KEYWORDS]`<br> e.g., `find James Jake`
 **List** | `list`
+**View** | `view INDEX`<br> e.g., `view 1`
 **Help** | `help`

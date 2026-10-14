@@ -72,7 +72,7 @@ The **API** of this component is specified in [`Ui.java`](https://github.com/AY2
 
 ![Structure of the UI Component](images/UiClassDiagram.png)
 
-The UI consists of a `MainWindow` and its parts, such as `CommandBox`, `ResultDisplay`, `PersonListPanel`, and `StatusBarFooter`. All of these, including `MainWindow`, inherit from the abstract `UiPart` class, which captures common behavior among classes that represent visible GUI parts.
+The UI consists of a `MainWindow` and its parts, such as `CommandBox`, `ResultDisplay`, `PersonListPanel`, `PersonDetailsPanel`, and `StatusBarFooter`. All of these, including `MainWindow`, inherit from the abstract `UiPart` class, which captures common behavior among classes that represent visible GUI parts.
 
 The `UI` component uses the JavaFX UI framework. The layouts of these UI parts are defined in matching `.fxml` files in `src/main/resources/view`. For example, [`MainWindow.fxml`](https://github.com/AY2627S1-CS2103T-F09-2a/tp/tree/master/src/main/resources/view/MainWindow.fxml) specifies the layout of [`MainWindow`](https://github.com/AY2627S1-CS2103T-F09-2a/tp/tree/master/src/main/java/seedu/address/ui/MainWindow.java).
 
@@ -82,6 +82,10 @@ The `UI` component,
 * listens for changes to `Model` data so that the UI can be updated with the modified data.
 * keeps a reference to the `Logic` component, because the `UI` relies on the `Logic` to execute commands.
 * depends on some classes in the `Model` component because it displays `Person` objects from the model.
+
+For `view INDEX`, `ViewCommand` reads the student at that index in the filtered list and returns the `Person` in `CommandResult` with a feedback message. It does not update the filter or model. `LogicManager` skips the storage write because `ViewCommand.shouldSaveAddressBook()` returns false. `MainWindow` selects that person in `PersonListPanel`; the list selection updates `PersonDetailsPanel`, which shows all stored fields. A failed parse or out-of-range index produces no `CommandResult`, so the current selection and details remain unchanged.
+
+Before executing a command, `MainWindow` remembers the selected student. After a successful command that does not explicitly select a student, it restores that selection only if the student remains in the displayed list. Otherwise it clears the selection, which also clears the details pane. This prevents a search from transferring the highlight to a different student at the same list index.
 
 ### Logic component
 
@@ -579,6 +583,26 @@ testers are expected to do more *exploratory* testing.
 
 1. _{ more test cases …​ }_
 
+### Viewing a student's complete record
+
+1. Prerequisites: Start with sample data and enter `list`.
+
+   1. Enter `view 1`.<br>
+      Expected: Alex Yeoh's card is highlighted. The details pane shows his contact information, guardian Adrian Yeoh, guardian phone 91234567, and `Outstanding fee: 120.00`. The result identifies Alex Yeoh.
+
+   1. Enter `view 2`.<br>
+      Expected: Bernice Yu's card is highlighted and the details pane shows `Outstanding fee: None`.
+
+   1. Enter `view 0`, `view 01`, `view 1 2`, and `view 999` in turn.<br>
+      Expected: Each command shows an error. Bernice remains selected and the displayed list is unchanged.
+
+1. Enter `find Charlotte`, followed by `view 1`.<br>
+   Expected: Charlotte Oliveiro is selected from the filtered list. The details pane shows Carlos Oliveiro, guardian phone 63456789, and outstanding fee 450.00. The list remains filtered to Charlotte.
+
+1. Enter `list`, `view 1`, then `find Alex`.<br>
+   Expected: Alex Yeoh remains selected and his details remain visible. Next, enter `find Bernice`.<br>
+   Expected: Bernice is displayed but not selected, and the details pane is cleared.
+
 ### Deleting a person
 
 1. Deleting a person while all persons are being shown
@@ -598,7 +622,7 @@ testers are expected to do more *exploratory* testing.
 
 ### Outstanding-fee labels on student cards
 
-1. Start the app in a fresh folder to load the sample students, then resize the window to its minimum size (450 by 600).
+1. Start the app in a fresh folder to load the sample students, then resize the window to its minimum size (750 by 450).
    Run `list`, `find Alex`, `list`, `find Bernice`, and `list` in that order. Alex Yeoh should show
    `S$120.00 outstanding` whenever his card is visible. Bernice Yu should never show a fee label. Their contact details
    should remain readable.
