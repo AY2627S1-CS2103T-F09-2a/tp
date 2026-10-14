@@ -49,7 +49,8 @@ public class SetOutstandingCommandTest {
         new SetOutstandingCommand(Index.fromOneBased(1), new OutstandingFee("1")).execute(model);
         assertEquals(new OutstandingFee("1.00"),
                 model.getFilteredPersonList().get(0).getOutstandingFee().orElseThrow());
-        new SetOutstandingCommand(Index.fromOneBased(1), null).execute(model);
+        CommandResult clearResult = new SetOutstandingCommand(Index.fromOneBased(1), null).execute(model);
+        assertEquals("Amy Bee no longer has an outstanding fee.", clearResult.getFeedbackToUser());
         assertEquals(1, model.getFilteredPersonList().size());
         assertTrue(model.getFilteredPersonList().get(0).getOutstandingFee().isEmpty());
         storage.saveAddressBook(model.getAddressBook());
@@ -70,10 +71,20 @@ public class SetOutstandingCommandTest {
         Person expected = new PersonBuilder(student).withOutstandingFee("99999.99").build();
         assertEquals(List.of(expected), model.getFilteredPersonList());
         assertEquals(List.of(hidden, expected), model.getAddressBook().getPersonList());
-        assertEquals("Outstanding fee for Amy Bee: S$99999.99", result.getFeedbackToUser());
+        assertEquals("Set outstanding fee for Amy Bee: S$99999.99", result.getFeedbackToUser());
         new SetOutstandingCommand(Index.fromOneBased(1), null).execute(model);
         assertEquals(List.of(student), model.getFilteredPersonList());
         assertEquals(List.of(hidden, student), model.getAddressBook().getPersonList());
+    }
+
+    @Test
+    public void execute_clearAlreadyPaidStudent_reportsNoOutstandingFee() throws Exception {
+        Model model = new ModelManager();
+        Person student = new PersonBuilder().build();
+        model.addPerson(student);
+        CommandResult result = new SetOutstandingCommand(Index.fromOneBased(1), null).execute(model);
+        assertEquals("Amy Bee no longer has an outstanding fee.", result.getFeedbackToUser());
+        assertEquals(List.of(student), model.getAddressBook().getPersonList());
     }
 
     @Test

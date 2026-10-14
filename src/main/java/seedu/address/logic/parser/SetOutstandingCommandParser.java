@@ -21,15 +21,21 @@ public class SetOutstandingCommandParser implements Parser<SetOutstandingCommand
             throw new ParseException(String.format(MESSAGE_INVALID_COMMAND_FORMAT,
                     SetOutstandingCommand.MESSAGE_USAGE));
         }
-        Index index = ParserUtil.parseIndex(parts[0]);
+        Index index;
+        try {
+            index = ParserUtil.parseIndex(parts[0]);
+        } catch (ParseException e) {
+            throw new ParseException(String.format(MESSAGE_INVALID_COMMAND_FORMAT,
+                    SetOutstandingCommand.MESSAGE_USAGE), e);
+        }
         if (!parts[1].matches(OutstandingFee.VALIDATION_REGEX)) {
-            throw new ParseException(SetOutstandingCommand.MESSAGE_USAGE);
+            throw new ParseException(SetOutstandingCommand.MESSAGE_INVALID_AMOUNT);
         }
         if (new BigDecimal(parts[1]).signum() == 0) {
             return new SetOutstandingCommand(index, null);
         }
         if (!OutstandingFee.isValidOutstandingFee(parts[1])) {
-            throw new ParseException(SetOutstandingCommand.MESSAGE_USAGE);
+            throw new ParseException(SetOutstandingCommand.MESSAGE_INVALID_AMOUNT);
         }
         return new SetOutstandingCommand(index, new OutstandingFee(parts[1]));
     }

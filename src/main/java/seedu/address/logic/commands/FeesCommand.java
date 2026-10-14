@@ -14,7 +14,8 @@ public class FeesCommand extends Command {
 
     public static final String COMMAND_WORD = "fees";
 
-    public static final String MESSAGE_USAGE = COMMAND_WORD;
+    public static final String MESSAGE_USAGE = COMMAND_WORD + ": Lists all students with outstanding fees.\n"
+            + "Example: " + COMMAND_WORD;
 
     public static final String MESSAGE_SUCCESS = "%1$d student(s) with outstanding fees.";
 

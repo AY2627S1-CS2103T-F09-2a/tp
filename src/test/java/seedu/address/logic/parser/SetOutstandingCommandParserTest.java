@@ -2,6 +2,7 @@ package seedu.address.logic.parser;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static seedu.address.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
 
 import org.junit.jupiter.api.Test;
 
@@ -24,6 +25,24 @@ public class SetOutstandingCommandParserTest {
                 parser.parse("1 99999.99"));
         assertEquals(new SetOutstandingCommand(Index.fromOneBased(1), null),
                 new AddressBookParser().parseCommand("setoutstanding 1 0"));
+    }
+
+    @Test
+    public void parse_invalidAmount_reportsAmountConstraints() {
+        for (String amount : new String[]{"-1", "100000", "1.234"}) {
+            ParseException exception = assertThrows(ParseException.class, () -> parser.parse("1 " + amount));
+            assertEquals("Outstanding fee must be between 0 and 99999.99, with at most two decimal places.",
+                    exception.getMessage());
+        }
+    }
+
+    @Test
+    public void parse_invalidIndexOrArgumentCount_reportsCommandFormat() {
+        for (String input : new String[]{"2147483648 1", "0 1", "abc 1", "1", "1 2 3"}) {
+            ParseException exception = assertThrows(ParseException.class, () -> parser.parse(input));
+            assertEquals(String.format(MESSAGE_INVALID_COMMAND_FORMAT, SetOutstandingCommand.MESSAGE_USAGE),
+                    exception.getMessage());
+        }
     }
 
     @Test

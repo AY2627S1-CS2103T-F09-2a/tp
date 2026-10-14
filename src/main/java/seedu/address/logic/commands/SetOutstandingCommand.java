@@ -18,9 +18,14 @@ import seedu.address.model.person.Person;
 public class SetOutstandingCommand extends Command {
 
     public static final String COMMAND_WORD = "setoutstanding";
-    public static final String MESSAGE_USAGE = COMMAND_WORD + " INDEX AMOUNT\n"
-            + "AMOUNT must be 0 to clear, or 0.01 to 99999.99 with at most two decimal places.";
-    public static final String MESSAGE_SUCCESS = "Outstanding fee for %1$s: S$%2$s";
+    public static final String MESSAGE_USAGE = COMMAND_WORD
+            + ": Sets the outstanding fee of the student identified by the displayed index.\n"
+            + "Parameters: INDEX AMOUNT\n"
+            + "Example: " + COMMAND_WORD + " 1 50.00";
+    public static final String MESSAGE_SUCCESS = "Set outstanding fee for %1$s: S$%2$s";
+    public static final String MESSAGE_CLEARED = "%1$s no longer has an outstanding fee.";
+    public static final String MESSAGE_INVALID_AMOUNT =
+            "Outstanding fee must be between 0 and 99999.99, with at most two decimal places.";
 
     private final Index index;
     private final OutstandingFee outstandingFee;
@@ -45,8 +50,10 @@ public class SetOutstandingCommand extends Command {
                 student.getEmail(), student.getAddress(),
                 student.getGuardianName(), student.getGuardianPhone(), outstandingFee, student.getTags());
         model.setPerson(student, updated);
-        return new CommandResult(String.format(MESSAGE_SUCCESS, updated.getName(),
-                outstandingFee == null ? "0.00" : outstandingFee));
+        if (outstandingFee == null) {
+            return new CommandResult(String.format(MESSAGE_CLEARED, updated.getName()));
+        }
+        return new CommandResult(String.format(MESSAGE_SUCCESS, updated.getName(), outstandingFee));
     }
 
     @Override
