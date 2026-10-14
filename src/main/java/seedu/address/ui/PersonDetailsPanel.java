@@ -6,6 +6,7 @@ import java.util.stream.Collectors;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
 import javafx.scene.layout.Region;
+import seedu.address.logic.Messages;
 import seedu.address.model.person.Person;
 
 /**
@@ -56,13 +57,13 @@ public class PersonDetailsPanel extends UiPart<Region> {
         }
 
         name.setText("Name: " + person.getName());
-        phone.setText("Phone: " + person.getPhone());
-        email.setText("Email: " + person.getEmail());
-        address.setText("Address: " + person.getAddress());
+        phone.setText("Phone: " + person.getPhone().map(Object::toString).orElse(Messages.NOT_PROVIDED));
+        email.setText("Email: " + person.getEmail().map(Object::toString).orElse(Messages.NOT_PROVIDED));
+        address.setText("Address: " + person.getAddress().map(Object::toString).orElse(Messages.NOT_PROVIDED));
         guardianName.setText("Guardian name: " + person.getGuardianName());
         guardianPhone.setText("Guardian phone: " + person.getGuardianPhone());
         outstandingFee.setText("Outstanding fee: " + person.getOutstandingFee()
-                .map(Object::toString).orElse("None"));
+                .map(fee -> "S$" + fee).orElse(Messages.NO_FEE));
         String tagNames = person.getTags().stream()
                 .sorted(Comparator.comparing(tag -> tag.tagName))
                 .map(tag -> tag.tagName)

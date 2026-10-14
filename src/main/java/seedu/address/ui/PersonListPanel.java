@@ -46,11 +46,15 @@ public class PersonListPanel extends UiPart<Region> {
      * Restores the same student after a list update, or clears a reused list-index selection.
      */
     public void retainSelection(Person person) {
-        if (person != null && personListView.getItems().contains(person)) {
-            selectPerson(person);
-        } else {
-            personListView.getSelectionModel().clearSelection();
+        if (person != null) {
+            for (Person displayedPerson : personListView.getItems()) {
+                if (displayedPerson.isSamePerson(person)) {
+                    selectPerson(displayedPerson);
+                    return;
+                }
+            }
         }
+        personListView.getSelectionModel().clearSelection();
     }
 
     public ReadOnlyObjectProperty<Person> selectedPersonProperty() {
