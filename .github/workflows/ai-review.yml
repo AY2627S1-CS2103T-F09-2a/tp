@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   review:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       # Check out the trusted base commit, never the PR's code.
       - uses: actions/checkout@v4
