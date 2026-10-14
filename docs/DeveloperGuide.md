@@ -596,6 +596,24 @@ testers are expected to do more *exploratory* testing.
 
 1. _{ more test cases …​ }_
 
+### Outstanding-fee labels on student cards
+
+1. Start the app in a fresh folder to load the sample students, then resize the window to its minimum size (450 by 600).
+   Run `list`, `find Alex`, `list`, `find Bernice`, and `list` in that order. Alex Yeoh should show
+   `S$120.00 outstanding` whenever his card is visible. Bernice Yu should never show a fee label. Their contact details
+   should remain readable.
+
+1. Run `add n/Test Student p/91234567 e/test@example.com a/Test address`. The new card should have no fee label.
+   Run `delete 7`; the new card should disappear, and the other students' labels should remain unchanged.
+
+1. Run `find Alex`, then `setoutstanding 1 99999.99`. The feedback should show
+   `Set outstanding fee for Alex Yeoh: S$99999.99`. His card should show `S$99999.99 outstanding` at the minimum
+   window size without hiding contact details. Restart the app and run `find Alex` to verify that the fee persists.
+
+1. Run `setoutstanding 1 0`. The feedback should show `Set outstanding fee for Alex Yeoh: S$0.00` and his card
+   should have no fee label. Run `fees` to verify that Alex is excluded. Restart the app and run `find Alex` to
+   verify that the fee remains cleared.
+
 ### Saving data
 
 1. Dealing with missing/corrupted data files
