@@ -48,7 +48,7 @@ public class Messages {
                 .append(person.getGuardianName())
                 .append("; Guardian Phone: ")
                 .append(person.getGuardianPhone());
-        person.getOutstandingFee().ifPresent(fee -> builder.append("; Outstanding Fee: $").append(fee));
+        person.getOutstandingFee().ifPresent(fee -> builder.append("; Outstanding Fee: S$").append(fee));
         builder.append("; Tags: ");
         person.getTags().forEach(builder::append);
         return builder.toString();
