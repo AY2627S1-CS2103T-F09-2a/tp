@@ -72,7 +72,7 @@ llm_request = urllib.request.Request(
         "Content-Type": "application/json",
     },
 )
-with urllib.request.urlopen(llm_request, timeout=300) as response:
+with urllib.request.urlopen(llm_request, timeout=1000) as response:
     result = json.loads(response.read())
 
 review = result["choices"][0]["message"]["content"].strip()
