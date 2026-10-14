@@ -12,29 +12,31 @@ import seedu.address.commons.util.ToStringBuilder;
 import seedu.address.model.tag.Tag;
 
 /**
- * Represents a Person in the address book.
- * Guarantees: details are present and not null, field values are validated, immutable.
+ * Represents a student in Poco Book.
+ * Guarantees: name and guardian contact are present and not null; field values are validated, immutable.
+ * The student's phone, email, address and outstanding fee are optional.
  */
 public class Person {
 
     // Identity fields
     private final Name name;
-    private final Phone phone;
-    private final Email email;
+    private final GuardianPhone guardianPhone;
 
     // Data fields
-    private final Address address;
     private final GuardianName guardianName;
-    private final GuardianPhone guardianPhone;
+    private final Phone phone;
+    private final Email email;
+    private final Address address;
     private final OutstandingFee outstandingFee;
     private final Set<Tag> tags = new HashSet<>();
 
     /**
-     * Every field except {@code outstandingFee} must be present and not null.
+     * Name, guardian name, guardian phone and tags must be present and not null.
+     * {@code phone}, {@code email}, {@code address} and {@code outstandingFee} may be null when not provided.
      */
     public Person(Name name, Phone phone, Email email, Address address, GuardianName guardianName,
             GuardianPhone guardianPhone, OutstandingFee outstandingFee, Set<Tag> tags) {
-        requireAllNonNull(name, phone, email, address, guardianName, guardianPhone, tags);
+        requireAllNonNull(name, guardianName, guardianPhone, tags);
         this.name = name;
         this.phone = phone;
         this.email = email;
@@ -49,16 +51,16 @@ public class Person {
         return name;
     }
 
-    public Phone getPhone() {
-        return phone;
+    public Optional<Phone> getPhone() {
+        return Optional.ofNullable(phone);
     }
 
-    public Email getEmail() {
-        return email;
+    public Optional<Email> getEmail() {
+        return Optional.ofNullable(email);
     }
 
-    public Address getAddress() {
-        return address;
+    public Optional<Address> getAddress() {
+        return Optional.ofNullable(address);
     }
 
     public GuardianName getGuardianName() {
@@ -85,8 +87,8 @@ public class Person {
     }
 
     /**
-     * Returns true if both persons have the same name.
-     * This defines a weaker notion of equality between two persons.
+     * Returns true if both students have the same name, ignoring case, and the same guardian phone.
+     * This defines a weaker notion of equality between two students.
      */
     public boolean isSamePerson(Person otherPerson) {
         if (otherPerson == this) {
@@ -94,12 +96,13 @@ public class Person {
         }
 
         return otherPerson != null
-                && otherPerson.getName().equals(getName());
+                && otherPerson.getName().isSameNameIgnoreCase(getName())
+                && otherPerson.getGuardianPhone().equals(getGuardianPhone());
     }
 
     /**
-     * Returns true if both persons have the same identity and data fields.
-     * This defines a stronger notion of equality between two persons.
+     * Returns true if both students have the same identity and data fields.
+     * This defines a stronger notion of equality between two students.
      */
     @Override
     public boolean equals(Object other) {
@@ -113,9 +116,9 @@ public class Person {
         }
 
         return name.equals(otherPerson.name)
-                && phone.equals(otherPerson.phone)
-                && email.equals(otherPerson.email)
-                && address.equals(otherPerson.address)
+                && Objects.equals(phone, otherPerson.phone)
+                && Objects.equals(email, otherPerson.email)
+                && Objects.equals(address, otherPerson.address)
                 && guardianName.equals(otherPerson.guardianName)
                 && guardianPhone.equals(otherPerson.guardianPhone)
                 && Objects.equals(outstandingFee, otherPerson.outstandingFee)

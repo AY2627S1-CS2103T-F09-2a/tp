@@ -45,7 +45,12 @@ public class ViewCommand extends Command {
         }
 
         Person personToView = lastShownList.get(targetIndex.getZeroBased());
-        return new CommandResult(String.format(MESSAGE_VIEW_STUDENT_SUCCESS, personToView.getName()));
+        return new CommandResult(String.format(MESSAGE_VIEW_STUDENT_SUCCESS, personToView.getName()), personToView);
+    }
+
+    @Override
+    public boolean shouldSaveAddressBook() {
+        return false;
     }
 
     @Override

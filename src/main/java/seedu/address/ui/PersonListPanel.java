@@ -2,6 +2,7 @@ package seedu.address.ui;
 
 import java.util.logging.Logger;
 
+import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.ListCell;
@@ -27,6 +28,33 @@ public class PersonListPanel extends UiPart<Region> {
         super(FXML);
         personListView.setItems(personList);
         personListView.setCellFactory(listView -> new PersonListViewCell());
+    }
+
+    /**
+     * Selects and scrolls to a student in the currently displayed list.
+     */
+    public void selectPerson(Person person) {
+        personListView.getSelectionModel().select(person);
+        personListView.scrollTo(person);
+    }
+
+    public Person getSelectedPerson() {
+        return personListView.getSelectionModel().getSelectedItem();
+    }
+
+    /**
+     * Restores the same student after a list update, or clears a reused list-index selection.
+     */
+    public void retainSelection(Person person) {
+        if (person != null && personListView.getItems().contains(person)) {
+            selectPerson(person);
+        } else {
+            personListView.getSelectionModel().clearSelection();
+        }
+    }
+
+    public ReadOnlyObjectProperty<Person> selectedPersonProperty() {
+        return personListView.getSelectionModel().selectedItemProperty();
     }
 
     /**

@@ -1,5 +1,6 @@
 package seedu.address.model.person;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.testutil.Assert.assertThrows;
@@ -32,6 +33,18 @@ public class AddressTest {
         assertTrue(Address.isValidAddress("Blk 456, Den Road, #01-355"));
         assertTrue(Address.isValidAddress("-")); // one character
         assertTrue(Address.isValidAddress("Leng Inc; 1234 Market St; San Francisco CA 2349879; USA")); // long address
+        assertTrue(Address.isValidAddress("a".repeat(150))); // 150 characters
+        assertTrue(Address.isValidAddress("北京市 #01-02")); // non-ASCII letters and symbols
+
+        // invalid addresses
+        assertFalse(Address.isValidAddress("a".repeat(151))); // 151 characters
+        assertFalse(Address.isValidAddress("12 Clementi\nAve 3")); // line break
+        assertFalse(Address.isValidAddress("12 Clementi\tAve 3")); // control character
+    }
+
+    @Test
+    public void constructor_extraSpaces_normalizesSpaces() {
+        assertEquals("12 Clementi Ave 3", new Address(" 12  Clementi   Ave 3 ").value);
     }
 
     @Test

@@ -3,38 +3,56 @@ package seedu.address.model.person;
 import static java.util.Objects.requireNonNull;
 import static seedu.address.commons.util.AppUtil.checkArgument;
 
+import java.text.Normalizer;
+
 /**
- * Represents a Person's address in the address book.
- * Guarantees: immutable; is valid as declared in {@link #isValidAddress(String)}
+ * Represents a student's address.
+ * Guarantees: immutable; normalized to NFC with single ASCII spaces; is valid as declared in
+ * {@link #isValidAddress(String)}
  */
 public class Address {
 
-    public static final String MESSAGE_CONSTRAINTS = "Addresses can take any values, and should not be blank";
+    public static final String MESSAGE_CONSTRAINTS =
+            "Addresses must be 1-150 printable characters and must not contain line breaks.";
 
     /*
-     * The first character of the address must not be a whitespace,
-     * otherwise " " (a blank string) becomes a valid input.
+     * Letters, combining marks, numbers, punctuation, symbols and ASCII spaces only,
+     * so control characters and line breaks are rejected.
      */
-    public static final String VALIDATION_REGEX = "[^\\s].*";
+    public static final String VALIDATION_REGEX = "[\\p{L}\\p{M}\\p{N}\\p{P}\\p{S} ]+";
+
+    private static final int MAX_LENGTH = 150;
 
     public final String value;
 
     /**
-     * Constructs an {@code Address}.
+     * Constructs an {@code Address}, normalizing Unicode and ASCII spaces.
      *
      * @param address A valid address.
      */
     public Address(String address) {
         requireNonNull(address);
         checkArgument(isValidAddress(address), MESSAGE_CONSTRAINTS);
-        value = address;
+        value = normalize(address);
     }
 
     /**
-     * Returns true if a given string is a valid address.
+     * Returns true if the address has 1-150 printable code points after normalization.
      */
     public static boolean isValidAddress(String test) {
-        return test.matches(VALIDATION_REGEX);
+        requireNonNull(test);
+        String normalized = normalize(test);
+        int length = normalized.codePointCount(0, normalized.length());
+        return length >= 1 && length <= MAX_LENGTH && normalized.matches(VALIDATION_REGEX);
+    }
+
+    /**
+     * Returns the NFC address with surrounding ASCII spaces removed and internal ASCII spaces collapsed.
+     */
+    private static String normalize(String address) {
+        return Normalizer.normalize(address, Normalizer.Form.NFC)
+                .replaceAll("^ +| +$", "")
+                .replaceAll(" +", " ");
     }
 
     @Override

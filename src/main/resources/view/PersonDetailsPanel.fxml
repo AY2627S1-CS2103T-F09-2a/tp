@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.layout.VBox?>
+
+<ScrollPane fitToWidth="true" hbarPolicy="NEVER" xmlns="http://javafx.com/javafx/17"
+            xmlns:fx="http://javafx.com/fxml/1" styleClass="details-pane">
+  <content>
+    <VBox spacing="12">
+      <padding>
+        <Insets top="18" right="18" bottom="18" left="18" />
+      </padding>
+      <Label text="Student record" styleClass="details-title" />
+      <Label fx:id="name" wrapText="true" styleClass="details-field" />
+      <Label fx:id="phone" wrapText="true" styleClass="details-field" />
+      <Label fx:id="email" wrapText="true" styleClass="details-field" />
+      <Label fx:id="address" wrapText="true" styleClass="details-field" />
+      <Label fx:id="guardianName" wrapText="true" styleClass="details-field" />
+      <Label fx:id="guardianPhone" wrapText="true" styleClass="details-field" />
+      <Label fx:id="outstandingFee" wrapText="true" styleClass="details-field" />
+      <Label fx:id="tags" wrapText="true" styleClass="details-field" />
+    </VBox>
+  </content>
+</ScrollPane>

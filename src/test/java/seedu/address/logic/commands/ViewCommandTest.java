@@ -10,6 +10,7 @@ import static seedu.address.testutil.Assert.assertThrows;
 import static seedu.address.testutil.TypicalIndexes.INDEX_FIRST_PERSON;
 import static seedu.address.testutil.TypicalIndexes.INDEX_SECOND_PERSON;
 import static seedu.address.testutil.TypicalPersons.BENSON;
+import static seedu.address.testutil.TypicalPersons.CARL;
 import static seedu.address.testutil.TypicalPersons.getTypicalAddressBook;
 
 import org.junit.jupiter.api.Test;
@@ -43,7 +44,7 @@ public class ViewCommandTest {
 
         Model expectedModel = new ModelManager(model.getAddressBook(), new UserPrefs());
 
-        assertCommandSuccess(viewCommand, model, expectedMessage, expectedModel);
+        assertCommandSuccess(viewCommand, model, new CommandResult(expectedMessage, personToView), expectedModel);
     }
 
     @Test
@@ -56,7 +57,7 @@ public class ViewCommandTest {
 
         Model expectedModel = new ModelManager(model.getAddressBook(), new UserPrefs());
 
-        assertCommandSuccess(viewCommand, model, expectedMessage, expectedModel);
+        assertCommandSuccess(viewCommand, model, new CommandResult(expectedMessage, personToView), expectedModel);
     }
 
     @Test
@@ -79,7 +80,17 @@ public class ViewCommandTest {
         Model expectedModel = new ModelManager(model.getAddressBook(), new UserPrefs());
         showPersonAtIndex(expectedModel, INDEX_SECOND_PERSON);
 
-        assertCommandSuccess(viewCommand, model, expectedMessage, expectedModel);
+        assertCommandSuccess(viewCommand, model, new CommandResult(expectedMessage, BENSON), expectedModel);
+    }
+
+    @Test
+    public void execute_studentWithoutOutstandingFee_returnsCompleteRecord() {
+        Index carlIndex = Index.fromOneBased(3);
+        ViewCommand viewCommand = new ViewCommand(carlIndex);
+        String expectedMessage = String.format(ViewCommand.MESSAGE_VIEW_STUDENT_SUCCESS, CARL.getName());
+
+        Model expectedModel = new ModelManager(model.getAddressBook(), new UserPrefs());
+        assertCommandSuccess(viewCommand, model, new CommandResult(expectedMessage, CARL), expectedModel);
     }
 
     @Test
