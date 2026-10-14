@@ -113,6 +113,8 @@ Format: `setoutstanding INDEX AMOUNT`
 * `INDEX` identifies a student in the current displayed list, starting from 1. Signs and leading zeros are rejected.
 * `AMOUNT` replaces the full outstanding fee. Use a value from `0.01` to `99999.99`, with at most two decimal places.
 * Use `0` to clear the fee. A student whose fee is cleared disappears from a `fees` result.
+* Feedback shows `Set outstanding fee for NAME: S$AMOUNT`, with exactly two decimal places, including
+  `S$0.00` when clearing a fee. Clearing an already-cleared fee succeeds with the same `S$0.00` feedback.
 * Other student details and the current filter are preserved. Invalid input leaves records and the list unchanged.
 * Successful changes use the application's normal saving behaviour. A save error means persistence is not confirmed.
 

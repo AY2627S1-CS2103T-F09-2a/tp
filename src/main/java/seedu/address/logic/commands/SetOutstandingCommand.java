@@ -23,7 +23,6 @@ public class SetOutstandingCommand extends Command {
             + "Parameters: INDEX AMOUNT\n"
             + "Example: " + COMMAND_WORD + " 1 50.00";
     public static final String MESSAGE_SUCCESS = "Set outstanding fee for %1$s: S$%2$s";
-    public static final String MESSAGE_CLEARED = "%1$s no longer has an outstanding fee.";
     public static final String MESSAGE_INVALID_AMOUNT =
             "Outstanding fee must be between 0 and 99999.99, with at most two decimal places.";
 
@@ -50,10 +49,8 @@ public class SetOutstandingCommand extends Command {
                 student.getEmail(), student.getAddress(),
                 student.getGuardianName(), student.getGuardianPhone(), outstandingFee, student.getTags());
         model.setPerson(student, updated);
-        if (outstandingFee == null) {
-            return new CommandResult(String.format(MESSAGE_CLEARED, updated.getName()));
-        }
-        return new CommandResult(String.format(MESSAGE_SUCCESS, updated.getName(), outstandingFee));
+        String amount = outstandingFee == null ? "0.00" : outstandingFee.toString();
+        return new CommandResult(String.format(MESSAGE_SUCCESS, updated.getName(), amount));
     }
 
     @Override

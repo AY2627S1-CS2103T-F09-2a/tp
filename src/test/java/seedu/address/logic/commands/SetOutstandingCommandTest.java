@@ -50,7 +50,7 @@ public class SetOutstandingCommandTest {
         assertEquals(new OutstandingFee("1.00"),
                 model.getFilteredPersonList().get(0).getOutstandingFee().orElseThrow());
         CommandResult clearResult = new SetOutstandingCommand(Index.fromOneBased(1), null).execute(model);
-        assertEquals("Amy Bee no longer has an outstanding fee.", clearResult.getFeedbackToUser());
+        assertEquals("Set outstanding fee for Amy Bee: S$0.00", clearResult.getFeedbackToUser());
         assertEquals(1, model.getFilteredPersonList().size());
         assertTrue(model.getFilteredPersonList().get(0).getOutstandingFee().isEmpty());
         storage.saveAddressBook(model.getAddressBook());
@@ -78,12 +78,12 @@ public class SetOutstandingCommandTest {
     }
 
     @Test
-    public void execute_clearAlreadyPaidStudent_reportsNoOutstandingFee() throws Exception {
+    public void execute_clearAlreadyPaidStudent_reportsZeroAmount() throws Exception {
         Model model = new ModelManager();
         Person student = new PersonBuilder().build();
         model.addPerson(student);
         CommandResult result = new SetOutstandingCommand(Index.fromOneBased(1), null).execute(model);
-        assertEquals("Amy Bee no longer has an outstanding fee.", result.getFeedbackToUser());
+        assertEquals("Set outstanding fee for Amy Bee: S$0.00", result.getFeedbackToUser());
         assertEquals(List.of(student), model.getAddressBook().getPersonList());
     }
 
