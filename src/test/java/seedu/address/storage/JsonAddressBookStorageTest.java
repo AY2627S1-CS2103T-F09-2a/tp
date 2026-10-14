@@ -107,7 +107,7 @@ public class JsonAddressBookStorageTest {
 
         Person savedPerson = readBack.getPersonList().get(0);
         assertEquals("91234567", savedPerson.getGuardianPhone().getValue());
-        assertEquals("1.20", savedPerson.getOutstandingFee().toString());
+        assertEquals("1.20", savedPerson.getOutstandingFee().get().toString());
         assertEquals(original, new AddressBook(readBack));
     }
 

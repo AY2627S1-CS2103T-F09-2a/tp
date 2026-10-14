@@ -58,7 +58,7 @@ public class PersonBuilder {
         address = personToCopy.getAddress();
         guardianName = personToCopy.getGuardianName();
         guardianPhone = personToCopy.getGuardianPhone();
-        outstandingFee = personToCopy.getOutstandingFee();
+        outstandingFee = personToCopy.getOutstandingFee().orElse(null);
         tags = new HashSet<>(personToCopy.getTags());
     }
 

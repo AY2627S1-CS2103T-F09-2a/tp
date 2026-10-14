@@ -39,11 +39,11 @@ public class EditCommandTest {
     public void execute_allFieldsSpecifiedUnfilteredList_success() {
         Person editedLegacyFields = new PersonBuilder().build();
         Person originalPerson = model.getFilteredPersonList().get(0);
+        // Edit cannot change guardian or fee fields yet, so they are kept from the original student.
         Person editedPerson = new PersonBuilder(editedLegacyFields)
                 .withGuardianName(originalPerson.getGuardianName().toString())
                 .withGuardianPhone(originalPerson.getGuardianPhone().toString())
-                .withOutstandingFee(originalPerson.getOutstandingFee() == null
-                        ? null : originalPerson.getOutstandingFee().toString())
+                .withOutstandingFee(originalPerson.getOutstandingFee().map(Object::toString).orElse(null))
                 .build();
         EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder(editedLegacyFields).build();
         EditCommand editCommand = new EditCommand(INDEX_FIRST_PERSON, descriptor);

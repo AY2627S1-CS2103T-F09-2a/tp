@@ -5,6 +5,7 @@ import static seedu.address.commons.util.CollectionUtil.requireAllNonNull;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 
 import seedu.address.commons.util.ToStringBuilder;
@@ -68,8 +69,11 @@ public class Person {
         return guardianPhone;
     }
 
-    public OutstandingFee getOutstandingFee() {
-        return outstandingFee;
+    /**
+     * Returns the outstanding fee, or an empty {@code Optional} if there is none.
+     */
+    public Optional<OutstandingFee> getOutstandingFee() {
+        return Optional.ofNullable(outstandingFee);
     }
 
     /**

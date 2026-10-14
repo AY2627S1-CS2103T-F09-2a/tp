@@ -37,7 +37,7 @@ public class JsonAdaptedPersonTest {
     private static final String VALID_ADDRESS = BENSON.getAddress().toString();
     private static final String VALID_GUARDIAN_NAME = BENSON.getGuardianName().toString();
     private static final String VALID_GUARDIAN_PHONE = BENSON.getGuardianPhone().toString();
-    private static final String VALID_OUTSTANDING_FEE = BENSON.getOutstandingFee().toString();
+    private static final String VALID_OUTSTANDING_FEE = BENSON.getOutstandingFee().get().toString();
     private static final List<JsonAdaptedTag> VALID_TAGS = BENSON.getTags().stream()
             .map(JsonAdaptedTag::new)
             .collect(Collectors.toList());

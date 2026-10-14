@@ -68,7 +68,7 @@ class JsonAdaptedPerson {
         address = source.getAddress().value;
         guardianName = source.getGuardianName().getFullName();
         guardianPhone = source.getGuardianPhone().getValue();
-        outstandingFee = source.getOutstandingFee() == null ? null : source.getOutstandingFee().toString();
+        outstandingFee = source.getOutstandingFee().map(OutstandingFee::toString).orElse(null);
         tags.addAll(source.getTags().stream()
                 .map(JsonAdaptedTag::new)
                 .collect(Collectors.toList()));
