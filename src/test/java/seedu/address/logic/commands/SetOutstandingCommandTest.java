@@ -57,10 +57,11 @@ public class SetOutstandingCommandTest {
     }
 
     @Test
-    public void execute_optionalContactsAbsent_preservesStudentAndOtherRecords() throws Exception {
+    public void execute_preservesStudentAndOtherRecords() throws Exception {
         Model model = new ModelManager();
         Person hidden = new PersonBuilder().withName("Hidden Student").withOutstandingFee("5").build();
-        Person student = new PersonBuilder().withoutContactDetails().withTags("class").build();
+        Person student = new PersonBuilder().withGuardianName("Mr Tan").withGuardianPhone("98765432")
+                .withTags("class").build();
         model.addPerson(hidden);
         model.addPerson(student);
         model.updateFilteredPersonList(person -> person.getName().equals(student.getName()));
