@@ -4,11 +4,16 @@
     "phone": "94351253",
     "email": "alice@example.com",
     "address": "123, Jurong West Ave 6, #08-111",
+    "guardianName": "Anne Pauline",
+    "guardianPhone": "91234567",
+    "outstandingFee": "0.01",
     "tags": [ "friends" ]
   }, {
     "name": "Alice Pauline",
     "phone": "94351253",
     "email": "pauline@example.com",
-    "address": "4th street"
+    "address": "4th street",
+    "guardianName": "Anne Pauline",
+    "guardianPhone": "91234567"
   } ]
 }

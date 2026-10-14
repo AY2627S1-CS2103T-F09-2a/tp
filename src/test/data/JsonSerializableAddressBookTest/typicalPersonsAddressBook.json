@@ -5,42 +5,58 @@
     "phone" : "94351253",
     "email" : "alice@example.com",
     "address" : "123, Jurong West Ave 6, #08-111",
+    "guardianName" : "Anne Pauline",
+    "guardianPhone" : "91234567",
+    "outstandingFee" : "0.01",
     "tags" : [ "friends" ]
   }, {
     "name" : "Benson Meier",
     "phone" : "98765432",
     "email" : "johnd@example.com",
     "address" : "311, Clementi Ave 2, #02-25",
+    "guardianName" : "Betty Meier",
+    "guardianPhone" : "82345678",
+    "outstandingFee" : "99999.99",
     "tags" : [ "owesMoney", "friends" ]
   }, {
     "name" : "Carl Kurz",
     "phone" : "95352563",
     "email" : "heinz@example.com",
     "address" : "wall street",
+    "guardianName" : "Guardian",
+    "guardianPhone" : "91234567",
     "tags" : [ ]
   }, {
     "name" : "Daniel Meier",
     "phone" : "87652533",
     "email" : "cornelia@example.com",
     "address" : "10th street",
+    "guardianName" : "Guardian",
+    "guardianPhone" : "91234567",
     "tags" : [ "friends" ]
   }, {
     "name" : "Elle Meyer",
     "phone" : "9482224",
     "email" : "werner@example.com",
     "address" : "michegan ave",
+    "guardianName" : "Guardian",
+    "guardianPhone" : "91234567",
     "tags" : [ ]
   }, {
     "name" : "Fiona Kunz",
     "phone" : "9482427",
     "email" : "lydia@example.com",
     "address" : "little tokyo",
+    "guardianName" : "Guardian",
+    "guardianPhone" : "91234567",
     "tags" : [ ]
   }, {
     "name" : "George Best",
     "phone" : "9482442",
     "email" : "anna@example.com",
     "address" : "4th street",
+    "guardianName" : "Guardian",
+    "guardianPhone" : "91234567",
     "tags" : [ ]
   } ]
 }

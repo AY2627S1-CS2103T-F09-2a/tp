@@ -5,6 +5,7 @@ import static seedu.address.commons.util.CollectionUtil.requireAllNonNull;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 
 import seedu.address.commons.util.ToStringBuilder;
@@ -23,17 +24,24 @@ public class Person {
 
     // Data fields
     private final Address address;
+    private final GuardianName guardianName;
+    private final GuardianPhone guardianPhone;
+    private final OutstandingFee outstandingFee;
     private final Set<Tag> tags = new HashSet<>();
 
     /**
-     * Every field must be present and not null.
+     * Every field except {@code outstandingFee} must be present and not null.
      */
-    public Person(Name name, Phone phone, Email email, Address address, Set<Tag> tags) {
-        requireAllNonNull(name, phone, email, address, tags);
+    public Person(Name name, Phone phone, Email email, Address address, GuardianName guardianName,
+            GuardianPhone guardianPhone, OutstandingFee outstandingFee, Set<Tag> tags) {
+        requireAllNonNull(name, phone, email, address, guardianName, guardianPhone, tags);
         this.name = name;
         this.phone = phone;
         this.email = email;
         this.address = address;
+        this.guardianName = guardianName;
+        this.guardianPhone = guardianPhone;
+        this.outstandingFee = outstandingFee;
         this.tags.addAll(tags);
     }
 
@@ -51,6 +59,21 @@ public class Person {
 
     public Address getAddress() {
         return address;
+    }
+
+    public GuardianName getGuardianName() {
+        return guardianName;
+    }
+
+    public GuardianPhone getGuardianPhone() {
+        return guardianPhone;
+    }
+
+    /**
+     * Returns the outstanding fee, or an empty {@code Optional} if there is none.
+     */
+    public Optional<OutstandingFee> getOutstandingFee() {
+        return Optional.ofNullable(outstandingFee);
     }
 
     /**
@@ -93,13 +116,16 @@ public class Person {
                 && phone.equals(otherPerson.phone)
                 && email.equals(otherPerson.email)
                 && address.equals(otherPerson.address)
+                && guardianName.equals(otherPerson.guardianName)
+                && guardianPhone.equals(otherPerson.guardianPhone)
+                && Objects.equals(outstandingFee, otherPerson.outstandingFee)
                 && tags.equals(otherPerson.tags);
     }
 
     @Override
     public int hashCode() {
         // use this method for custom fields hashing instead of implementing your own
-        return Objects.hash(name, phone, email, address, tags);
+        return Objects.hash(name, phone, email, address, guardianName, guardianPhone, outstandingFee, tags);
     }
 
     @Override
@@ -109,6 +135,9 @@ public class Person {
                 .add("phone", phone)
                 .add("email", email)
                 .add("address", address)
+                .add("guardianName", guardianName)
+                .add("guardianPhone", guardianPhone)
+                .add("outstandingFee", outstandingFee)
                 .add("tags", tags)
                 .toString();
     }

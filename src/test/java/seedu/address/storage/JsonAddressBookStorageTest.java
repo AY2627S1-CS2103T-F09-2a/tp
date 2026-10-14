@@ -18,6 +18,8 @@ import org.junit.jupiter.api.io.TempDir;
 import seedu.address.commons.exceptions.DataLoadingException;
 import seedu.address.model.AddressBook;
 import seedu.address.model.ReadOnlyAddressBook;
+import seedu.address.model.person.Person;
+import seedu.address.testutil.PersonBuilder;
 
 public class JsonAddressBookStorageTest {
     private static final Path TEST_DATA_FOLDER = Paths.get("src", "test", "data", "JsonAddressBookStorageTest");
@@ -61,6 +63,11 @@ public class JsonAddressBookStorageTest {
     }
 
     @Test
+    public void readAddressBook_invalidOutstandingFeeAddressBook_throwDataLoadingException() {
+        assertThrows(DataLoadingException.class, () -> readAddressBook("invalidOutstandingFeeAddressBook.json"));
+    }
+
+    @Test
     public void readAndSaveAddressBook_allInOrder_success() throws Exception {
         Path filePath = testFolder.resolve("TempAddressBook.json");
         AddressBook original = getTypicalAddressBook();
@@ -84,6 +91,24 @@ public class JsonAddressBookStorageTest {
         readBack = jsonAddressBookStorage.readAddressBook().get(); // file path not specified
         assertEquals(original, new AddressBook(readBack));
 
+    }
+
+    @Test
+    public void readAndSaveAddressBook_normalizedGuardianPhoneAndFee_success() throws Exception {
+        Path filePath = testFolder.resolve("TempAddressBook.json");
+        Person person = new PersonBuilder().withGuardianPhone("9 123-4567")
+                .withOutstandingFee("1.2").build();
+        AddressBook original = new AddressBook();
+        original.addPerson(person);
+        JsonAddressBookStorage jsonAddressBookStorage = new JsonAddressBookStorage(filePath);
+
+        jsonAddressBookStorage.saveAddressBook(original);
+        ReadOnlyAddressBook readBack = jsonAddressBookStorage.readAddressBook().get();
+
+        Person savedPerson = readBack.getPersonList().get(0);
+        assertEquals("91234567", savedPerson.getGuardianPhone().getValue());
+        assertEquals("1.20", savedPerson.getOutstandingFee().get().toString());
+        assertEquals(original, new AddressBook(readBack));
     }
 
     @Test
