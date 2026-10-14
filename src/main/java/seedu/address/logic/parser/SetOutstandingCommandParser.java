@@ -21,13 +21,8 @@ public class SetOutstandingCommandParser implements Parser<SetOutstandingCommand
             throw new ParseException(String.format(MESSAGE_INVALID_COMMAND_FORMAT,
                     SetOutstandingCommand.MESSAGE_USAGE));
         }
-        Index index;
-        try {
-            index = ParserUtil.parseIndex(parts[0]);
-        } catch (ParseException e) {
-            throw new ParseException(String.format(MESSAGE_INVALID_COMMAND_FORMAT,
-                    SetOutstandingCommand.MESSAGE_USAGE), e);
-        }
+        Index index = ParserUtil.parseIndex(parts[0],
+                String.format(MESSAGE_INVALID_COMMAND_FORMAT, SetOutstandingCommand.MESSAGE_USAGE));
         if (!parts[1].matches(OutstandingFee.VALIDATION_REGEX)) {
             throw new ParseException(SetOutstandingCommand.MESSAGE_INVALID_AMOUNT);
         }
