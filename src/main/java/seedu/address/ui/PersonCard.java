@@ -40,6 +40,8 @@ public class PersonCard extends UiPart<Region> {
     @FXML
     private Label email;
     @FXML
+    private Label guardian;
+    @FXML
     private Label outstandingFee;
     @FXML
     private FlowPane tags;
@@ -55,6 +57,7 @@ public class PersonCard extends UiPart<Region> {
         setOptionalText(phone, person.getPhone().map(p -> p.value));
         setOptionalText(address, person.getAddress().map(a -> a.value));
         setOptionalText(email, person.getEmail().map(e -> e.value));
+        guardian.setText("Guardian: " + person.getGuardianName() + " (" + person.getGuardianPhone() + ")");
         person.getOutstandingFee().ifPresent(fee -> {
             outstandingFee.setText("S$" + fee + " outstanding");
             outstandingFee.setVisible(true);

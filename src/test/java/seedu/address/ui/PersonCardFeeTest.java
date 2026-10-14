@@ -57,4 +57,24 @@ public class PersonCardFeeTest {
         Platform.runLater(assertion);
         assertion.get(10, TimeUnit.SECONDS);
     }
+
+    @Test
+    public void create_studentWithoutOptionalContactDetails_displaysGuardianAndHidesOptionalLabels()
+            throws Exception {
+        FutureTask<Void> assertion = new FutureTask<>(() -> {
+            PersonCard card = new PersonCard(new PersonBuilder()
+                    .withoutContactDetails()
+                    .withGuardianName("Mei Tan")
+                    .withGuardianPhone("92345678")
+                    .build(), 1);
+            Label guardian = (Label) card.getRoot().lookup("#guardian");
+            assertEquals("Guardian: Mei Tan (92345678)", guardian.getText());
+            assertFalse(((Label) card.getRoot().lookup("#phone")).isVisible());
+            assertFalse(((Label) card.getRoot().lookup("#address")).isVisible());
+            assertFalse(((Label) card.getRoot().lookup("#email")).isVisible());
+            return null;
+        });
+        Platform.runLater(assertion);
+        assertion.get(10, TimeUnit.SECONDS);
+    }
 }
