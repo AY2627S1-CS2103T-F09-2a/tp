@@ -630,9 +630,13 @@ testers are expected to do more *exploratory* testing.
 1. Run `add n/Test Student p/91234567 e/test@example.com a/Test address`. The new card should have no fee label.
    Run `delete 7`; the new card should disappear, and the other students' labels should remain unchanged.
 
-1. Close the app and back up `data/addressbook.json`. Change Alex's `outstandingFee` in the file to `99999.99`, then
-   relaunch and run `find Alex`. His card should show `S$99999.99 outstanding` at the minimum window size without hiding
-   contact details. Restore the original data file after the check. The current app has no command for setting a fee.
+1. Run `find Alex`, then `setoutstanding 1 99999.99`. The feedback should show
+   `Set outstanding fee for Alex Yeoh: S$99999.99`. His card should show `S$99999.99 outstanding` at the minimum
+   window size without hiding contact details. Restart the app and run `find Alex` to verify that the fee persists.
+
+1. Run `setoutstanding 1 0`. The feedback should show `Set outstanding fee for Alex Yeoh: S$0.00` and his card
+   should have no fee label. Run `fees` to verify that Alex is excluded. Restart the app and run `find Alex` to
+   verify that the fee remains cleared.
 
 ### Saving data
 
