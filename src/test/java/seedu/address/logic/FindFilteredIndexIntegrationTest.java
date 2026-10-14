@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.logic.Messages.MESSAGE_PERSONS_LISTED_OVERVIEW;
 import static seedu.address.testutil.Assert.assertThrows;
 import static seedu.address.testutil.TypicalPersons.BENSON;
+import static seedu.address.testutil.TypicalPersons.CARL;
 import static seedu.address.testutil.TypicalPersons.DANIEL;
 import static seedu.address.testutil.TypicalPersons.getTypicalAddressBook;
 
@@ -22,13 +23,14 @@ import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.model.Model;
 import seedu.address.model.ModelManager;
 import seedu.address.model.UserPrefs;
+import seedu.address.model.person.Person;
 import seedu.address.storage.JsonAddressBookStorage;
 import seedu.address.storage.JsonUserPrefsStorage;
 import seedu.address.storage.StorageManager;
 
 /**
  * Integration tests that run raw user input through {@link LogicManager} to check that,
- * after a {@code find}, index-based commands refer to the filtered list rather than the full list.
+ * after a {@code find} or {@code fees}, index-based commands refer to the filtered list rather than the full list.
  */
 public class FindFilteredIndexIntegrationTest {
 
@@ -61,6 +63,21 @@ public class FindFilteredIndexIntegrationTest {
         assertEquals(List.of(BENSON), logic.getFilteredPersonList());
         assertFalse(model.getAddressBook().getPersonList().contains(DANIEL));
         assertTrue(model.getAddressBook().getPersonList().contains(BENSON));
+    }
+
+    @Test
+    public void fees_thenDelete_deletesPersonAtFilteredIndex() throws Exception {
+        // ALICE and BENSON already owe fees; GEORGE (7th in the full list) is given one
+        logic.execute("setoutstanding 7 50.00");
+        logic.execute("fees");
+        assertEquals(3, logic.getFilteredPersonList().size());
+        Person george = logic.getFilteredPersonList().get(2);
+
+        // Index 3 is CARL in the full list, but GEORGE in the fees list
+        logic.execute("delete 3");
+
+        assertFalse(model.getAddressBook().getPersonList().contains(george));
+        assertTrue(model.getAddressBook().getPersonList().contains(CARL));
     }
 
     @Test
