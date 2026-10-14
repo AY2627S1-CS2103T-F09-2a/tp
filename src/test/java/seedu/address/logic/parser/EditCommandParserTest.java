@@ -86,6 +86,13 @@ public class EditCommandParserTest {
     }
 
     @Test
+    public void parse_uneditableFieldPrefix_failure() {
+        assertParseFailure(parser, "1 a/123 Street g/New Guardian", MESSAGE_INVALID_FORMAT);
+        assertParseFailure(parser, "1" + NAME_DESC_AMY + " gp/98887777", MESSAGE_INVALID_FORMAT);
+        assertParseFailure(parser, "1" + PHONE_DESC_AMY + " f/10", MESSAGE_INVALID_FORMAT);
+    }
+
+    @Test
     public void parse_indexTooLargeForInt_throwsInvalidIndexMessage() {
         assertParseFailure(parser, "2147483648" + NAME_DESC_AMY, MESSAGE_INVALID_STUDENT_DISPLAYED_INDEX);
         assertParseFailure(parser, "999999999999999999999999999999" + NAME_DESC_AMY,
