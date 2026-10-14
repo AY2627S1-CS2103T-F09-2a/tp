@@ -20,6 +20,7 @@ import org.junit.jupiter.api.io.TempDir;
 import seedu.address.logic.commands.CommandResult;
 import seedu.address.logic.commands.DeleteCommand;
 import seedu.address.logic.commands.exceptions.CommandException;
+import seedu.address.logic.parser.exceptions.ParseException;
 import seedu.address.model.Model;
 import seedu.address.model.ModelManager;
 import seedu.address.model.UserPrefs;
@@ -100,6 +101,14 @@ public class FindFilteredIndexIntegrationTest {
 
         assertThrows(CommandException.class, () -> logic.execute("delete 1"));
         assertEquals(fullListSize, model.getAddressBook().getPersonList().size());
+    }
+
+    @Test
+    public void find_thenInvalidFind_keepsDisplayedList() throws Exception {
+        logic.execute("find meier");
+
+        assertThrows(ParseException.class, () -> logic.execute("find @@@"));
+        assertEquals(List.of(BENSON, DANIEL), logic.getFilteredPersonList());
     }
 
 }
