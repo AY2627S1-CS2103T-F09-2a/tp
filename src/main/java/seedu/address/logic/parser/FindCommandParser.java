@@ -28,7 +28,6 @@ public class FindCommandParser implements Parser<FindCommand> {
 
         String[] nameKeywords = trimmedArgs.split("\\s+");
         for (String keyword : nameKeywords) {
-            // Throw exception when the user tried to search for an invalid name
             if (!Name.isValidName(keyword)) {
                 throw new ParseException(
                         String.format(MESSAGE_INVALID_COMMAND_FORMAT, FindCommand.MESSAGE_USAGE));
