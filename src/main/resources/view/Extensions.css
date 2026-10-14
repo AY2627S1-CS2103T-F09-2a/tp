@@ -18,3 +18,12 @@
 .tooltip-text {
     -fx-text-fill: white;
 }
+
+.list-cell .outstanding-fee-label {
+    -fx-background-color: #8b3e12;
+    -fx-background-radius: 4;
+    -fx-padding: 3 8 3 8;
+    -fx-font-family: "Segoe UI Semibold";
+    -fx-font-size: 12px;
+    -fx-text-fill: #fff4e5;
+}

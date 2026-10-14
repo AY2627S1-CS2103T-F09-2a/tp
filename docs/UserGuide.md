@@ -93,6 +93,9 @@ Examples:
 
 Shows a list of all persons in the address book.
 
+Students with an outstanding fee display an `S$AMOUNT outstanding` label on their cards, with the amount shown to two decimal places.
+Students without an outstanding fee do not display this label. The label also appears in `find` results.
+
 Format: `list`
 
 ### Editing a person: `edit`
