@@ -45,8 +45,8 @@ public class SetOutstandingCommand extends Command {
             throw new CommandException(Messages.MESSAGE_INVALID_STUDENT_DISPLAYED_INDEX);
         }
         Person student = displayed.get(index.getZeroBased());
-        Person updated = new Person(student.getName(), student.getPhone(),
-                student.getEmail(), student.getAddress(),
+        Person updated = new Person(student.getName(), student.getPhone().orElse(null),
+                student.getEmail().orElse(null), student.getAddress().orElse(null),
                 student.getGuardianName(), student.getGuardianPhone(), outstandingFee, student.getTags());
         model.setPerson(student, updated);
         String amount = outstandingFee == null ? "0.00" : outstandingFee.toString();

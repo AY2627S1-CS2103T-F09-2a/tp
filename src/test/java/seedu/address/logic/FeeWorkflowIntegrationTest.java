@@ -32,6 +32,23 @@ public class FeeWorkflowIntegrationTest {
     private Path directory;
 
     @Test
+    public void execute_optionalContactsAbsent_setsAndClearsFee() throws Exception {
+        Model model = new ModelManager();
+        Person student = new PersonBuilder().withoutContactDetails().build();
+        model.addPerson(student);
+        JsonAddressBookStorage data = new JsonAddressBookStorage(directory.resolve("students.json"));
+        Logic logic = new LogicManager(model,
+                new StorageManager(data, new JsonUserPrefsStorage(directory.resolve("preferences.json"))));
+        logic.execute("setoutstanding 1 15.50");
+        assertEquals(new PersonBuilder(student).withOutstandingFee("15.50").build(),
+                model.getFilteredPersonList().get(0));
+        assertEquals(model.getAddressBook(), data.readAddressBook().orElseThrow());
+        logic.execute("setoutstanding 1 0");
+        assertEquals(List.of(student), model.getFilteredPersonList());
+        assertEquals(model.getAddressBook(), data.readAddressBook().orElseThrow());
+    }
+
+    @Test
     public void execute_feeWorkflow_preservesRecordsAndPersists() throws Exception {
         Model model = new ModelManager();
         Person paid = new PersonBuilder().withName("Paid Student").build();
