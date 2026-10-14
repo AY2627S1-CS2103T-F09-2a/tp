@@ -96,8 +96,8 @@ Examples:
 
 Shows a list of all students in the address book.
 
-Students with an outstanding fee display an `S$AMOUNT outstanding` label on their cards, with the amount shown to two decimal places.
-Students without an outstanding fee do not display this label. The label also appears in `find` results.
+Each student card shows the student's guardian contact as `Guardian: GUARDIAN_NAME (GUARDIAN_PHONE)`, together with any provided student phone, address, email, and tags.
+Students with an outstanding fee also display an `S$AMOUNT outstanding` label on their cards, with the amount shown to two decimal places; students without an outstanding fee do not display this label. The same card details appear in `find` and `fees` results.
 
 Format: `list`
 
@@ -247,3 +247,4 @@ Action | Format, Examples
 **Fees** | `fees`
 **Set outstanding fee** | `setoutstanding INDEX AMOUNT`<br> e.g., `setoutstanding 1 150.50`; `setoutstanding 1 0` clears it
 **Help** | `help`
+**Exit** | `exit`
