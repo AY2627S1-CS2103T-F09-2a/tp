@@ -1,259 +1,285 @@
-"""Regression checks for author restrictions and safe fix publication."""
+"""Behavioral boundary tests; no live keys, model calls, or remote writes."""
 
 import base64
 import copy
+import importlib.util
 import io
 import json
 import os
 from pathlib import Path
+import tarfile
 import tempfile
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
+import urllib.request
 import zipfile
 
-import fix
+
+BASE = Path(__file__).resolve().parents[1]
+TARGET = BASE / 'templates/.github/shizhen-fix/fix.py'
+if not TARGET.exists():
+    TARGET = Path(__file__).with_name('fix.py')
+spec = importlib.util.spec_from_file_location('fix', TARGET)
+fix = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(fix)
+HEAD = 'a' * 40
+FILE = 'src/main/java/example/Amount.java'
+SOURCE = 'class Amount { int value = -1; }\n'
 
 
-SHA = 'a' * 40
-OTHER_SHA = 'b' * 40
-PATH = 'src/main/java/example/Test.java'
-ORIGINAL = 'class Test { int amount = -1; }\n'
-EDIT = {'path': PATH, 'before': 'amount = -1', 'after': 'amount = 0'}
+def pull(fork=False):
+    return {'number': 7, 'user': {'id': fix.AUTHOR_ID, 'login': fix.AUTHOR_LOGIN},
+            'state': 'open', 'draft': False, 'html_url': 'https://github.com/team/repo/pull/7',
+            'head': {'sha': HEAD, 'ref': 'feature',
+                     'repo': {'full_name': 'author/repo' if fork else 'team/repo'}},
+            'base': {'ref': 'main'}}
 
 
-def pull_request():
-    return {'number': 7, 'user': {'id': fix.AUTHOR_ID, 'login': 'shiverin'},
-            'state': 'open', 'draft': False,
-            'head': {'sha': SHA, 'ref': 'my-feature', 'repo': {'full_name': 'owner/repo'}},
-            'base': {'ref': 'master'}, 'html_url': 'https://github.com/owner/repo/pull/7'}
+class Boundaries(unittest.TestCase):
+    def test_only_numeric_author_identity_is_trusted(self):
+        pr = pull()
+        pr['user']['id'] += 1
+        with self.assertRaises(fix.Stop):
+            fix.eligible(pr)
 
+    def test_renaming_allowed_user_does_not_transfer_identity(self):
+        pr = pull()
+        pr['user']['login'] = 'renamed-owner'
+        fix.eligible(pr)
 
-class FakeGitHub:
-    repository = 'owner/repo'
-    token = 'dummy'
-    prefix = 'https://api.github.com/repos/owner/repo/'
-
-    def __init__(self):
-        self.pr = pull_request()
-        self.calls = []
-        self.mode = '100644'
-        self.reserved = False
-
-    def pages(self, path):
-        if path.endswith('/files'):
-            return [{'filename': PATH, 'status': 'modified'}]
-        if path.endswith('/commits'):
-            return [{'commit': {'message': 'Add feature'}}]
-        raise AssertionError(path)
-
-    def api(self, path, data=None, method=None):
-        self.calls.append((path, data, method))
-        if path == 'pulls/7':
-            return copy.deepcopy(self.pr)
-        if path == 'git/commits/' + SHA:
-            return {'tree': {'sha': OTHER_SHA}}
-        if path == f'git/trees/{OTHER_SHA}?recursive=1':
-            return {'tree': [{'path': PATH, 'mode': self.mode, 'type': 'blob'}]}
-        if path.startswith('contents/'):
-            return {'type': 'file', 'size': len(ORIGINAL),
-                    'content': base64.b64encode(ORIGINAL.encode()).decode()}
-        if path == 'git/refs':
-            if self.reserved:
-                raise fix.Stop('API request failed with HTTP 422.')
-            self.reserved = True
-            return {}
-        if path.startswith('git/ref/heads/'):
-            return {'object': {'sha': SHA}}
-        if path in ('git/blobs', 'git/trees', 'git/commits'):
-            return {'sha': OTHER_SHA}
-        if path.startswith('git/refs/heads/'):
-            return {}
-        if path == 'pulls' and data:
-            return {'html_url': 'https://github.com/owner/repo/pull/8'}
-        raise AssertionError(path)
-
-
-class FixTests(unittest.TestCase):
-    def setUp(self):
-        self.tmp = tempfile.TemporaryDirectory()
-        self.addCleanup(self.tmp.cleanup)
-        self.previous = Path.cwd()
-        os.chdir(self.tmp.name)
-        self.addCleanup(os.chdir, self.previous)
-        self.env = patch.dict(os.environ, {
-            'GITHUB_OUTPUT': str(Path('outputs').resolve()),
-            'GITHUB_STEP_SUMMARY': str(Path('summary').resolve()),
-            'GITHUB_EVENT_PATH': str(Path('event.json').resolve()),
-            'GITHUB_EVENT_NAME': 'workflow_run', 'GITHUB_RUN_ID': '123',
-            'VALIDATION_RESULT': 'failure', 'LLM_API_KEY': 'dummy', 'PR_NUMBER': '7',
-        })
-        self.env.start()
-        self.addCleanup(self.env.stop)
-        fix.save('event.json', {'workflow_run': {'id': 99}})
-        self.gh = FakeGitHub()
-
-    def proposal(self):
-        return {'repository': 'owner/repo', 'pr_number': 7, 'head_sha': SHA,
-                'branch': f'shizhen-fix/pr-7-{SHA[:12]}',
-                'edits': [EDIT], 'original_hashes': {PATH: fix.digest(ORIGINAL)},
-                'decisions': [{'finding': 1, 'decision': 'fix', 'reason': 'Reject negative initial value.'}]}
-
-    def handoff(self):
-        return {'repository': 'owner/repo', 'pr_number': 7, 'head_sha': SHA,
-                'run_id': 99, 'run_attempt': 1,
-                'review': {'review': {'key_issues_to_review': [{'issue_header': 'Bug'}]}}}
-
-    def test_only_verified_numeric_author_id_is_allowed(self):
-        for changed in [{'user': {'id': 9, 'login': 'shiverin'}},
-                        {'state': 'closed'}, {'draft': True},
-                        {'head': {'ref': 'shizhen-fix/pr-7', 'repo': {}, 'sha': SHA}}]:
-            pr = pull_request()
-            pr.update(changed)
-            with self.subTest(changed=changed), self.assertRaises(fix.Stop):
+    def test_closed_draft_missing_fork_and_fix_branches_are_rejected(self):
+        for case in ['closed', 'draft', 'fork', 'branch']:
+            pr = pull()
+            if case == 'closed': pr['state'] = 'closed'
+            if case == 'draft': pr['draft'] = True
+            if case == 'fork': pr['head']['repo'] = None
+            if case == 'branch': pr['head']['ref'] = 'shizhen-fix/pr-7-old'
+            with self.subTest(case=case), self.assertRaises(fix.Stop):
                 fix.eligible(pr)
-        fix.eligible(pull_request())
 
-    def test_reject_traversal_configs_and_ambiguous_edits(self):
-        for path in ['../x.java', '/src/main/java/X.java', 'src/main/java/../X.java',
-                     'src/main/java//X.java', '.github/workflows/a.yml', 'build.gradle',
-                     'src/main/java/evil\\X.java']:
-            with self.subTest(path=path):
-                self.assertFalse(fix.allowed_path(path))
-        self.assertEqual(fix.apply_edits([EDIT], {PATH: ORIGINAL}, {PATH})[PATH],
-                         ORIGINAL.replace('amount = -1', 'amount = 0'))
-        for edits in [[{**EDIT, 'before': ''}], [{**EDIT, 'before': 'not present'}],
-                      [{**EDIT, 'path': 'build.gradle'}], [EDIT, EDIT]]:
-            with self.subTest(edits=edits), self.assertRaises(fix.Stop):
-                fix.apply_edits(edits, {PATH: ORIGINAL}, {PATH})
+    def test_immutable_sha_and_positive_number_validation(self):
+        self.assertEqual(fix.require_number('38694141097'), 38694141097)
+        for value in ['0', '-1', '2.1', '$(id)', '１２']:
+            with self.assertRaises(fix.Stop): fix.require_number(value)
+        for value in ['main', '../../secret', 'a' * 39, None]:
+            with self.assertRaises(fix.Stop): fix.require_sha(value)
 
-    def test_symlinks_and_executable_files_are_not_followed(self):
-        for mode in ['120000', '100755']:
-            gh = FakeGitHub()
-            gh.mode = mode
+    def test_paths_cannot_escape_or_modify_automation(self):
+        self.assertTrue(fix.allowed_path(FILE))
+        for path in ['../x.java', '/src/main/java/A.java', 'src/main/java/../A.java',
+                     '.github/workflows/review.yml', 'build.gradle', '.env',
+                     'src/main/java/.git/x.java', 'src/main/java/evil\n.java',
+                     'src//main/java/A.java', 'src\\main\\java\\A.java']:
+            with self.subTest(path=path): self.assertFalse(fix.allowed_path(path))
+
+    def test_exact_edit_changes_only_the_selected_substring(self):
+        actual = fix.apply_edits([{'path': FILE, 'before': '-1', 'after': '0'}],
+                                 {FILE: SOURCE}, {FILE})
+        self.assertEqual(actual, {FILE: SOURCE.replace('-1', '0')})
+
+    def test_ambiguous_missing_empty_and_unrelated_edits_are_rejected(self):
+        for before in ['class', 'absent', '']:
+            text = SOURCE + (' class' if before == 'class' else '')
             with self.assertRaises(fix.Stop):
-                fix.file_at(gh, SHA, PATH)
-            self.assertFalse(any(call[0].startswith('contents/') for call in gh.calls))
-
-    def test_wrong_author_and_stale_reviews_never_call_model_or_reserve_branch(self):
-        for changes in [{'user': {'id': 4}}, {'head': {**self.gh.pr['head'], 'sha': OTHER_SHA}}]:
-            self.gh = FakeGitHub()
-            self.gh.pr.update(changes)
-            with patch.object(fix, 'handoff_from_run', return_value=self.handoff()), \
-                    patch.object(fix, 'request_json') as model, self.assertRaises(fix.Stop):
-                fix.generate(self.gh)
-            model.assert_not_called()
-            self.assertFalse(self.gh.reserved)
-
-    def test_manual_runs_and_reviewer_handoffs_also_enforce_author_gate(self):
-        self.gh.pr['user']['id'] = 4
-        fix.save('event.json', {'inputs': {'pr_number': 7}})
-        with patch.dict(os.environ, {'GITHUB_EVENT_NAME': 'workflow_dispatch'}), \
-                patch.object(fix, 'manual_handoff') as lookup, self.assertRaises(fix.Stop):
-            fix.generate(self.gh)
-        lookup.assert_not_called()
-        fix.handoff(self.gh)
-        self.assertFalse(Path('review-head.json').exists())
-
-    def test_no_findings_and_accepted_fixes_do_not_call_model(self):
-        handoff = self.handoff()
-        handoff['review']['review']['key_issues_to_review'] = []
-        with patch.object(fix, 'handoff_from_run', return_value=handoff), \
-                patch.object(fix, 'request_json') as model, self.assertRaises(fix.Stop):
-            fix.generate(self.gh)
-        model.assert_not_called()
-        with patch.object(fix, 'handoff_from_run', return_value=self.handoff()), \
-                patch.object(self.gh, 'pages', return_value=[{'commit': {'message': 'Apply shizhen-fix for PR #7'}}]), \
-                patch.object(fix, 'request_json') as model, self.assertRaises(fix.Stop):
-            fix.generate(self.gh)
-        model.assert_not_called()
-
-    def test_valid_proposal_and_duplicate_attempt_reservation(self):
-        plan = {'decisions': self.proposal()['decisions'], 'edits': [EDIT]}
-        response = {'choices': [{'finish_reason': 'stop', 'message': {'content': json.dumps(plan)}}]}
-        with patch.object(fix, 'handoff_from_run', return_value=self.handoff()), \
-                patch.object(fix, 'request_json', return_value=response) as model:
-            fix.generate(self.gh)
-            self.assertEqual(model.call_args.args[0], fix.ENDPOINT)
-            self.assertEqual(model.call_args.args[2]['model'], 'x-test-1')
-            self.assertTrue(Path('proposal.json').exists())
-            with self.assertRaises(fix.Stop):
-                fix.generate(self.gh)
-            self.assertEqual(model.call_count, 1)
-        fix.validate_proposal(self.gh, fix.load_json('proposal.json'))
-
-    def test_publisher_rechecks_author_head_scope_and_hashes(self):
-        proposal = self.proposal()
-        for changed in [{'user': {'id': 9}}, {'head': {**self.gh.pr['head'], 'sha': OTHER_SHA}}]:
-            gh = FakeGitHub()
-            gh.pr.update(changed)
-            with self.assertRaises(fix.Stop):
-                fix.validate_proposal(gh, proposal)
-        proposal['original_hashes'][PATH] = 'wrong'
+                fix.apply_edits([{'path': FILE, 'before': before, 'after': 'other'}],
+                                {FILE: text}, {FILE})
         with self.assertRaises(fix.Stop):
-            fix.validate_proposal(self.gh, proposal)
+            fix.apply_edits([{'path': FILE, 'before': '-1', 'after': '0'}], {FILE: SOURCE}, set())
 
-    def test_failed_checks_publish_only_draft_and_preserve_original_branch(self):
-        for fork in [False, True]:
-            gh = FakeGitHub()
-            if fork:
-                gh.pr['head']['repo']['full_name'] = 'shiverin/repo'
-            fix.save('proposal.json', self.proposal())
-            fix.publish(gh)
-            created = [data for path, data, _ in gh.calls if path == 'pulls'][0]
-            self.assertTrue(created['draft'])
-            self.assertEqual(created['base'], 'master' if fork else 'my-feature')
-            self.assertIn('**failure**', created['body'])
-            writes = [path for path, data, _ in gh.calls if data]
-            self.assertFalse(any(path.startswith('git/refs/heads/my-feature') for path in writes))
-            self.assertFalse(any('/merge' in path or '/reviews' in path for path in writes))
+    def test_file_modes_reject_symlinks_and_executables(self):
+        gh = Mock()
+        for mode in ['120000', '100755', '160000']:
+            gh._trees = {HEAD: {FILE: {'mode': mode, 'type': 'blob'}}}
+            with self.assertRaises(fix.Stop): fix.file_at(gh, HEAD, FILE)
+            gh.api.assert_not_called()
 
-    def test_changed_head_during_review_never_exports_handoff(self):
-        fix.handoff(self.gh)
-        self.gh.pr['head']['sha'] = OTHER_SHA
+    def test_truncated_tree_is_rejected(self):
+        gh = fix.GitHub('team/repo', 'fake')
+        gh.api = Mock(side_effect=[{'tree': {'sha': 'b' * 40}}, {'truncated': True}])
+        with self.assertRaises(fix.Stop): fix.file_at(gh, HEAD, FILE)
+
+    def test_stale_proposal_stops_before_reading_source(self):
+        gh = Mock(repository='team/repo')
+        pr = pull(); pr['head']['sha'] = 'b' * 40
+        gh.api.return_value = pr
         with self.assertRaises(fix.Stop):
-            fix.finish_handoff(self.gh)
-        self.assertFalse(Path('review-handoff/handoff.json').exists())
+            fix.validate_proposal(gh, {'repository': 'team/repo', 'pr_number': 7, 'head_sha': HEAD})
+        self.assertEqual(gh.api.call_count, 1)
 
-    def test_artifact_run_identity_and_archive_contents_are_verified(self):
-        run = {'path': '.github/workflows/shizhen-review.yml', 'name': 'shizhen-review',
-               'conclusion': 'success', 'event': 'pull_request_target',
-               'repository': {'full_name': 'owner/repo'}}
-        artifacts = {'artifacts': [{'id': 1, 'name': 'shizhen-review-handoff-1'}]}
-        buf = io.BytesIO()
-        with zipfile.ZipFile(buf, 'w') as archive:
-            archive.writestr('handoff.json', json.dumps(self.handoff()))
-        with patch.object(self.gh, 'api', side_effect=[run, artifacts]), \
-                patch.object(fix, 'open_request') as urlopen:
-            urlopen.return_value.__enter__.return_value.read.return_value = buf.getvalue()
-            self.assertEqual(fix.handoff_from_run(self.gh, 99)['head_sha'], SHA)
-        for invalid in [{**run, 'conclusion': 'failure'}, {**run, 'path': 'evil.yml'},
-                        {**run, 'repository': {'full_name': 'attacker/repo'}}]:
-            with patch.object(self.gh, 'api', return_value=invalid), self.assertRaises(fix.Stop):
-                fix.handoff_from_run(self.gh, 99)
+    def test_cross_repository_proposal_is_rejected(self):
+        gh = Mock(repository='team/repo')
+        with self.assertRaises(fix.Stop): fix.validate_proposal(gh, {'repository': 'evil/repo'})
+        gh.api.assert_not_called()
 
-    def test_other_authors_review_without_handoff_is_a_clean_skip(self):
-        run = {'path': '.github/workflows/shizhen-review.yml', 'name': 'shizhen-review',
-               'conclusion': 'success', 'event': 'pull_request_target',
-               'repository': {'full_name': 'owner/repo'}}
-        with patch.object(self.gh, 'api', side_effect=[run, {'artifacts': []}]), \
-                self.assertRaisesRegex(fix.Stop, '^Skipped:'):
-            fix.handoff_from_run(self.gh, 99)
-
-    def test_redirects_drop_credentials_and_reject_non_https(self):
-        request = fix.urllib.request.Request('https://api.github.com/resource',
-                                            headers={'Authorization': 'Bearer dummy'})
+    def test_redirect_strips_bearer_on_host_change(self):
         handler = fix.SafeRedirect()
-        redirected = handler.redirect_request(request, None, 302, 'Found', {},
-                                               'https://storage.example.com/artifact.zip')
-        self.assertIsNone(redirected.get_header('Authorization'))
+        req = urllib.request.Request('https://api.github.com/artifact', headers={'Authorization': 'Bearer fake'})
+        new = handler.redirect_request(req, None, 302, 'Found', {}, 'https://storage.example/archive')
+        self.assertIsNone(new.get_header('Authorization'))
+        same = handler.redirect_request(req, None, 302, 'Found', {}, 'https://api.github.com/next')
+        self.assertEqual(same.get_header('Authorization'), 'Bearer fake')
         with self.assertRaises(fix.Stop):
-            handler.redirect_request(request, None, 302, 'Found', {}, 'http://unsafe.example.com')
+            handler.redirect_request(req, None, 302, 'Found', {}, 'http://storage.example/archive')
 
-    def test_incomplete_provider_response_never_writes_a_proposal(self):
-        response = {'choices': [{'finish_reason': 'length', 'message': {'content': '{}'}}]}
-        with patch.object(fix, 'handoff_from_run', return_value=self.handoff()), \
-                patch.object(fix, 'request_json', return_value=response), self.assertRaises(fix.Stop):
-            fix.generate(self.gh)
+
+class TriggerGuards(unittest.TestCase):
+    def setUp(self):
+        self.temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temporary.cleanup)
+        self.previous = Path.cwd()
+        os.chdir(self.temporary.name)
+        self.addCleanup(os.chdir, self.previous)
+        self.environ = patch.dict(os.environ, {
+            'GITHUB_EVENT_PATH': str(Path.cwd() / 'event.json'),
+            'GITHUB_EVENT_NAME': 'workflow_dispatch', 'GITHUB_OUTPUT': str(Path.cwd() / 'output'),
+            'GITHUB_STEP_SUMMARY': str(Path.cwd() / 'summary'),
+        })
+        self.environ.start(); self.addCleanup(self.environ.stop)
+        Path('event.json').write_text(json.dumps({'inputs': {'pr_number': 7}}))
+
+    def test_manual_run_cannot_bypass_author_restriction(self):
+        gh = Mock(repository='team/repo')
+        pr = pull(); pr['user']['id'] += 1; gh.api.return_value = pr
+        with patch.object(fix, 'manual_handoff') as handoff, patch.object(fix, 'request_json') as model:
+            with self.assertRaises(fix.Stop): fix.generate(gh)
+            handoff.assert_not_called(); model.assert_not_called()
+
+    def test_automatic_run_cannot_bypass_author_restriction(self):
+        os.environ['GITHUB_EVENT_NAME'] = 'workflow_run'
+        Path('event.json').write_text(json.dumps({'workflow_run': {'id': 123}}))
+        gh = Mock(repository='team/repo'); pr = pull(); pr['user']['id'] += 1
+        gh.api.return_value = pr
+        with patch.object(fix, 'handoff_from_run', return_value={'pr_number': 7}), \
+             patch.object(fix, 'request_json') as model:
+            with self.assertRaises(fix.Stop): fix.generate(gh)
+            model.assert_not_called()
+
+    def test_accepted_fix_stops_repair_loop(self):
+        gh = Mock(repository='team/repo'); gh.api.return_value = pull()
+        gh.pages.return_value = [{'commit': {'message': 'Apply shizhen-fix for PR #7'}}]
+        with patch.object(fix, 'manual_handoff', return_value={'pr_number': 7, 'head_sha': HEAD}), \
+             patch.object(fix, 'request_json') as model:
+            with self.assertRaises(fix.Stop): fix.generate(gh)
+            model.assert_not_called()
+
+    def test_atomic_reservation_blocks_duplicate_model_calls(self):
+        gh = Mock(repository='team/repo')
+        gh.api.side_effect = [pull(), pull(), fix.Stop('API request failed with HTTP 422.')]
+        gh.pages.side_effect = [[], [{'filename': FILE, 'status': 'modified'}]]
+        data = {'pr_number': 7, 'head_sha': HEAD,
+                'review': {'review': {'key_issues_to_review': [{'issue': 'bad input'}]}}}
+        with patch.object(fix, 'manual_handoff', return_value=data), \
+             patch.object(fix, 'file_at', return_value=SOURCE), patch.object(fix, 'request_json') as model:
+            with self.assertRaises(fix.Stop): fix.generate(gh)
+            model.assert_not_called()
+
+    def test_handoff_rejects_wrong_workflow_without_downloading_artifacts(self):
+        gh = Mock(repository='team/repo')
+        gh.api.return_value = {'path': '.github/workflows/other.yml', 'name': 'shizhen-review'}
+        with patch.object(fix, 'open_request') as download:
+            with self.assertRaises(fix.Stop): fix.handoff_from_run(gh, 123)
+            download.assert_not_called()
+
+    def test_handoff_binds_archive_to_the_source_run(self):
+        gh = Mock(repository='team/repo', token='fake', prefix='https://api.github.com/repos/team/repo/')
+        run = {'path': '.github/workflows/shizhen-review.yml', 'name': 'shizhen-review',
+               'conclusion': 'success', 'event': 'pull_request_target',
+               'repository': {'full_name': 'team/repo'}}
+        gh.api.side_effect = [run, {'artifacts': [{'id': 1, 'name': 'shizhen-review-handoff'}]}]
+        archive = io.BytesIO()
+        with zipfile.ZipFile(archive, 'w') as stream:
+            stream.writestr('handoff.json', json.dumps({'repository': 'team/repo', 'run_id': 999}))
+        with patch.object(fix, 'open_request', return_value=io.BytesIO(archive.getvalue())):
+            with self.assertRaises(fix.Stop): fix.handoff_from_run(gh, 123)
+
+    def test_materialization_rejects_symlinks_and_traversal(self):
+        for malicious in ['symlink', 'traversal']:
+            raw = io.BytesIO()
+            with tarfile.open(fileobj=raw, mode='w:gz') as archive:
+                entry = tarfile.TarInfo('root/link' if malicious == 'symlink' else 'root/../../outside')
+                if malicious == 'symlink':
+                    entry.type = tarfile.SYMTYPE; entry.linkname = '/tmp/outside'
+                archive.addfile(entry, io.BytesIO())
+            Path('proposal.json').write_text(json.dumps({'head_sha': HEAD}))
+            gh = Mock(prefix='https://api.github.com/repos/team/repo/', token='fake')
+            with patch.object(fix, 'validate_proposal', return_value=(pull(), {})), \
+                 patch.object(fix, 'open_request', return_value=io.BytesIO(raw.getvalue())):
+                with self.subTest(case=malicious), self.assertRaises(fix.Stop): fix.materialize(gh)
+            Path('candidate').rmdir()
+
+    def test_publication_is_draft_only_and_does_not_edit_original_branch(self):
+        for fork in [False, True]:
+            pr = pull(fork=fork)
+            proposal = {'pr_number': 7, 'head_sha': HEAD, 'branch': 'shizhen-fix/pr-7-' + HEAD[:12],
+                        'decisions': [{'finding': 1, 'decision': 'fix', 'reason': 'Reject negative values.'}]}
+            Path('proposal.json').write_text(json.dumps(proposal))
+            gh = Mock(repository='team/repo')
+            def api(path, data=None, method=None):
+                if path.startswith('git/ref/'): return {'object': {'sha': HEAD}}
+                if path.startswith('git/commits/') and data is None: return {'tree': {'sha': 'b' * 40}}
+                if path == 'git/blobs': return {'sha': 'c' * 40}
+                if path == 'git/trees': return {'sha': 'd' * 40}
+                if path == 'git/commits': return {'sha': 'e' * 40}
+                if path.startswith('git/refs/'): return {}
+                if path == 'pulls': return {'html_url': 'https://github.com/team/repo/pull/8'}
+                self.fail('Unexpected API operation: ' + path)
+            gh.api.side_effect = api
+            with patch.object(fix, 'validate_proposal', return_value=(pr, {FILE: SOURCE})), \
+                 patch.dict(os.environ, {'GITHUB_RUN_ID': '123', 'VALIDATION_RESULT': 'failure'}):
+                fix.publish(gh)
+            created = [c for c in gh.api.call_args_list if c.args[0] == 'pulls'][0].args[1]
+            self.assertIs(created['draft'], True)
+            self.assertEqual(created['base'], 'main' if fork else 'feature')
+            self.assertIn('**failure**', created['body'])
+            writes = [c.args[0] for c in gh.api.call_args_list if len(c.args) > 1]
+            self.assertFalse(any('/feature' in p or 'merge' in p or 'reviews' in p for p in writes))
+
+    def test_generate_validate_and_materialize_one_supported_repair(self):
+        gh = Mock(repository='team/repo', prefix='https://api.github.com/repos/team/repo/', token='fake')
+        gh.api.return_value = pull()
+        gh.pages.side_effect = [[], [{'filename': FILE, 'status': 'modified'}]]
+        review = {'pr_number': 7, 'head_sha': HEAD, 'run_id': 123,
+                  'review': {'review': {'key_issues_to_review': [{'issue': 'negative value'}]}}}
+        plan = {'decisions': [{'finding': 1, 'decision': 'fix', 'reason': 'Reject negative default.'}],
+                'edits': [{'path': FILE, 'before': '-1', 'after': '0'}]}
+        reply = {'choices': [{'finish_reason': 'stop', 'message': {'content': json.dumps(plan)}}]}
+        with patch.object(fix, 'manual_handoff', return_value=review), \
+             patch.object(fix, 'file_at', return_value=SOURCE), \
+             patch.object(fix, 'request_json', return_value=reply) as model, \
+             patch.dict(os.environ, {'LLM_API_KEY': 'fake-not-sent'}):
+            fix.generate(gh)
+        self.assertIn('proposed=true', Path('output').read_text())
+        sent = model.call_args.args[2]
+        self.assertEqual(sent['model'], 'x-test-1')
+        self.assertEqual(sent['reasoning_effort'], 'high')
+        self.assertNotIn('fake-not-sent', json.dumps(sent))
+        proposal = json.loads(Path('proposal.json').read_text())
+        gh.pages.side_effect = None
+        gh.pages.return_value = [{'filename': FILE, 'status': 'modified'}]
+        with patch.object(fix, 'file_at', return_value=SOURCE):
+            pr, updated = fix.validate_proposal(gh, proposal)
+        self.assertEqual(updated[FILE], SOURCE.replace('-1', '0'))
+        raw = io.BytesIO()
+        with tarfile.open(fileobj=raw, mode='w:gz') as archive:
+            entry = tarfile.TarInfo('snapshot/' + FILE)
+            entry.size = len(SOURCE.encode())
+            archive.addfile(entry, io.BytesIO(SOURCE.encode()))
+        with patch.object(fix, 'validate_proposal', return_value=(pr, updated)), \
+             patch.object(fix, 'open_request', return_value=io.BytesIO(raw.getvalue())):
+            fix.materialize(gh)
+        self.assertEqual((Path('candidate') / FILE).read_text(), updated[FILE])
+
+    def test_incomplete_model_response_never_publishes_a_proposal(self):
+        gh = Mock(repository='team/repo'); gh.api.return_value = pull()
+        gh.pages.side_effect = [[], [{'filename': FILE, 'status': 'modified'}]]
+        review = {'pr_number': 7, 'head_sha': HEAD, 'run_id': 123,
+                  'review': {'review': {'key_issues_to_review': [{'issue': 'negative value'}]}}}
+        reply = {'choices': [{'finish_reason': 'length', 'message': {'content': '{}'}}]}
+        with patch.object(fix, 'manual_handoff', return_value=review), \
+             patch.object(fix, 'file_at', return_value=SOURCE), \
+             patch.object(fix, 'request_json', return_value=reply), \
+             patch.dict(os.environ, {'LLM_API_KEY': 'fake-not-sent'}):
+            with self.assertRaises(fix.Stop): fix.generate(gh)
         self.assertFalse(Path('proposal.json').exists())
 
 
