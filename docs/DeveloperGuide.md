@@ -581,7 +581,49 @@ testers are expected to do more *exploratory* testing.
    1. Relaunch the app by double-clicking the JAR file.<br>
        Expected: The most recent window size and location are retained.
 
-1. _{ more test cases …​ }_
+### Adding and finding students
+
+1. Start with sample data in a fresh application folder. Enter
+   `add n/Riya Kumar g/Anil Kumar gp/97654321 p/98765432 e/riya@example.com a/12 Clementi Ave 3 f/75.50`.<br>
+   Expected: One student is added, the full list is displayed, and the confirmation contains Riya's supplied details.
+   Her card shows `S$75.50 outstanding`. Enter `find Riya`, then `view 1` to inspect her complete record.
+
+1. Enter `add n/riya  kumar g/Anil Kumar gp/9765-4321`.<br>
+   Expected: The duplicate is rejected; the records and current search result stay unchanged.
+
+1. Enter `add n/Zoe Tan g/Mei Tan gp/92345678`, then `find Zoe` and `view 1`.<br>
+   Expected: The student is added without optional contacts or a fee. The pane shows `Not provided` for phone,
+   email and address, and `Outstanding fee: None`.
+
+1. Enter `add n/Missing Guardian`, then `find @@@`.<br>
+   Expected: Both commands report errors and leave the records and displayed list unchanged.
+
+1. Enter `find riya ZOE`, then `find Riy`.<br>
+   Expected: The first command lists Riya and Zoe once each, using case-insensitive OR matching of complete name words.
+   The partial word `Riy` matches neither student. Enter `list` to restore all students.
+
+### Filtering and updating outstanding fees
+
+1. Start with sample data in a fresh application folder and enter `fees`.<br>
+   Expected: Alex Yeoh, Charlotte Oliveiro and Irfan Ibrahim are shown in that order, indexed 1 to 3.
+   The feedback reports `3 student(s) with outstanding fees.`
+
+1. Enter `view 1`, then `setoutstanding 1 75.50`.<br>
+   Expected: Alex remains selected; his card and details pane show S$75.50. His other fields stay unchanged.
+
+1. Enter `setoutstanding 1 0`.<br>
+   Expected: Alex leaves the filtered list, Charlotte becomes index 1, and Alex's selection and details pane clear.
+
+1. Enter `setoutstanding 1 1.234`, `setoutstanding 01 10`, and `fees extra`.<br>
+   Expected: Each command reports an error; Charlotte and Irfan remain displayed with their original fees.
+
+1. Enter `delete 1` while the fee filter is active.<br>
+   Expected: Charlotte is deleted, rather than the first student of the unfiltered list. Irfan becomes index 1.
+   The confirmation includes Charlotte's guardian and outstanding-fee details.
+
+1. Restart the app and enter `fees`.<br>
+   Expected: Only Irfan remains owing fees; Alex's fee stays cleared and Charlotte stays deleted.
+   Enter `list` to show the remaining students, including Alex.
 
 ### Viewing a student's complete record
 
@@ -626,8 +668,6 @@ testers are expected to do more *exploratory* testing.
    1. Other incorrect delete commands to try: `delete`, `delete x`, `...` (where x is larger than the list size)<br>
       Expected: Similar to previous.
 
-1. _{ more test cases …​ }_
-
 ### Outstanding-fee labels on student cards
 
 1. Start the app in a fresh folder to load the sample students, then resize the window to its minimum size (750 by 450).
@@ -649,8 +689,16 @@ testers are expected to do more *exploratory* testing.
 
 ### Saving data
 
-1. Dealing with missing/corrupted data files
+1. In a disposable application folder, add a student and change their fee. Close and restart the app.<br>
+   Expected: The student's guardian contact, optional fields and updated fee are restored from `data/addressbook.json`.
 
-   1. _{Explain how to simulate missing or corrupted data files and state the expected behavior.}_
+1. Back up `data/addressbook.json` before testing invalid data. With the app closed, replace the disposable file's
+   contents with invalid JSON, then relaunch the app.<br>
+   Expected: The app starts with an empty list. Run `list`, `find Riya`, `fees`, or `help`, then close the app.
+   The invalid data file remains unchanged because these commands do not save student data.
 
-1. _{ more test cases …​ }_
+1. Relaunch and execute a valid `add` command.<br>
+   Expected: The new record is saved as valid JSON, replacing the invalid file. Restore the backup if needed.
+
+1. Launch the JAR by its absolute path from a different empty working folder.<br>
+   Expected: Data, preferences and logs remain beside the JAR; the unrelated working folder remains empty.
