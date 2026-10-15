@@ -17,7 +17,7 @@ Poco Book is a **desktop application for independent tutors to manage students, 
 
 1. Download the latest `.jar` file from [here](https://github.com/AY2627S1-CS2103T-F09-2a/tp/releases).
 
-1. Copy the file to the folder you want to use as the _home folder_ for your AddressBook.
+1. Copy the file to the folder you want to use as the _home folder_ for Poco Book.
 
 1. Open a terminal, `cd` to the folder containing the JAR file, and run `java -jar addressbook.jar`.<br>
    A GUI similar to the one below should appear in a few seconds. Note how the app contains some sample data.<br>
@@ -222,7 +222,7 @@ _Details coming soon ..._
 ## FAQ
 
 **Q**: How do I transfer my data to another computer?<br>
-**A**: Install the app on the other computer and overwrite the data file it creates with the data file from your previous AddressBook home folder.
+**A**: Install the app on the other computer and overwrite the data file it creates with the data file from your previous Poco Book home folder.
 
 --------------------------------------------------------------------------------------------------------------------
 
