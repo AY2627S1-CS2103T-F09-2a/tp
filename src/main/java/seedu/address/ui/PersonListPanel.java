@@ -1,8 +1,11 @@
 package seedu.address.ui;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Logger;
 
 import javafx.beans.property.ReadOnlyObjectProperty;
+import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.ListCell;
@@ -21,6 +24,9 @@ public class PersonListPanel extends UiPart<Region> {
     @FXML
     private ListView<Person> personListView;
 
+    /** Maps each student replaced in the list since the last {@link #retainSelection} to its replacement. */
+    private final Map<Person, Person> replacements = new HashMap<>();
+
     /**
      * Creates a {@code PersonListPanel} with the given {@code ObservableList}.
      */
@@ -28,6 +34,7 @@ public class PersonListPanel extends UiPart<Region> {
         super(FXML);
         personListView.setItems(personList);
         personListView.setCellFactory(listView -> new PersonListViewCell());
+        personList.addListener(this::recordReplacements);
     }
 
     /**
@@ -44,17 +51,30 @@ public class PersonListPanel extends UiPart<Region> {
 
     /**
      * Restores the same student after a list update, or clears a reused list-index selection.
+     * A student edited during the update is restored as their edited version.
      */
     public void retainSelection(Person person) {
-        if (person != null) {
-            for (Person displayedPerson : personListView.getItems()) {
-                if (displayedPerson.isSamePerson(person)) {
-                    selectPerson(displayedPerson);
-                    return;
-                }
+        Person current = person == null ? null : replacements.getOrDefault(person, person);
+        replacements.clear();
+        if (current != null && personListView.getItems().contains(current)) {
+            selectPerson(current);
+        } else {
+            personListView.getSelectionModel().clearSelection();
+        }
+    }
+
+    /**
+     * Records the students replaced in place by {@code change}, such as by an edit that keeps them displayed.
+     */
+    private void recordReplacements(ListChangeListener.Change<? extends Person> change) {
+        while (change.next()) {
+            if (!change.wasReplaced() || change.getRemovedSize() != change.getAddedSize()) {
+                continue;
+            }
+            for (int i = 0; i < change.getRemovedSize(); i++) {
+                replacements.put(change.getRemoved().get(i), change.getAddedSubList().get(i));
             }
         }
-        personListView.getSelectionModel().clearSelection();
     }
 
     public ReadOnlyObjectProperty<Person> selectedPersonProperty() {

@@ -11,6 +11,7 @@ import java.nio.file.Path;
  */
 public final class ApplicationPaths {
 
+    private static final int MAX_SYMLINK_DEPTH = 40;
     private static final Path HOME_FOLDER = locateHomeFolder();
 
     private ApplicationPaths() {}
@@ -53,7 +54,7 @@ public final class ApplicationPaths {
             Path realHome = absoluteHome.toRealPath();
             Path current = target;
             while (current != null && current.startsWith(absoluteHome)) {
-                if (Files.exists(current, LinkOption.NOFOLLOW_LINKS) && !current.toRealPath().startsWith(realHome)) {
+                if (Files.exists(current, LinkOption.NOFOLLOW_LINKS) && !resolvesInside(current, realHome)) {
                     throw new IllegalArgumentException("Runtime files must stay inside the application home folder.");
                 }
                 current = current.getParent();
@@ -62,5 +63,27 @@ public final class ApplicationPaths {
             throw new IllegalStateException("Cannot validate the runtime file path.", e);
         }
         return target;
+    }
+
+    private static boolean resolvesInside(Path path, Path realHome) throws IOException {
+        if (Files.exists(path)) {
+            return path.toRealPath().startsWith(realHome);
+        }
+        Path current = path;
+        for (int depth = 0; depth < MAX_SYMLINK_DEPTH && Files.isSymbolicLink(current); depth++) {
+            Path parent = current.getParent();
+            if (parent == null || !Files.exists(parent)) {
+                return false;
+            }
+            Path realParent = parent.toRealPath();
+            if (!realParent.startsWith(realHome)) {
+                return false;
+            }
+            current = realParent.resolve(Files.readSymbolicLink(current)).normalize();
+            if (!current.startsWith(realHome)) {
+                return false;
+            }
+        }
+        return !Files.isSymbolicLink(current) && current.startsWith(realHome);
     }
 }

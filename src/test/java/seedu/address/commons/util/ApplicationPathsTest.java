@@ -57,4 +57,23 @@ public class ApplicationPathsTest {
         assertThrows(IllegalArgumentException.class, () ->
                 ApplicationPaths.resolveWithin(home, Path.of("data", "addressbook.json")));
     }
+
+    @Test
+    @DisabledOnOs(OS.WINDOWS)
+    public void resolveWithin_danglingSymbolicLinkOutsideHome_rejects() throws Exception {
+        Path home = Files.createDirectory(directory.resolve("home"));
+        Path missingOutside = directory.resolve("outside").resolve("missing");
+        Files.createSymbolicLink(home.resolve("data"), missingOutside);
+        assertThrows(IllegalArgumentException.class, () ->
+                ApplicationPaths.resolveWithin(home, Path.of("data", "addressbook.json")));
+    }
+
+    @Test
+    @DisabledOnOs(OS.WINDOWS)
+    public void resolveWithin_danglingSymbolicLinkInsideHome_staysInsideHome() throws Exception {
+        Path home = Files.createDirectory(directory.resolve("home"));
+        Files.createSymbolicLink(home.resolve("data"), Path.of("storage"));
+        assertEquals(home.resolve("data/addressbook.json"),
+                ApplicationPaths.resolveWithin(home, Path.of("data", "addressbook.json")));
+    }
 }

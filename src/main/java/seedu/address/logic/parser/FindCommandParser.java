@@ -2,6 +2,7 @@ package seedu.address.logic.parser;
 
 import static seedu.address.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
 
+import java.text.Normalizer;
 import java.util.List;
 
 import seedu.address.logic.commands.FindCommand;
@@ -26,9 +27,9 @@ public class FindCommandParser implements Parser<FindCommand> {
                     String.format(MESSAGE_INVALID_COMMAND_FORMAT, FindCommand.MESSAGE_USAGE));
         }
 
-        String[] nameKeywords = trimmedArgs.split("\\s+");
+        String[] nameKeywords = Normalizer.normalize(trimmedArgs, Normalizer.Form.NFC).split("\\s+");
         for (String keyword : nameKeywords) {
-            if (!Name.isValidName(keyword)) {
+            if (!keyword.matches(Name.VALIDATION_REGEX)) {
                 throw new ParseException(
                         String.format(MESSAGE_INVALID_COMMAND_FORMAT, FindCommand.MESSAGE_USAGE));
             }

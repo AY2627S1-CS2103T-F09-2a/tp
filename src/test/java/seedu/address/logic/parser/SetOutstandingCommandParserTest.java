@@ -3,6 +3,7 @@ package seedu.address.logic.parser;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static seedu.address.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
+import static seedu.address.logic.Messages.MESSAGE_INVALID_STUDENT_DISPLAYED_INDEX;
 
 import org.junit.jupiter.api.Test;
 
@@ -38,10 +39,18 @@ public class SetOutstandingCommandParserTest {
 
     @Test
     public void parse_invalidIndexOrArgumentCount_reportsCommandFormat() {
-        for (String input : new String[]{"2147483648 1", "0 1", "abc 1", "1", "1 2 3"}) {
+        for (String input : new String[]{"0 1", "abc 1", "1", "1 2 3"}) {
             ParseException exception = assertThrows(ParseException.class, () -> parser.parse(input));
             assertEquals(String.format(MESSAGE_INVALID_COMMAND_FORMAT, SetOutstandingCommand.MESSAGE_USAGE),
                     exception.getMessage());
+        }
+    }
+
+    @Test
+    public void parse_indexTooLargeForInt_reportsInvalidStudentIndex() {
+        for (String input : new String[]{"2147483648 1", "999999999999999999999999999999 1"}) {
+            ParseException exception = assertThrows(ParseException.class, () -> parser.parse(input));
+            assertEquals(MESSAGE_INVALID_STUDENT_DISPLAYED_INDEX, exception.getMessage());
         }
     }
 

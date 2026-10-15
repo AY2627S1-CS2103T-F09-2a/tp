@@ -54,4 +54,9 @@ public class FindCommand extends Command {
                 .add("predicate", predicate)
                 .toString();
     }
+
+    @Override
+    public boolean shouldSaveAddressBook() {
+        return false;
+    }
 }
