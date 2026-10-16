@@ -15,7 +15,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Stream;
 
 import seedu.address.commons.core.index.Index;
 import seedu.address.logic.commands.EditCommand;
@@ -41,13 +40,13 @@ public class EditCommandParser implements Parser<EditCommand> {
         Index index = ParserUtil.parseIndex(argMultimap.getPreamble(),
                 String.format(MESSAGE_INVALID_COMMAND_FORMAT, EditCommand.MESSAGE_USAGE));
 
-        // Guardian details and fees cannot be edited; reject them rather than absorbing them into another value.
-        if (Stream.of(PREFIX_GUARDIAN_NAME, PREFIX_GUARDIAN_PHONE, PREFIX_OUTSTANDING_FEE)
-                .anyMatch(prefix -> argMultimap.getValue(prefix).isPresent())) {
+        // Fees have a dedicated command; reject the prefix instead of absorbing it into another value.
+        if (argMultimap.getValue(PREFIX_OUTSTANDING_FEE).isPresent()) {
             throw new ParseException(String.format(MESSAGE_INVALID_COMMAND_FORMAT, EditCommand.MESSAGE_USAGE));
         }
 
-        argMultimap.verifyNoDuplicatePrefixesFor(PREFIX_NAME, PREFIX_PHONE, PREFIX_EMAIL, PREFIX_ADDRESS);
+        argMultimap.verifyNoDuplicatePrefixesFor(PREFIX_NAME, PREFIX_PHONE, PREFIX_EMAIL, PREFIX_ADDRESS,
+                PREFIX_GUARDIAN_NAME, PREFIX_GUARDIAN_PHONE);
 
         EditPersonDescriptor editPersonDescriptor = new EditPersonDescriptor();
 
@@ -62,6 +61,14 @@ public class EditCommandParser implements Parser<EditCommand> {
         }
         if (argMultimap.getValue(PREFIX_ADDRESS).isPresent()) {
             editPersonDescriptor.setAddress(ParserUtil.parseAddress(argMultimap.getValue(PREFIX_ADDRESS).get()));
+        }
+        if (argMultimap.getValue(PREFIX_GUARDIAN_NAME).isPresent()) {
+            editPersonDescriptor.setGuardianName(
+                    ParserUtil.parseGuardianName(argMultimap.getValue(PREFIX_GUARDIAN_NAME).get()));
+        }
+        if (argMultimap.getValue(PREFIX_GUARDIAN_PHONE).isPresent()) {
+            editPersonDescriptor.setGuardianPhone(
+                    ParserUtil.parseGuardianPhone(argMultimap.getValue(PREFIX_GUARDIAN_PHONE).get()));
         }
         parseTagsForEdit(argMultimap.getAllValues(PREFIX_TAG)).ifPresent(editPersonDescriptor::setTags);
 

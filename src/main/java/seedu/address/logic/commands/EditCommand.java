@@ -3,6 +3,8 @@ package seedu.address.logic.commands;
 import static java.util.Objects.requireNonNull;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_ADDRESS;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_EMAIL;
+import static seedu.address.logic.parser.CliSyntax.PREFIX_GUARDIAN_NAME;
+import static seedu.address.logic.parser.CliSyntax.PREFIX_GUARDIAN_PHONE;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_NAME;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_PHONE;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_TAG;
@@ -23,6 +25,8 @@ import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.model.Model;
 import seedu.address.model.person.Address;
 import seedu.address.model.person.Email;
+import seedu.address.model.person.GuardianName;
+import seedu.address.model.person.GuardianPhone;
 import seedu.address.model.person.Name;
 import seedu.address.model.person.Person;
 import seedu.address.model.person.Phone;
@@ -43,6 +47,8 @@ public class EditCommand extends Command {
             + "[" + PREFIX_PHONE + "PHONE] "
             + "[" + PREFIX_EMAIL + "EMAIL] "
             + "[" + PREFIX_ADDRESS + "ADDRESS] "
+            + "[" + PREFIX_GUARDIAN_NAME + "GUARDIAN_NAME] "
+            + "[" + PREFIX_GUARDIAN_PHONE + "GUARDIAN_PHONE] "
             + "[" + PREFIX_TAG + "TAG]...\n"
             + "Example: " + COMMAND_WORD + " 1 "
             + PREFIX_PHONE + "91234567 "
@@ -101,8 +107,10 @@ public class EditCommand extends Command {
         Address updatedAddress = editPersonDescriptor.getAddress().or(personToEdit::getAddress).orElse(null);
         Set<Tag> updatedTags = editPersonDescriptor.getTags().orElse(personToEdit.getTags());
 
-        return new Person(updatedName, updatedPhone, updatedEmail, updatedAddress, personToEdit.getGuardianName(),
-                personToEdit.getGuardianPhone(), personToEdit.getOutstandingFee().orElse(null), updatedTags);
+        return new Person(updatedName, updatedPhone, updatedEmail, updatedAddress,
+                editPersonDescriptor.getGuardianName().orElse(personToEdit.getGuardianName()),
+                editPersonDescriptor.getGuardianPhone().orElse(personToEdit.getGuardianPhone()),
+                personToEdit.getOutstandingFee().orElse(null), updatedTags);
     }
 
     @Override
@@ -138,6 +146,8 @@ public class EditCommand extends Command {
         private Email email;
         private Address address;
         private Set<Tag> tags;
+        private GuardianName guardianName;
+        private GuardianPhone guardianPhone;
 
         public EditPersonDescriptor() {}
 
@@ -151,13 +161,31 @@ public class EditCommand extends Command {
             setEmail(toCopy.email);
             setAddress(toCopy.address);
             setTags(toCopy.tags);
+            setGuardianName(toCopy.guardianName);
+            setGuardianPhone(toCopy.guardianPhone);
         }
 
         /**
          * Returns true if at least one field is edited.
          */
         public boolean isAnyFieldEdited() {
-            return CollectionUtil.isAnyNonNull(name, phone, email, address, tags);
+            return CollectionUtil.isAnyNonNull(name, phone, email, address, tags, guardianName, guardianPhone);
+        }
+
+        public void setGuardianName(GuardianName guardianName) {
+            this.guardianName = guardianName;
+        }
+
+        public Optional<GuardianName> getGuardianName() {
+            return Optional.ofNullable(guardianName);
+        }
+
+        public void setGuardianPhone(GuardianPhone guardianPhone) {
+            this.guardianPhone = guardianPhone;
+        }
+
+        public Optional<GuardianPhone> getGuardianPhone() {
+            return Optional.ofNullable(guardianPhone);
         }
 
         public void setName(Name name) {
@@ -224,7 +252,9 @@ public class EditCommand extends Command {
                     && Objects.equals(phone, otherEditPersonDescriptor.phone)
                     && Objects.equals(email, otherEditPersonDescriptor.email)
                     && Objects.equals(address, otherEditPersonDescriptor.address)
-                    && Objects.equals(tags, otherEditPersonDescriptor.tags);
+                    && Objects.equals(tags, otherEditPersonDescriptor.tags)
+                    && Objects.equals(guardianName, otherEditPersonDescriptor.guardianName)
+                    && Objects.equals(guardianPhone, otherEditPersonDescriptor.guardianPhone);
         }
 
         @Override
@@ -234,6 +264,8 @@ public class EditCommand extends Command {
                     .add("phone", phone)
                     .add("email", email)
                     .add("address", address)
+                    .add("guardianName", guardianName)
+                    .add("guardianPhone", guardianPhone)
                     .add("tags", tags)
                     .toString();
         }
