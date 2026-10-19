@@ -53,13 +53,3 @@ If you plan to use IntelliJ IDEA (highly recommended):
    * [Tracing code](https://se-education.org/guides/tutorials/ab3TracingCode.html)
    * [Adding a new command](https://se-education.org/guides/tutorials/ab3AddRemark.html)
    * [Removing fields](https://se-education.org/guides/tutorials/ab3RemovingFields.html)
-
-## Enabling assertions during development
-
-The Gradle application run task enables Java assertions through `applicationDefaultJvmArgs = ['-ea']` in `build.gradle`. Run the app with `./gradlew run` (Windows: `gradlew.bat run`). Passing unit tests alone does not prove that assertions are enabled in an application run.
-
-If you run `seedu.address.Main` directly from IntelliJ instead of through Gradle, open **Run → Edit Configurations**, select that application configuration, add **VM options** if needed, and enter `-ea`. Apply the setting to every direct application configuration you use.
-
-To verify your runner for tutorial preparation, temporarily place `assert false;` in a reachable part of your own tP code, run it, and capture the resulting `AssertionError`. Remove that deliberate failure before committing or running the app normally. Each member should prepare their own tutorial evidence.
-
-For a downloaded JAR, assertions can be enabled explicitly with `java -ea -jar addressbook.jar`.
