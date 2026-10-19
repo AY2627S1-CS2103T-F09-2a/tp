@@ -93,4 +93,9 @@ public class HelpCommand extends Command {
         return other == this || other instanceof HelpCommand command
                 && Objects.equals(targetCommand, command.targetCommand);
     }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(targetCommand);
+    }
 }

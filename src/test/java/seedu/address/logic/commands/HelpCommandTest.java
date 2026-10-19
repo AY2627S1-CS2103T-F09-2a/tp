@@ -8,6 +8,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.logic.commands.CommandTestUtil.assertCommandSuccess;
 import static seedu.address.logic.commands.HelpCommand.SHOWING_HELP_MESSAGE;
 
+import java.util.HashSet;
+import java.util.List;
+
 import org.junit.jupiter.api.Test;
 
 import seedu.address.model.Model;
@@ -57,5 +60,11 @@ public class HelpCommandTest {
         assertNotEquals(command, new HelpCommand());
         assertNotEquals(command, null);
         assertNotEquals(command, "paid");
+    }
+
+    @Test
+    public void hashCode_equalCommands_deduplicateInSet() {
+        assertEquals(2, new HashSet<>(List.of(new HelpCommand("paid"), new HelpCommand("paid"),
+                new HelpCommand(), new HelpCommand())).size());
     }
 }
