@@ -109,6 +109,19 @@ Shows only students with an outstanding fee, in their existing order, with new d
 The result states `N student(s) with outstanding fees.` An empty result is successful.
 This command takes no arguments and does not change student records. Use `list` to restore the full list.
 
+### Totalling all outstanding fees: `feesummary`
+
+Format: `feesummary`
+
+Shows how many students owe fees and the exact total they owe, counting **every stored student**, even when the displayed list is filtered by `find` or `fees`.
+The feedback reads `N student(s) owe a total of S$AMOUNT.` with exactly two decimal places, so a book with no outstanding fees shows `0 student(s) owe a total of S$0.00.`
+The total is the sum of all individual amounts and can therefore be larger than the S$99999.99 per-student maximum.
+
+* This command takes no arguments; extra text produces an invalid-command-format message.
+* The displayed list, the selected student and the stored data are unchanged. `feesummary` does not save anything.
+
+Examples: `feesummary` in a book where two students owe S$180.00 and S$75.50 shows `2 student(s) owe a total of S$255.50.`
+
 ### Setting or clearing an outstanding fee: `setoutstanding`
 
 Format: `setoutstanding INDEX AMOUNT`
@@ -122,6 +135,21 @@ Format: `setoutstanding INDEX AMOUNT`
 * Successful changes use the application's normal saving behaviour. A save error means persistence is not confirmed.
 
 Examples: `setoutstanding 1 150.50`, `setoutstanding 1 0`.
+
+### Recording a full payment: `paid`
+
+Format: `paid INDEX`
+
+Marks the outstanding fee of the student at `INDEX` in the **currently displayed list** as fully paid and reports how much was cleared.
+The feedback reads `Marked outstanding fee as paid for NAME: S$AMOUNT`
+
+* A typical flow is `fees` to see who owes money, then `paid INDEX` for the student who paid.
+* `INDEX` refers to the displayed list, so run `list` or `fees` again if the list has changed since you last looked. Signs, leading zeros, zero, omitted and out-of-range indexes are rejected.
+* A student with no outstanding fee is rejected with `This student has no outstanding fee to mark as paid: NAME`; `setoutstanding INDEX 0` remains available for clearing a fee explicitly.
+* Every other detail of the student, and the active filter, is preserved. A student disappears from a `fees` result once their fee is cleared, and the remaining indexes shift up; in a `find` result the student stays visible if they still match.
+* Rejected input changes neither the data nor the displayed list. A successful payment uses the application's normal saving behaviour, so it survives a restart unless a save error is reported.
+
+Examples: `paid 1`, `paid 2`.
 
 ### Editing a student: `edit`
 
@@ -245,6 +273,8 @@ Action | Format, Examples
 **List** | `list`
 **View** | `view INDEX`<br> e.g., `view 1`
 **Fees** | `fees`
+**Fee summary** | `feesummary`
 **Set outstanding fee** | `setoutstanding INDEX AMOUNT`<br> e.g., `setoutstanding 1 150.50`; `setoutstanding 1 0` clears it
+**Record payment** | `paid INDEX`<br> e.g., `paid 1`
 **Help** | `help`
 **Exit** | `exit`
