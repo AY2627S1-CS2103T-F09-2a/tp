@@ -141,7 +141,7 @@ Examples: `setoutstanding 1 150.50`, `setoutstanding 1 0`.
 Format: `paid INDEX`
 
 Marks the outstanding fee of the student at `INDEX` in the **currently displayed list** as fully paid and reports how much was cleared.
-The feedback reads `Marked outstanding fee as paid for NAME: S$AMOUNT.`
+The feedback reads `Marked outstanding fee as paid for NAME: S$AMOUNT`
 
 * A typical flow is `fees` to see who owes money, then `paid INDEX` for the student who paid.
 * `INDEX` refers to the displayed list, so run `list` or `fees` again if the list has changed since you last looked. Signs, leading zeros, zero, omitted and out-of-range indexes are rejected.
