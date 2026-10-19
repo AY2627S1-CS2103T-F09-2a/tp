@@ -31,7 +31,7 @@ public class FeeSummaryCommandTest {
         model.addPerson(paid);
         model.updateFilteredPersonList(person -> person.equals(paid));
         AddressBook before = new AddressBook(model.getAddressBook());
-        assertEquals("2 student(s) owe a total of S$100000.00.",
+        assertEquals("Across all stored students: 2 student(s) owe a total of S$100000.00. Displayed list unchanged.",
                 new FeeSummaryCommand().execute(model).getFeedbackToUser());
         assertEquals(List.of(paid), model.getFilteredPersonList());
         assertEquals(before, model.getAddressBook());
@@ -41,10 +41,10 @@ public class FeeSummaryCommandTest {
     @Test
     public void execute_noFees_returnsZero() {
         Model model = new ModelManager();
-        assertEquals("0 student(s) owe a total of S$0.00.",
+        assertEquals("Across all stored students: 0 student(s) owe a total of S$0.00. Displayed list unchanged.",
                 new FeeSummaryCommand().execute(model).getFeedbackToUser());
         model.addPerson(new PersonBuilder().build());
-        assertEquals("0 student(s) owe a total of S$0.00.",
+        assertEquals("Across all stored students: 0 student(s) owe a total of S$0.00. Displayed list unchanged.",
                 new FeeSummaryCommand().execute(model).getFeedbackToUser());
     }
 
