@@ -84,8 +84,9 @@ public class AddressBookParserTest {
 
     @Test
     public void parseCommand_help() throws Exception {
-        assertTrue(parser.parseCommand(HelpCommand.COMMAND_WORD) instanceof HelpCommand);
-        assertTrue(parser.parseCommand(HelpCommand.COMMAND_WORD + " 3") instanceof HelpCommand);
+        assertEquals(new HelpCommand(), parser.parseCommand(HelpCommand.COMMAND_WORD));
+        assertEquals(new HelpCommand("paid"), parser.parseCommand("help paid"));
+        assertThrows(ParseException.class, () -> parser.parseCommand("help 3"));
     }
 
     @Test

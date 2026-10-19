@@ -266,6 +266,22 @@ The following activity diagram summarizes what happens when a user executes a ne
 
 _{more aspects and alternatives to be added}_
 
+### Command-specific help
+
+`help` continues to open the help window. `HelpCommandParser` accepts one optional, exact command word;
+`help COMMAND` returns that command's usage in the result area without invoking its parser or action.
+Unknown targets and extra arguments fail with usage instructions and an alphabetical list of available commands.
+
+`HelpCommand` reuses existing `MESSAGE_USAGE` constants for implemented commands, adding index/payment constraints
+where needed. Commands without usage constants have short local entries. The available-command list is derived
+from those entries, so it cannot drift from the supported help targets. When registering a new command, add its
+help entry and update `CommandHelpLogicTest` in the same integration PR; do not advertise unmerged commands.
+
+Targeted help returns a normal `CommandResult` with no help-window, exit or viewed-person action. The command
+never changes the model or filter and returns `false` from `shouldSaveAddressBook()`. Integration tests exercise
+all supported targets, including `clear`, `exit`, `paid` and `list`, against filtered records and an existing data
+file to catch accidental execution, filter replacement or storage writes.
+
 ### \[Proposed\] Data archiving
 
 _{Explain here how the data archiving feature will be implemented}_
@@ -799,6 +815,23 @@ testers are expected to do more *exploratory* testing.
 1. Run `setoutstanding 1 0`. The feedback should show `Set outstanding fee for Alex Yeoh: S$0.00` and his card
    should have no fee label. Run `fees` to verify that Alex is excluded. Restart the app and run `find Alex` to
    verify that the fee remains cleared.
+
+### Reading command-specific help
+
+1. Prerequisites: Keep two students in a disposable book, with only one shown by `find`.
+
+   1. Enter `help paid`.<br>
+      Expected: The result area shows the payment syntax, an example and the whole-fee/displayed-index constraints.
+      No payment is recorded, the displayed list is unchanged and no help window opens.
+
+   1. Enter `help clear`, `help exit` and `help list`.<br>
+      Expected: Each shows instructions only. The app stays open, no student is deleted and the filter is unchanged.
+
+   1. Enter `help unknown` and `help paid 1`.<br>
+      Expected: Each reports invalid format, explains `help [COMMAND]` and lists the available command words.
+
+   1. Enter `help`.<br>
+      Expected: The existing help window opens with the online guide link. Close the help window to continue.
 
 ### Saving data
 
