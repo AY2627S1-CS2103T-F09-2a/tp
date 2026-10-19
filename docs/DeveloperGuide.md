@@ -200,6 +200,29 @@ This section describes some noteworthy details on how certain features are imple
 
 `DeleteConfirmationHandlerTest` replaces the dialog with a confirmer that records each request and returns a fixed answer. It covers confirming, cancelling, deleting from `find` and `fees` results, and a list that changes or empties during confirmation, all without a display. `LogicManagerTest` checks that `Logic#getDeletionTarget(String)` finds the displayed student for a valid `delete` command, and finds no student for other commands or for invalid or malformed indexes. `DeleteConfirmationDialogTest` checks the dialog's content, fee warning, keys, buttons and size with JavaFX. It checks that Enter, Tab, Space and the letters of a typed command leave the dialog open, and that the longest valid names fit without cut-off text. Like the other JavaFX tests, it runs only when the environment variable `POCO_UI_TESTS` is `true`. The branch in `MainWindow#executeCommand(String)` that connects these parts needs the full main window, so the manual tests in [Deleting a student](#deleting-a-student) check it instead.
 
+### Fee summary and full-payment commands
+
+The all-student fee total (`feesummary`) and full-payment recording (`paid`) extend the outstanding-fee feature described under the Logic and Model components. Both commands work on the immutable `OutstandingFee` value object, so no `Person`, `Model` or storage-format change was needed for v1.4.
+
+#### Implementation
+
+`FeeSummaryCommand` walks every person in the **complete** address book via `Model#getAddressBook()#getPersonList()` rather than the filtered list, keeps a running `BigDecimal` total and a count of students whose fee is present, and formats the result with `toPlainString()` so two decimal places are always shown. Iterating the unfiltered book is what makes the total independent of the current `find`/`fees` filter. The command also overrides `Command#shouldSaveAddressBook()` to return `false`, so `LogicManager` does not write to storage for a pure query. `FeeSummaryCommandParser` rejects any argument with `MESSAGE_INVALID_COMMAND_FORMAT`, which keeps `feesummary 1` from being silently accepted.
+
+`PaidCommand` holds an `Index` that was validated by `ParserUtil#parseIndex` at parse time. During execution it (i) rejects an index outside the displayed list, (ii) looks up the target `Person` in that displayed list, and (iii) fails with a user-facing `CommandException` when the fee is absent (`Person#getOutstandingFee()` returns an `Optional`). Only after those checks does it construct a replacement `Person` with every other field copied verbatim — name, optional phone/email/address, guardian name and phone, and tags — and call `Model#setPerson(...)`. Because the `Person` is immutable, this copy-then-replace step is what preserves the fields the command does not touch, and because `setPerson` goes through the updated address book, the active filter and the GUI selection are refreshed by the usual `FilteredList`/`ObservableList` listeners.
+
+The sequence of interactions for a successful payment is shown below.
+
+![Sequence diagram for recording a full payment](images/PaidSequenceDiagram.png)
+
+The corresponding sources are `docs/diagrams/PaidSequenceDiagram.puml`, `FeeSummaryCommand`, `PaidCommand`, `FeeSummaryCommandParser`, `PaidCommandParser` and the `AddressBookParser` cases that register `feesummary` and `paid`.
+
+#### Design considerations
+
+* **Query vs mutation.** Only `paid` mutates and saves; `feesummary` opts out of saving so that a read-only command cannot report a save failure the user cannot act on.
+* **Exact money arithmetic.** Amounts use `BigDecimal` rather than `double`, so totals of many two-decimal fees cannot drift by a cent, and the summary can legitimately exceed the S$99999.99 per-student cap.
+* **Displayed index vs stored index.** Both commands act on the *displayed* list, matching `delete`, `edit`, `view` and `setoutstanding`. This keeps the mental model consistent, at the cost of the user needing to re-run `fees` after a payment because indexes shift.
+* **Alternatives considered.** (a) Making `feesummary` respect the current filter was rejected because a filtered total is easy to misread as the amount still owed overall. (b) Making `paid` accept a partial amount was rejected for v1.4: it needs a payment-history model, which is a larger change than the iteration allows, so `setoutstanding INDEX 0` and `paid INDEX` both clear a whole fee. (c) Reusing `setoutstanding` with amount `0` instead of adding `paid` was considered, but a dedicated command gives clearer feedback (`S$AMOUNT` cleared) and cannot be confused with re-setting a fee.
+
 ### \[Proposed\] Undo/redo feature
 
 #### Proposed Implementation
@@ -576,6 +599,77 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
       Use case ends.
 
+**Use case: UC07 - Show the total of all outstanding fees**
+
+**Guarantees:**
+
+* No student data is changed, the displayed list and the selection stay the same, and nothing is saved.
+
+**MSS**
+
+1.  Tutor requests the total of all outstanding fees.
+2.  Poco Book shows how many students owe fees and the exact total they owe across every stored student, regardless of the current displayed list.
+
+    Use case ends.
+
+**Extensions**
+
+* 2a. No student has an outstanding fee.
+
+    * 2a1. Poco Book shows that zero students owe a total of S$0.00.
+
+      Use case ends.
+
+* 1a. The tutor supplies extra text after the command word.
+
+    * 1a1. Poco Book shows an error message describing the correct format. Nothing is changed.
+
+      Use case ends.
+
+**Use case: UC08 - Record a full payment of a student's outstanding fee**
+
+**Guarantees:**
+
+* Only the specified student's outstanding fee is cleared. Every other field, including optional contact details and tags, is preserved.
+* If the request is invalid, no student data is changed and the displayed list is unchanged.
+* If the data is saved successfully, the cleared fee still applies after Poco Book restarts.
+
+**MSS**
+
+1.  Tutor <u>lists the students with outstanding fees (UC05)</u> or otherwise has the student in the displayed list.
+2.  Tutor requests to record that a specific student in the displayed list has paid their outstanding fee in full.
+3.  Poco Book clears that student's outstanding fee, saves the data, and shows the amount that was cleared.
+
+    Use case ends.
+
+**Extensions**
+
+* 1a. The student is already in the displayed list (e.g., after the tutor lists all students, or <u>finds the student by name (UC02)</u>).
+
+  Use case resumes at step 2.
+
+* 1b. The displayed list is empty.
+
+  Use case ends.
+
+* 2a. The index given by the tutor in the displayed list is invalid.
+
+    * 2a1. Poco Book shows an error message.
+
+      Use case resumes at step 2.
+
+* 2b. The student has no outstanding fee (e.g., it was already paid).
+
+    * 2b1. Poco Book shows an error message that the student has no outstanding fee to mark as paid.
+
+      Use case ends.
+
+* 3a. Poco Book is unable to save the data.
+
+    * 3a1. Poco Book shows an error message that the data could not be saved. The change is kept only until Poco Book is closed.
+
+      Use case ends.
+
 ### Non-Functional Requirements
 
 These are quality targets for the intended Poco Book MVP, not claims that every target has already been achieved.
@@ -673,6 +767,25 @@ testers are expected to do more *exploratory* testing.
 1. Restart the app and enter `fees`.<br>
    Expected: Only Irfan remains owing fees; Alex's fee stays cleared and Charlotte stays deleted.
    Enter `list` to show the remaining students, including Alex.
+
+### Totalling and recording fee payments
+
+1. Prerequisites: Start with sample data, where Alex Yeoh owes S$120.00, Charlotte Oliveiro owes S$50.00 and Irfan Ibrahim owes S$200.00.
+
+   1. Enter `find Alex` then `feesummary`.<br>
+      Expected: Only Alex is displayed, and the feedback reports `3 student(s) owe a total of S$370.00.` The filter and the displayed list are unchanged.
+
+   1. Enter `fees`, then `paid 1`.<br>
+      Expected: Alex's fee is cleared, the feedback states the amount removed, Alex disappears from the `fees` result and the remaining students are re-indexed from 1.
+
+   1. Enter `paid 1` again, then `paid 0`, `paid 01`, `paid 1 2` and `feesummary extra`.<br>
+      Expected: Each command reports an error and leaves the records and the displayed list unchanged.
+
+   1. Enter `list`, then `paid 2`.<br>
+      Expected: The command acts on the second student of the **full** list, showing that the index follows the displayed list.
+
+   1. Enter `feesummary` again, then restart the app and enter `fees`.<br>
+      Expected: The total has dropped by the paid amounts, and the cleared fees are still cleared after the restart.
 
 ### Viewing a student's complete record
 
