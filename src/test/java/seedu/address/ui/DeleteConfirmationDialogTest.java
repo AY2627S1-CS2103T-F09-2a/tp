@@ -2,8 +2,8 @@ package seedu.address.ui;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static seedu.address.testutil.Assert.assertThrows;
 import static seedu.address.testutil.TypicalPersons.CARL;
 
 import java.util.ArrayList;
@@ -48,8 +48,6 @@ public class DeleteConfirmationDialogTest {
     private static final double SMALL_SCREEN_WIDTH = 1280 / 1.5;
     private static final double SMALL_SCREEN_HEIGHT = 720 / 1.5 - 48;
 
-    private static final Person STUDENT_OWING_FEE = new PersonBuilder(CARL).withOutstandingFee("450.00").build();
-
     @BeforeAll
     public static void initializeToolkit() {
         try {
@@ -62,7 +60,7 @@ public class DeleteConfirmationDialogTest {
     }
 
     @Test
-    public void constructor_noFee_showsDetailsAndKeyInstructionsWithoutFeeWarning() throws Exception {
+    public void constructor_showsDetailsAndKeyInstructions() throws Exception {
         runOnFxThread(() -> {
             DialogPane dialogPane = newDialog(CARL).getDialogPane();
 
@@ -72,7 +70,7 @@ public class DeleteConfirmationDialogTest {
                     DeleteConfirmationDialog.PERMANENCE_NOTE_STYLE_CLASS));
             assertEquals("Press Y to delete this student, or N to cancel.", labelText(dialogPane,
                     DeleteConfirmationDialog.KEY_INSTRUCTIONS_STYLE_CLASS));
-            assertNull(dialogPane.lookup("." + DeleteConfirmationDialog.FEE_WARNING_STYLE_CLASS));
+            // An alert's style class matches its type, which decides its icon
             assertTrue(dialogPane.getStyleClass().contains("confirmation"));
             return null;
         });
@@ -89,14 +87,11 @@ public class DeleteConfirmationDialogTest {
     }
 
     @Test
-    public void constructor_feeOwed_showsFeeWarningWithWarningIcon() throws Exception {
-        runOnFxThread(() -> {
-            DialogPane dialogPane = newDialog(STUDENT_OWING_FEE).getDialogPane();
+    public void constructor_studentOwesFee_throwsIllegalArgumentException() throws Exception {
+        Person studentOwingFee = new PersonBuilder(CARL).withOutstandingFee("450.00").build();
 
-            assertEquals("This student still owes S$450.00. Deleting them also deletes this unpaid fee.",
-                    labelText(dialogPane, DeleteConfirmationDialog.FEE_WARNING_STYLE_CLASS));
-            // An alert's style class matches its type, which decides its icon
-            assertTrue(dialogPane.getStyleClass().contains("warning"));
+        runOnFxThread(() -> {
+            assertThrows(IllegalArgumentException.class, () -> newDialog(studentOwingFee));
             return null;
         });
     }
@@ -192,10 +187,9 @@ public class DeleteConfirmationDialogTest {
     }
 
     @Test
-    public void showAndConfirm_longestNamesAndFee_fitsSmallScreenWithoutCutOffText() throws Exception {
+    public void showAndConfirm_longestNames_fitsSmallScreenWithoutCutOffText() throws Exception {
         // Valid names are at most 70 characters; "W" is among the widest letters
-        Person longNames = new PersonBuilder().withName("W".repeat(70)).withGuardianName("W".repeat(70))
-                .withOutstandingFee("99999.99").build();
+        Person longNames = new PersonBuilder().withName("W".repeat(70)).withGuardianName("W".repeat(70)).build();
         AtomicReference<Dimension2D> size = new AtomicReference<>();
         List<String> cutOffTexts = new ArrayList<>();
 

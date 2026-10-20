@@ -72,7 +72,7 @@ public class LogicManager implements Logic {
         if (!(command instanceof DeleteCommand deleteCommand)) {
             return Optional.empty();
         }
-        return deleteCommand.getTarget(model.getFilteredPersonList());
+        return deleteCommand.getTarget(model.getFilteredPersonList()).filter(DeleteCommand::isDeletable);
     }
 
     /**

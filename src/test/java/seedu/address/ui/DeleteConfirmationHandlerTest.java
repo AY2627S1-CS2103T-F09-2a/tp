@@ -6,14 +6,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.testutil.Assert.assertThrows;
 import static seedu.address.testutil.TypicalPersons.ALICE;
 import static seedu.address.testutil.TypicalPersons.BENSON;
+import static seedu.address.testutil.TypicalPersons.CARL;
 import static seedu.address.testutil.TypicalPersons.DANIEL;
-import static seedu.address.testutil.TypicalPersons.GEORGE;
 import static seedu.address.testutil.TypicalPersons.getTypicalAddressBook;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -33,6 +34,7 @@ import seedu.address.model.person.Person;
 import seedu.address.storage.JsonAddressBookStorage;
 import seedu.address.storage.JsonUserPrefsStorage;
 import seedu.address.storage.StorageManager;
+import seedu.address.testutil.PersonBuilder;
 
 /**
  * Tests that {@code DeleteConfirmationHandler} deletes a student only after the user confirms,
@@ -75,13 +77,14 @@ public class DeleteConfirmationHandlerTest {
 
     @Test
     public void confirmAndDelete_confirmed_deletesStudentAndSaves() throws Exception {
-        CommandResult result = confirmAndDelete(handlerAnswering(true), "delete 1");
+        // The third student, CARL, owes no fee
+        CommandResult result = confirmAndDelete(handlerAnswering(true), "delete 3");
 
-        assertEquals(List.of(ALICE), confirmationRequests);
-        assertEquals(String.format(DeleteCommand.MESSAGE_DELETE_PERSON_SUCCESS, Messages.format(ALICE)),
+        assertEquals(List.of(CARL), confirmationRequests);
+        assertEquals(String.format(DeleteCommand.MESSAGE_DELETE_PERSON_SUCCESS, Messages.format(CARL)),
                 result.getFeedbackToUser());
-        assertFalse(model.getAddressBook().getPersonList().contains(ALICE));
-        assertEquals(BENSON, logic.getFilteredPersonList().get(0));
+        assertFalse(model.getAddressBook().getPersonList().contains(CARL));
+        assertEquals(DANIEL, logic.getFilteredPersonList().get(2));
 
         ReadOnlyAddressBook savedAddressBook = new JsonAddressBookStorage(addressBookFile).readAddressBook()
                 .orElseThrow();
@@ -116,31 +119,25 @@ public class DeleteConfirmationHandlerTest {
     }
 
     @Test
-    public void confirmAndDelete_confirmedFromFeesResults_deletesStudentAtFilteredIndex() throws Exception {
-        // ALICE and BENSON already owe fees; GEORGE (7th in the full list) is given one
-        logic.execute("setoutstanding 7 50.00");
-        logic.execute("fees");
-        Person george = logic.getFilteredPersonList().get(2);
-        assertEquals(GEORGE.getName(), george.getName());
+    public void confirmAndDelete_feeClearedWithSetOutstanding_deletesStudent() throws Exception {
+        assertDeletableOnlyAfterFeeCleared("setoutstanding 1 0");
+    }
 
-        // Index 3 is CARL in the full list, but GEORGE in the fees list
-        confirmAndDelete(handlerAnswering(true), "delete 3");
-
-        assertEquals(List.of(george), confirmationRequests);
-        assertFalse(model.getAddressBook().getPersonList().contains(george));
-        assertEquals(List.of(ALICE, BENSON), logic.getFilteredPersonList());
+    @Test
+    public void confirmAndDelete_feeRecordedAsPaid_deletesStudent() throws Exception {
+        assertDeletableOnlyAfterFeeCleared("paid 1");
     }
 
     @Test
     public void confirmAndDelete_displayedStudentChangesBeforeConfirmation_throwsWithoutDeleting() {
-        // The confirmer hides ALICE, so BENSON moves up to the index that the user confirmed for ALICE
+        // The confirmer hides CARL, so DANIEL moves up to the index that the user confirmed for CARL
         DeleteConfirmationHandler handler = new DeleteConfirmationHandler(logic, student -> {
             model.updateFilteredPersonList(person -> !person.equals(student));
             return true;
         });
 
         assertThrows(CommandException.class, DeleteConfirmationHandler.MESSAGE_TARGET_CHANGED, () ->
-                confirmAndDelete(handler, "delete 1"));
+                confirmAndDelete(handler, "delete 3"));
         assertEquals(getTypicalAddressBook(), model.getAddressBook());
     }
 
@@ -152,8 +149,27 @@ public class DeleteConfirmationHandlerTest {
         });
 
         assertThrows(CommandException.class, DeleteConfirmationHandler.MESSAGE_TARGET_CHANGED, () ->
-                confirmAndDelete(handler, "delete 1"));
+                confirmAndDelete(handler, "delete 3"));
         assertEquals(getTypicalAddressBook(), model.getAddressBook());
+    }
+
+    /**
+     * Asserts that ALICE, who owes a fee, cannot be deleted until {@code clearFeeCommand} clears her fee,
+     * and that she can then be confirmed and deleted.
+     */
+    private void assertDeletableOnlyAfterFeeCleared(String clearFeeCommand) throws Exception {
+        assertEquals(Optional.empty(), logic.getDeletionTarget("delete 1"));
+        assertThrows(CommandException.class, String.format(DeleteCommand.MESSAGE_STUDENT_OWES_FEE, ALICE.getName(),
+                "0.01"), () -> logic.execute("delete 1"));
+
+        logic.execute(clearFeeCommand);
+        Person aliceWithoutFee = new PersonBuilder(ALICE).withoutOutstandingFee().build();
+        CommandResult result = confirmAndDelete(handlerAnswering(true), "delete 1");
+
+        assertEquals(List.of(aliceWithoutFee), confirmationRequests);
+        assertEquals(String.format(DeleteCommand.MESSAGE_DELETE_PERSON_SUCCESS, Messages.format(aliceWithoutFee)),
+                result.getFeedbackToUser());
+        assertFalse(model.getAddressBook().getPersonList().contains(aliceWithoutFee));
     }
 
     /**

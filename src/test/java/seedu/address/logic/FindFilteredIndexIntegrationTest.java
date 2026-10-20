@@ -67,17 +67,19 @@ public class FindFilteredIndexIntegrationTest {
     }
 
     @Test
-    public void fees_thenDelete_deletesPersonAtFilteredIndex() throws Exception {
+    public void fees_thenDelete_refusesPersonAtFilteredIndex() throws Exception {
         // ALICE and BENSON already owe fees; GEORGE (7th in the full list) is given one
         logic.execute("setoutstanding 7 50.00");
         logic.execute("fees");
         assertEquals(3, logic.getFilteredPersonList().size());
         Person george = logic.getFilteredPersonList().get(2);
 
-        // Index 3 is CARL in the full list, but GEORGE in the fees list
-        logic.execute("delete 3");
+        // Index 3 is CARL in the full list, but GEORGE in the fees list. A student who owes a fee
+        // cannot be deleted, so the error names GEORGE and no student is deleted.
+        assertThrows(CommandException.class, String.format(DeleteCommand.MESSAGE_STUDENT_OWES_FEE,
+                george.getName(), "50.00"), () -> logic.execute("delete 3"));
 
-        assertFalse(model.getAddressBook().getPersonList().contains(george));
+        assertTrue(model.getAddressBook().getPersonList().contains(george));
         assertTrue(model.getAddressBook().getPersonList().contains(CARL));
     }
 

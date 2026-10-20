@@ -55,7 +55,7 @@ The *Sequence Diagram* below shows how the components interact with each other f
 
 <img src="images/ArchitectureSequenceDiagram.png" width="574" />
 
-For simplicity, the diagram leaves out the confirmation that `delete` asks for before `Logic` executes it. See [Delete confirmation](#delete-confirmation).
+For simplicity, the diagram leaves out the confirmation that `delete` asks for before `Logic` executes it, unless the student cannot be deleted. See [Delete confirmation](#delete-confirmation).
 
 Each of the four main components (also shown in the diagram above),
 
@@ -87,7 +87,7 @@ The `UI` component,
 
 For `view INDEX`, `ViewCommand` reads the student at that index in the filtered list and returns the `Person` in `CommandResult` with a feedback message. It does not update the filter or model. `LogicManager` skips the storage write because `ViewCommand.shouldSaveAddressBook()` returns false. `MainWindow` selects that person in `PersonListPanel`; the list selection updates `PersonDetailsPanel`, which shows all stored fields. The details pane unwraps optional student contact fields and shows `Not provided` when a field is absent. It formats an outstanding fee as `S$` followed by two decimal places, or `None` when absent. A failed parse or out-of-range index produces no `CommandResult`, so the current selection and details remain unchanged.
 
-For `delete INDEX`, `MainWindow` asks the tutor to confirm before `Logic` executes the command. See [Delete confirmation](#delete-confirmation).
+For `delete INDEX`, `MainWindow` asks the tutor to confirm before `Logic` executes the command, unless the student cannot be deleted. See [Delete confirmation](#delete-confirmation).
 
 Before executing a command, `MainWindow` remembers the selected student. After a successful command that does not explicitly select a student, it restores that selection by student identity if the student remains in the displayed list. This selects the current record after a fee change, so the details pane shows the updated amount. Otherwise it clears the selection and details pane. This also prevents a search from transferring the highlight to a different student at the same list index.
 
@@ -167,10 +167,12 @@ This section describes some noteworthy details on how certain features are imple
 
 `delete INDEX` asks the tutor to confirm before a student is deleted, because a deleted student cannot be restored. Asking for confirmation is UI behaviour, so it is handled in the `UI` component. `Logic` gains only a query method, `Logic#getDeletionTarget(String)`, which reports which student a command would delete without executing it. `Model` and `Storage` are unchanged, and deletion and saving still use the existing path.
 
+A student who still owes a fee cannot be deleted, so that an unpaid fee is never lost by accident. `DeleteCommand#isDeletable(Person)` holds this rule. `DeleteCommand#execute(Model)` refuses such a student with an error message that names the student and the amount owed. To delete them, the tutor first records the payment with `paid` or clears the fee with `setoutstanding`. The rule applies only to `delete`: `clear` still removes all students, including those who owe fees.
+
 `MainWindow#executeCommand(String)` decides whether a command needs confirmation:
 
-1. It calls `Logic#getDeletionTarget(String)`. `LogicManager` parses the input with its `AddressBookParser`, the same parser that `Logic#execute(String)` uses. If the input is a `delete` command, `LogicManager` calls `DeleteCommand#getTarget(List)` with the displayed list, so the index refers to the same list, such as `find` or `fees` results, as it does when `DeleteCommand` executes.
-1. If there is no target, `MainWindow` passes the input to `Logic#execute(String)`, as it did before this feature. This happens when the input is another command, cannot be parsed, or has an index beyond the end of the list. Invalid `delete` commands therefore report the usual errors without opening a dialog.
+1. It calls `Logic#getDeletionTarget(String)`. `LogicManager` parses the input with its `AddressBookParser`, the same parser that `Logic#execute(String)` uses. If the input is a `delete` command, `LogicManager` calls `DeleteCommand#getTarget(List)` with the displayed list, so the index refers to the same list, such as `find` or `fees` results, as it does when `DeleteCommand` executes. It returns the student only if `DeleteCommand#isDeletable(Person)` allows the deletion.
+1. If there is no target, `MainWindow` passes the input to `Logic#execute(String)`, as it did before this feature. This happens when the input is another command, cannot be parsed, has an index beyond the end of the list, or names a student who still owes a fee. Such `delete` commands therefore report their errors without opening a dialog.
 1. Otherwise, `MainWindow` calls `DeleteConfirmationHandler#confirmAndDelete(String, Person)` with the target. The handler asks its `DeletionConfirmer` whether to delete the student. In the app, `MainWindow` supplies a confirmer that opens a `DeleteConfirmationDialog` over the main window and waits for the tutor to respond.
 1. If the tutor cancels, the handler returns a `CommandResult` with a cancellation message without calling `Logic#execute(String)`, so nothing is deleted or saved. `MainWindow` then restores the selection as it does after any other successful command.
 1. If the tutor confirms, the handler calls `Logic#getDeletionTarget(String)` again to check that the index still identifies the same student. It then calls `Logic#execute(String)`, which deletes the student and saves the data as before. While the dialog is open, the tutor cannot enter commands, so the displayed list cannot change. The second check is a safeguard in case a future change allows the list to change during confirmation: if a different student now has that index, the handler throws a `CommandException` and deletes nothing.
@@ -180,7 +182,7 @@ This section describes some noteworthy details on how certain features are imple
 * Pressing Y deletes the student, and pressing N keeps them. Pressing Esc or closing the window also keeps the student.
 * All other keys, including Enter and Space, are ignored. If the tutor presses Enter twice, or starts typing the next command before noticing the dialog, those keys go to the dialog. No command word starts with Y or N, so the start of the next command cannot answer the dialog, although a Y or N typed later would. D was avoided because `delete` starts with D.
 * The **Delete (Y)** and **Cancel (N)** buttons can be clicked, but the keyboard cannot reach them: Tab does not move to them, and Enter and Space do not press them. When a dialog opens, JavaFX gives keyboard focus to its main button. The Delete button is therefore created as a secondary button (`ButtonData.APPLY`) rather than the main one (`ButtonData.OK_DONE`), so that it never starts with focus.
-* The dialog is 520 pixels wide, and long names wrap rather than widening it. With the longest valid names and a fee, it measured 520 by 416 pixels on macOS. A 1280x720 screen at 150% scaling leaves about 853 by 432 pixels above a Windows 11 taskbar.
+* The dialog is 520 pixels wide, and long names wrap rather than widening it. With the longest valid names, it measured 520 by 370 pixels on macOS. A 1280x720 screen at 150% scaling leaves about 853 by 432 pixels above a Windows 11 taskbar.
 
 #### Design considerations
 
@@ -198,7 +200,7 @@ This section describes some noteworthy details on how certain features are imple
 
 **Testing**
 
-`DeleteConfirmationHandlerTest` replaces the dialog with a confirmer that records each request and returns a fixed answer. It covers confirming, cancelling, deleting from `find` and `fees` results, and a list that changes or empties during confirmation, all without a display. `LogicManagerTest` checks that `Logic#getDeletionTarget(String)` finds the displayed student for a valid `delete` command, and finds no student for other commands or for invalid or malformed indexes. `DeleteConfirmationDialogTest` checks the dialog's content, fee warning, keys, buttons and size with JavaFX. It checks that Enter, Tab, Space and the letters of a typed command leave the dialog open, and that the longest valid names fit without cut-off text. Like the other JavaFX tests, it runs only when the environment variable `POCO_UI_TESTS` is `true`. The branch in `MainWindow#executeCommand(String)` that connects these parts needs the full main window, so the manual tests in [Deleting a student](#deleting-a-student) check it instead.
+`DeleteConfirmationHandlerTest` replaces the dialog with a confirmer that records each request and returns a fixed answer. It covers confirming, cancelling, deleting from `find` results, deleting a student after their fee is cleared with `paid` or `setoutstanding`, and a list that changes or empties during confirmation, all without a display. `DeleteCommandTest` and `FindFilteredIndexIntegrationTest` check that a student who owes a fee is refused, in both the full and the `fees` list, without changing any data. `LogicManagerTest` checks that `Logic#getDeletionTarget(String)` finds the displayed student for a valid `delete` command, and finds no student for other commands, for invalid or malformed indexes, or for a student who owes a fee. `DeleteConfirmationDialogTest` checks the dialog's content, keys, buttons and size with JavaFX. It checks that Enter, Tab, Space and the letters of a typed command leave the dialog open, and that the longest valid names fit without cut-off text. Like the other JavaFX tests, it runs only when the environment variable `POCO_UI_TESTS` is `true`. The branch in `MainWindow#executeCommand(String)` that connects these parts needs the full main window, so the manual tests in [Deleting a student](#deleting-a-student) check it instead.
 
 ### Fee summary and full-payment commands
 
@@ -363,6 +365,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 | `* *`    | tutor                         | see the total amount of outstanding fees                         | know how much income I am still owed                                   |
 | `* *`    | tutor with many students      | sort students by outstanding fee                                 | follow up on the largest amounts first                                 |
 | `* *`    | tutor                         | confirm before a student is deleted                              | avoid deleting the wrong student by mistake                            |
+| `* *`    | tutor                         | be stopped from deleting a student who still owes a fee          | avoid losing track of unpaid fees                                      |
 | `* *`    | tutor                         | undo my last command                                             | recover from an accidental change                                      |
 | `*`      | tutor                         | record a partial payment of a fee                                | track fees paid in instalments                                         |
 | `*`      | tutor                         | see a student's payment history                                  | resolve questions about past payments                                  |
@@ -486,7 +489,8 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 **Guarantees:**
 
-* Only the specified student in the displayed list is deleted, together with their guardian contact and outstanding fee. Students not in the displayed list are never deleted.
+* Only the specified student in the displayed list is deleted, together with their guardian contact. Students not in the displayed list are never deleted.
+* A student who still owes a fee is never deleted.
 * If the request is invalid, no student data is changed.
 * If the data is saved successfully, the deletion still applies after Poco Book restarts.
 
@@ -494,9 +498,9 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 1.  Tutor <u>finds the student by name (UC02)</u>.
 2.  Tutor requests to delete a specific student in the displayed list.
-3.  Poco Book asks the tutor to confirm, showing the student's name, phone, guardian name, guardian phone and any outstanding fee.
+3.  Poco Book asks the tutor to confirm, showing the student's name, phone, guardian name and guardian phone.
 4.  Tutor confirms the deletion.
-5.  Poco Book deletes the student, together with their guardian contact and outstanding fee, saves the data, and shows the deleted student's details.
+5.  Poco Book deletes the student, together with their guardian contact, saves the data, and shows the deleted student's details.
 
     Use case ends.
 
@@ -515,6 +519,12 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
     * 2a1. Poco Book shows an error message without asking for confirmation.
 
       Use case resumes at step 2.
+
+* 2b. The student still owes a fee.
+
+    * 2b1. Poco Book shows an error message with the amount owed, without asking for confirmation, and keeps the student.
+
+      Use case ends.
 
 * 4a. Tutor cancels the deletion.
 
@@ -760,13 +770,12 @@ testers are expected to do more *exploratory* testing.
 1. Enter `setoutstanding 1 1.234`, `setoutstanding 01 10`, and `fees extra`.<br>
    Expected: Each command reports an error; Charlotte and Irfan remain displayed with their original fees.
 
-1. Enter `delete 1` while the fee filter is active, then press Y in the confirmation dialog.<br>
-   Expected: The dialog names Charlotte Oliveiro and warns in red that she still owes S$450.00. Charlotte is deleted, rather than the first student of the unfiltered list. Irfan becomes index 1.
-   The result message shows the details of the deleted student.
+1. Enter `delete 1` while the fee filter is active.<br>
+   Expected: No dialog opens. The result shows `Cannot delete Charlotte Oliveiro, who still owes S$450.00.`, naming Charlotte rather than the first student of the unfiltered list. Charlotte stays in the list.
 
 1. Restart the app and enter `fees`.<br>
-   Expected: Only Irfan remains owing fees; Alex's fee stays cleared and Charlotte stays deleted.
-   Enter `list` to show the remaining students, including Alex.
+   Expected: Charlotte and Irfan still owe their fees, and Alex's fee stays cleared.
+   Enter `list` to show all six students, including Alex.
 
 ### Totalling and recording fee payments
 
@@ -823,7 +832,7 @@ testers are expected to do more *exploratory* testing.
 * Only Y deletes the student. N, Esc and the dialog's window close button keep the student. Enter, Space, Tab and
   other keys do nothing.
 * After a cancellation, no student is deleted, and the displayed students and the selected student stay the same.
-* A student who owes a fee is shown with a warning icon and a red banner stating the amount.
+* A student who owes a fee cannot be deleted: an error message names the student and the amount, and no dialog opens.
 * Other commands, and `delete` commands with an invalid index, never open the dialog.
 * The whole dialog stays visible and readable, including on a small screen. The two buttons follow the operating
   system's usual order, so their order may differ between computers.
@@ -837,7 +846,6 @@ testers are expected to do more *exploratory* testing.
 1. Enter `view 2`, then `delete 2`.<br>
    Expected: A confirmation dialog opens over the main window. It shows `Name: Bernice Yu`, `Phone: 99272758`,
    `Guardian: Betty Yu`, `Guardian phone: 82345678` and `Press Y to delete this student, or N to cancel.`
-   There is no fee warning.
 
 1. Press Enter, Tab, Space, then type `delete 3`.<br>
    Expected: The dialog stays open, and no student is deleted.
@@ -855,20 +863,21 @@ testers are expected to do more *exploratory* testing.
    becomes index 2, and the selection and details pane clear.
 
 1. Enter `fees`, then `delete 3`.<br>
-   Expected: The dialog shows Irfan Ibrahim, phone 92492021, guardian Ismail Ibrahim and guardian phone 85678901,
-   with the warning icon and a red banner: `This student still owes S$250.50. Deleting them also deletes this unpaid
-   fee.`
-   Click **Delete (Y)**. Irfan is deleted and the fee list shows two students. Restart the app and enter `list`:
-   four students remain, without Bernice or Irfan.
+   Expected: No dialog opens. The result shows `Cannot delete Irfan Ibrahim, who still owes S$250.50.` and explains how
+   to clear the fee. Irfan is still in the list.
+
+1. Enter `paid 3`, then `find Irfan` and `delete 1`.<br>
+   Expected: Irfan's fee is recorded as paid. The dialog then opens for Irfan Ibrahim, phone 92492021, guardian
+   Ismail Ibrahim and guardian phone 85678901. Click **Delete (Y)**: Irfan is deleted. Restart the app and enter
+   `list`: four students remain, without Bernice or Irfan.
 
 1. Enter `delete 0`, `delete 01`, `delete x`, `delete`, and `delete 99` in turn.<br>
    Expected: Each command shows an error message. No dialog opens and no student is deleted.
 
-1. Enter `add n/Maximilian Alexander Bartholomew Fitzgerald-Montgomery Worthington II g/Rani Tan gp/96789013 f/99999.99`,
+1. Enter `add n/Maximilian Alexander Bartholomew Fitzgerald-Montgomery Worthington II g/Rani Tan gp/96789013`,
    then `find Maximilian` and `delete 1`.<br>
    Expected: The full name is shown, wrapping onto a second line if it does not fit, and is not cut off with `...`.
-   `Phone: Not provided` is shown, the red banner states `S$99999.99`, and both buttons are visible without resizing
-   the dialog. Press N.
+   `Phone: Not provided` is shown, and both buttons are visible without resizing the dialog. Press N.
 
 1. If possible, set your display to a resolution of 1280x720 with 150% scaling, then repeat the previous step.<br>
    Expected: The whole dialog, including the yellow line that names the Y and N keys and both buttons, fits on the

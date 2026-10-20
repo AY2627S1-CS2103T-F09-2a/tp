@@ -18,14 +18,13 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.stage.Window;
 import seedu.address.logic.Messages;
-import seedu.address.model.person.OutstandingFee;
 import seedu.address.model.person.Person;
 
 /**
  * A dialog that asks the user to confirm the deletion of a student.
  * On the keyboard, only Y deletes the student; N, Escape or closing the dialog keeps them.
  * Other keys, including Enter and Space, are ignored, so a habitual Enter or the start of the next command
- * cannot answer the dialog. A student with an outstanding fee is shown with a prominent warning.
+ * cannot answer the dialog.
  */
 public class DeleteConfirmationDialog {
 
@@ -38,7 +37,6 @@ public class DeleteConfirmationDialog {
 
     static final String DETAILS_STYLE_CLASS = "delete-confirmation-details";
     static final String PERMANENCE_NOTE_STYLE_CLASS = "delete-confirmation-permanence-note";
-    static final String FEE_WARNING_STYLE_CLASS = "delete-confirmation-fee-warning";
     static final String KEY_INSTRUCTIONS_STYLE_CLASS = "delete-confirmation-key-instructions";
 
     private static final KeyCode DELETE_KEY = KeyCode.Y;
@@ -48,13 +46,13 @@ public class DeleteConfirmationDialog {
     private static final String HEADER = "Delete this student?";
     private static final String DETAILS_FORMAT = "Name: %1$s\nPhone: %2$s\nGuardian: %3$s\nGuardian phone: %4$s";
     private static final String PERMANENCE_NOTE = "Deleted students cannot be restored.";
-    private static final String FEE_WARNING_FORMAT =
-            "This student still owes S$%1$s. Deleting them also deletes this unpaid fee.";
     private static final String STYLESHEET = "view/DeleteConfirmationDialog.css";
+    private static final String MESSAGE_CANNOT_CONFIRM_STUDENT_OWING_FEE =
+            "A student who still owes a fee cannot be deleted, so their deletion cannot be confirmed.";
 
     /**
      * A fixed width stops long names from widening the dialog; they wrap instead. The dialog then stays well within
-     * a 1280x720 screen at 150% scaling, which leaves about 853x480 pixels for windows.
+     * a 1280x720 screen at 150% scaling, which leaves about 853x432 pixels above a Windows 11 taskbar.
      */
     private static final double DIALOG_WIDTH = 520;
     private static final double CONTENT_SPACING = 8;
@@ -63,11 +61,17 @@ public class DeleteConfirmationDialog {
 
     /**
      * Creates a dialog, owned by {@code owner}, that asks whether to delete {@code student}.
+     *
+     * @throws IllegalArgumentException if {@code student} still owes a fee.
      */
     public DeleteConfirmationDialog(Window owner, Person student) {
         requireAllNonNull(owner, student);
-        AlertType type = student.getOutstandingFee().isPresent() ? AlertType.WARNING : AlertType.CONFIRMATION;
-        alert = new Alert(type, "", DELETE, CANCEL);
+        // Logic never asks to confirm deleting a student who owes a fee, because DeleteCommand refuses to delete them
+        if (student.getOutstandingFee().isPresent()) {
+            throw new IllegalArgumentException(MESSAGE_CANNOT_CONFIRM_STUDENT_OWING_FEE);
+        }
+
+        alert = new Alert(AlertType.CONFIRMATION, "", DELETE, CANCEL);
         alert.initOwner(owner);
         alert.setTitle(TITLE);
         alert.setHeaderText(HEADER);
@@ -106,15 +110,12 @@ public class DeleteConfirmationDialog {
     }
 
     /**
-     * Returns the student's details, a note that deletion is permanent, an outstanding-fee warning if they owe a fee,
-     * and the keys that answer the dialog.
+     * Returns the student's details, a note that deletion is permanent, and the keys that answer the dialog.
      */
     private static Node createContent(Person student) {
         VBox content = new VBox(CONTENT_SPACING);
         content.getChildren().add(createLabel(formatDetails(student), DETAILS_STYLE_CLASS));
         content.getChildren().add(createLabel(PERMANENCE_NOTE, PERMANENCE_NOTE_STYLE_CLASS));
-        student.getOutstandingFee().ifPresent(fee ->
-                content.getChildren().add(createLabel(formatFeeWarning(fee), FEE_WARNING_STYLE_CLASS)));
         content.getChildren().add(createLabel(KEY_INSTRUCTIONS, KEY_INSTRUCTIONS_STYLE_CLASS));
         return content;
     }
@@ -132,10 +133,6 @@ public class DeleteConfirmationDialog {
         String phone = student.getPhone().map(Object::toString).orElse(Messages.NOT_PROVIDED);
         return String.format(DETAILS_FORMAT, student.getName(), phone, student.getGuardianName(),
                 student.getGuardianPhone());
-    }
-
-    private static String formatFeeWarning(OutstandingFee fee) {
-        return String.format(FEE_WARNING_FORMAT, fee);
     }
 
     /**

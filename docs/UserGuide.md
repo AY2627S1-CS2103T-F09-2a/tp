@@ -30,7 +30,7 @@ Poco Book is a **desktop application for independent tutors to manage students, 
 
    * `add n/John Doe g/Jane Doe gp/98765432 e/johnd@example.com a/John street, block 123, #01-01` : Adds a student named `John Doe`, with guardian `Jane Doe`, to Poco Book.
 
-   * `delete 3` : Deletes the 3rd student shown in the current list, after you press Y to confirm.
+   * `delete 2` : Deletes the 2nd student shown in the current list, after you press Y to confirm.
 
    * `clear` : Deletes all students.
 
@@ -204,7 +204,8 @@ Example:
 
 ### Deleting a student: `delete`
 
-Deletes the specified student from Poco Book, after you confirm the deletion.
+Deletes the specified student from Poco Book, after you confirm the deletion. A student who still owes a fee cannot be
+deleted.
 
 Format: `delete INDEX`
 
@@ -220,13 +221,20 @@ Format: `delete INDEX`
     student. Poco Book shows `Deletion cancelled. No student was deleted.` The same students stay displayed, and the
     selected student stays selected.
 * All other keys, including Enter and Space, are ignored while the dialog is open, so pressing Enter again by
-  mistake cannot answer it.
-* If the student still owes a fee, the dialog shows a warning icon and a red banner with the amount, such as
-  `This student still owes S$450.00. Deleting them also deletes this unpaid fee.` You can still delete the student.
+  mistake cannot answer it. Answer the dialog before typing your next command: a Y or N that you type is taken as
+  the answer.
+* If the student still owes a fee, Poco Book shows an error message instead of the dialog, and the student is kept.
+  For example:<br>
+  `Cannot delete Charlotte Oliveiro, who still owes S$450.00.`<br>
+  `Before deleting, record the payment with paid INDEX or clear the fee with setoutstanding INDEX 0.`<br>
+  After you record the payment with `paid` or clear the fee with `setoutstanding INDEX 0`, you can delete the
+  student. If you are viewing the `fees` list, the student leaves it once their fee is cleared, so use `find` or
+  `list` to see their new index.
+* This rule applies only to `delete`. The `clear` command still removes all students, including those who owe fees.
 * If the index is invalid, Poco Book shows an error message instead of the dialog, and no student is deleted.
 
 <div markdown="span" class="alert alert-warning">:exclamation: **Caution:**
-A deleted student cannot be restored. Their record, including any outstanding fee, is removed.
+A deleted student cannot be restored.
 </div>
 
 Examples:
@@ -234,14 +242,17 @@ Examples:
   With the sample data, the dialog shows `Bernice Yu`, phone `99272758`, guardian `Betty Yu` and guardian phone
   `82345678`.
   Press Y to delete her, or N to keep her.
-* `fees` followed by `delete 2` asks you to confirm deleting the 2nd student who owes a fee.
-  With the sample data, this is `Charlotte Oliveiro`, and the dialog warns that she still owes `S$450.00`.
+* `fees` followed by `delete 2` shows an error instead of the dialog. With the sample data, the 2nd student in the
+  `fees` list is `Charlotte Oliveiro`, who still owes `S$450.00`. To delete her, enter `paid 2` to record her payment,
+  then `find Charlotte` and `delete 1`.
 
 ### Clearing all entries: `clear`
 
 Clears all entries from the address book.
 
 Format: `clear`
+
+* This removes every student, including students who still owe fees, without asking for confirmation.
 
 ### Exiting the program: `exit`
 
@@ -288,7 +299,7 @@ Action | Format, Examples
 --------|------------------
 **Add** | `add n/NAME g/GUARDIAN_NAME gp/GUARDIAN_PHONE [p/PHONE] [e/EMAIL] [a/ADDRESS] [f/AMOUNT]` <br> e.g., `add n/Riya Kumar g/Anil Kumar gp/97654321 p/98765432 e/riya@example.com a/12 Clementi Ave 3 f/75.50`
 **Clear** | `clear`
-**Delete** | `delete INDEX`, then press Y to confirm or N to cancel<br> e.g., `delete 3`
+**Delete** | `delete INDEX`, then press Y to confirm or N to cancel. A student who owes a fee cannot be deleted.<br> e.g., `delete 2`
 **Edit** | `edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [a/ADDRESS] [t/TAG]…​`<br> e.g., `edit 2 n/James Lee e/jameslee@example.com`
 **Find** | `find KEYWORD [MORE_KEYWORDS]`<br> e.g., `find James Jake`
 **List** | `list`
