@@ -56,6 +56,36 @@ public class FeesMinimumIntegrationTest {
     }
 
     @Test
+    public void execute_positiveFeeCrossesMinimum_updatesLiveFilter() throws Exception {
+        Model model = new ModelManager();
+        Person first = new PersonBuilder().withName("First Student").withOutstandingFee("100").build();
+        Person last = new PersonBuilder().withName("Last Student").withOutstandingFee("200").build();
+        model.addPerson(first);
+        model.addPerson(last);
+        Path data = directory.resolve("students.json");
+        Logic logic = new LogicManager(model, new StorageManager(new JsonAddressBookStorage(data),
+                new JsonUserPrefsStorage(directory.resolve("preferences.json"))));
+
+        logic.execute("fees min/100");
+        logic.execute("setoutstanding 1 150");
+        Person above = new PersonBuilder(first).withOutstandingFee("150").build();
+        assertEquals(List.of(above, last), logic.getFilteredPersonList());
+
+        logic.execute("setoutstanding 1 100");
+        assertEquals(List.of(first, last), logic.getFilteredPersonList());
+
+        logic.execute("setoutstanding 1 99.99");
+        Person below = new PersonBuilder(first).withOutstandingFee("99.99").build();
+        assertEquals(List.of(last), logic.getFilteredPersonList());
+        assertEquals(List.of(below, last), model.getAddressBook().getPersonList());
+        assertEquals(List.of(below, last), new JsonAddressBookStorage(data).readAddressBook()
+                .orElseThrow().getPersonList());
+
+        logic.execute("fees");
+        assertEquals(List.of(below, last), logic.getFilteredPersonList());
+    }
+
+    @Test
     public void execute_rejectedMinimum_preservesDataAndFilterWithoutListChanges() throws Exception {
         Model model = new ModelManager();
         Person below = new PersonBuilder().withName("Below Student").withOutstandingFee("50").build();

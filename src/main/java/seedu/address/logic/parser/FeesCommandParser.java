@@ -6,6 +6,7 @@ import java.math.BigDecimal;
 
 import seedu.address.logic.commands.FeesCommand;
 import seedu.address.logic.parser.exceptions.ParseException;
+import seedu.address.model.person.OutstandingFee;
 
 /**
  * Parses input arguments and creates a new {@code FeesCommand} object.
@@ -31,7 +32,7 @@ public class FeesCommandParser implements Parser<FeesCommand> {
         }
 
         String amount = arguments.getValue(PREFIX_MINIMUM).orElseThrow();
-        if (!amount.matches("[0-9]+(?:\\.[0-9]{1,2})?")) {
+        if (!amount.matches(OutstandingFee.VALIDATION_REGEX)) {
             throw new ParseException(String.format(MESSAGE_INVALID_COMMAND_FORMAT, FeesCommand.MESSAGE_USAGE));
         }
 

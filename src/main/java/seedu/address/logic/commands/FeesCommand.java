@@ -45,8 +45,10 @@ public class FeesCommand extends Command {
     @Override
     public CommandResult execute(Model model) {
         requireNonNull(model);
-        model.updateFilteredPersonList(person -> person.getOutstandingFee()
-                .filter(fee -> fee.value.compareTo(minimumAmount) >= 0).isPresent());
+        model.updateFilteredPersonList(minimumAmount.signum() == 0
+                ? PREDICATE_HAS_OUTSTANDING_FEE
+                : person -> person.getOutstandingFee()
+                        .filter(fee -> fee.value.compareTo(minimumAmount) >= 0).isPresent());
         return new CommandResult(String.format(MESSAGE_SUCCESS, model.getFilteredPersonList().size()));
     }
 
@@ -54,6 +56,11 @@ public class FeesCommand extends Command {
     public boolean equals(Object other) {
         return other == this || other instanceof FeesCommand command
                 && minimumAmount.compareTo(command.minimumAmount) == 0;
+    }
+
+    @Override
+    public int hashCode() {
+        return minimumAmount.stripTrailingZeros().hashCode();
     }
 
     @Override

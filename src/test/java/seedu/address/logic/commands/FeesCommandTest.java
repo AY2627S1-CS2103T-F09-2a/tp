@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.math.BigDecimal;
+import java.util.HashSet;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
@@ -134,6 +135,16 @@ public class FeesCommandTest {
         assertEquals(List.of(last), model.getFilteredPersonList());
         assertEquals(List.of(below, new PersonBuilder(first).withoutOutstandingFee().build(), last),
                 model.getAddressBook().getPersonList());
+    }
+
+    @Test
+    public void hashCode_equalThresholds_deduplicatesNumericAmounts() {
+        FeesCommand integerMinimum = new FeesCommand(new BigDecimal("100"));
+        FeesCommand decimalMinimum = new FeesCommand(new BigDecimal("100.00"));
+        assertEquals(integerMinimum.hashCode(), decimalMinimum.hashCode());
+        assertEquals(new FeesCommand().hashCode(), new FeesCommand(new BigDecimal("0.00")).hashCode());
+        assertEquals(2, new HashSet<>(List.of(integerMinimum, decimalMinimum,
+                new FeesCommand(), new FeesCommand(new BigDecimal("0.00")))).size());
     }
 
     @Test
