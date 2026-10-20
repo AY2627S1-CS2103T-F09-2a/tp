@@ -9,10 +9,7 @@ import static seedu.address.logic.commands.CommandTestUtil.showPersonAtIndex;
 import static seedu.address.testutil.Assert.assertThrows;
 import static seedu.address.testutil.TypicalIndexes.INDEX_FIRST_PERSON;
 import static seedu.address.testutil.TypicalIndexes.INDEX_SECOND_PERSON;
-import static seedu.address.testutil.TypicalIndexes.INDEX_THIRD_PERSON;
-import static seedu.address.testutil.TypicalPersons.ALICE;
 import static seedu.address.testutil.TypicalPersons.BENSON;
-import static seedu.address.testutil.TypicalPersons.CARL;
 import static seedu.address.testutil.TypicalPersons.getTypicalAddressBook;
 
 import java.util.List;
@@ -37,9 +34,8 @@ public class DeleteCommandTest {
 
     @Test
     public void execute_validIndexUnfilteredList_success() {
-        // The third student, CARL, owes no fee
-        Person personToDelete = model.getFilteredPersonList().get(INDEX_THIRD_PERSON.getZeroBased());
-        DeleteCommand deleteCommand = new DeleteCommand(INDEX_THIRD_PERSON);
+        Person personToDelete = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
+        DeleteCommand deleteCommand = new DeleteCommand(INDEX_FIRST_PERSON);
 
         String expectedMessage = "Deleted student:\n" + Messages.format(personToDelete);
 
@@ -59,7 +55,7 @@ public class DeleteCommandTest {
 
     @Test
     public void execute_validIndexFilteredList_success() {
-        showPersonAtIndex(model, INDEX_THIRD_PERSON);
+        showPersonAtIndex(model, INDEX_FIRST_PERSON);
 
         Person personToDelete = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
         DeleteCommand deleteCommand = new DeleteCommand(INDEX_FIRST_PERSON);
@@ -88,41 +84,16 @@ public class DeleteCommandTest {
     }
 
     @Test
-    public void execute_studentOwesFee_throwsCommandException() {
-        // The first student, ALICE, owes S$0.01
-        DeleteCommand deleteCommand = new DeleteCommand(INDEX_FIRST_PERSON);
-        String expectedMessage = String.format(DeleteCommand.MESSAGE_STUDENT_OWES_FEE, ALICE.getName(), "0.01");
-
-        assertCommandFailure(deleteCommand, model, expectedMessage);
-    }
-
-    @Test
-    public void execute_studentOwesFeeInFilteredList_throwsCommandException() {
-        // Only BENSON, who owes S$99999.99, is displayed. Index 1 of the full list is ALICE.
-        showPersonAtIndex(model, INDEX_SECOND_PERSON);
-        String expectedMessage = String.format(DeleteCommand.MESSAGE_STUDENT_OWES_FEE, BENSON.getName(), "99999.99");
-
-        assertCommandFailure(new DeleteCommand(INDEX_FIRST_PERSON), model, expectedMessage);
-    }
-
-    @Test
-    public void isDeletable() {
-        assertTrue(DeleteCommand.isDeletable(CARL));
-        assertFalse(DeleteCommand.isDeletable(ALICE));
-        assertThrows(NullPointerException.class, () -> DeleteCommand.isDeletable(null));
-    }
-
-    @Test
     public void constructor_nullIndex_throwsNullPointerException() {
         assertThrows(NullPointerException.class, () -> new DeleteCommand(null));
     }
 
     @Test
     public void getTarget_indexInDisplayedList_returnsStudentAtIndex() {
+        // Only BENSON is displayed. Index 1 of the full list is ALICE.
         showPersonAtIndex(model, INDEX_SECOND_PERSON);
-        Person displayedStudent = model.getFilteredPersonList().get(0);
 
-        assertEquals(Optional.of(displayedStudent),
+        assertEquals(Optional.of(BENSON),
                 new DeleteCommand(INDEX_FIRST_PERSON).getTarget(model.getFilteredPersonList()));
     }
 

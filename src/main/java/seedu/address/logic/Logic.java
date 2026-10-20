@@ -23,9 +23,8 @@ public interface Logic {
     CommandResult execute(String commandText) throws CommandException, ParseException;
 
     /**
-     * Returns the student in the displayed list that {@code commandText} would delete. Returns an empty
-     * {@code Optional} if it is not a valid {@code delete} command for a displayed student, or if that student cannot
-     * be deleted (for example, because they still owe a fee). Nothing is executed or changed.
+     * Returns the student in the displayed list that {@code commandText} would delete, or an empty {@code Optional}
+     * if it is not a valid {@code delete} command for a displayed student. Nothing is executed or changed.
      */
     Optional<Person> getDeletionTarget(String commandText);
 

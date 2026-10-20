@@ -21,13 +21,10 @@ public class DeleteCommand extends Command {
 
     public static final String MESSAGE_USAGE = COMMAND_WORD
             + ": Deletes the student identified by the index number used in the displayed student list.\n"
-            + "A student who still owes a fee cannot be deleted.\n"
             + "Parameters: INDEX (must be a positive integer)\n"
             + "Example: " + COMMAND_WORD + " 1";
 
     public static final String MESSAGE_DELETE_PERSON_SUCCESS = "Deleted student:\n%1$s";
-    public static final String MESSAGE_STUDENT_OWES_FEE = "Cannot delete %1$s, who still owes S$%2$s.\n"
-            + "Before deleting, record the payment with paid INDEX or clear the fee with setoutstanding INDEX 0.";
 
     private final Index targetIndex;
 
@@ -44,28 +41,14 @@ public class DeleteCommand extends Command {
         requireNonNull(model);
         Person personToDelete = getTarget(model.getFilteredPersonList())
                 .orElseThrow(() -> new CommandException(Messages.MESSAGE_INVALID_STUDENT_DISPLAYED_INDEX));
-        if (!isDeletable(personToDelete)) {
-            // A student who cannot be deleted always owes a fee (see isDeletable), so the fee is present here
-            throw new CommandException(String.format(MESSAGE_STUDENT_OWES_FEE, personToDelete.getName(),
-                    personToDelete.getOutstandingFee().orElseThrow()));
-        }
 
         model.deletePerson(personToDelete);
         return new CommandResult(String.format(MESSAGE_DELETE_PERSON_SUCCESS, Messages.format(personToDelete)));
     }
 
     /**
-     * Returns true if {@code student} can be deleted. A student who still owes a fee cannot be deleted,
-     * so that an unpaid fee is never lost by accident.
-     */
-    public static boolean isDeletable(Person student) {
-        requireNonNull(student);
-        return student.getOutstandingFee().isEmpty();
-    }
-
-    /**
-     * Returns the student at this command's index in {@code displayedList},
-     * or an empty {@code Optional} if the index is beyond the end of the list.
+     * Returns the student that this command would delete from {@code displayedList},
+     * or an empty {@code Optional} if the target index is beyond the end of the list.
      */
     public Optional<Person> getTarget(List<Person> displayedList) {
         requireNonNull(displayedList);

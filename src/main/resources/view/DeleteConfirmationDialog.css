@@ -3,6 +3,19 @@
     -fx-text-fill: white;
 }
 
+/* A solid red banner, so an unpaid fee stands out from the student's details. */
+.delete-confirmation-fee-warning {
+    -fx-background-color: #b3261e;
+    -fx-background-radius: 4;
+    -fx-border-color: #ff8a80;
+    -fx-border-radius: 4;
+    -fx-border-width: 2;
+    -fx-padding: 8 10 8 10;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-text-fill: white;
+}
+
 .delete-confirmation-key-instructions {
     -fx-font-size: 15px;
     -fx-font-weight: bold;

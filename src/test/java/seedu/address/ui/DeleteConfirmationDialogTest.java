@@ -2,8 +2,8 @@ package seedu.address.ui;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static seedu.address.testutil.Assert.assertThrows;
 import static seedu.address.testutil.TypicalPersons.CARL;
 
 import java.util.ArrayList;
@@ -69,7 +69,7 @@ public class DeleteConfirmationDialogTest {
     }
 
     @Test
-    public void constructor_showsDetailsAndKeyInstructions() throws Exception {
+    public void constructor_noFee_showsDetailsAndKeyInstructionsWithoutFeeWarning() throws Exception {
         runOnFxThread(() -> {
             DialogPane dialogPane = newDialog(CARL).getDialogPane();
 
@@ -79,6 +79,7 @@ public class DeleteConfirmationDialogTest {
                     DeleteConfirmationDialog.PERMANENCE_NOTE_STYLE_CLASS));
             assertEquals("Press Y to delete this student, or N to cancel.", labelText(dialogPane,
                     DeleteConfirmationDialog.KEY_INSTRUCTIONS_STYLE_CLASS));
+            assertNull(dialogPane.lookup("." + DeleteConfirmationDialog.FEE_WARNING_STYLE_CLASS));
             // An alert's style class matches its type, which decides its icon
             assertTrue(dialogPane.getStyleClass().contains("confirmation"));
             return null;
@@ -96,11 +97,16 @@ public class DeleteConfirmationDialogTest {
     }
 
     @Test
-    public void constructor_studentOwesFee_throwsIllegalArgumentException() throws Exception {
+    public void constructor_feeOwed_showsFeeWarningWithWarningIcon() throws Exception {
         Person studentOwingFee = new PersonBuilder(CARL).withOutstandingFee("450.00").build();
 
         runOnFxThread(() -> {
-            assertThrows(IllegalArgumentException.class, () -> newDialog(studentOwingFee));
+            DialogPane dialogPane = newDialog(studentOwingFee).getDialogPane();
+
+            assertEquals("This student still owes S$450.00. Deleting them also deletes this unpaid fee.",
+                    labelText(dialogPane, DeleteConfirmationDialog.FEE_WARNING_STYLE_CLASS));
+            // An alert's style class matches its type, which decides its icon
+            assertTrue(dialogPane.getStyleClass().contains("warning"));
             return null;
         });
     }
@@ -182,23 +188,36 @@ public class DeleteConfirmationDialogTest {
     }
 
     @Test
-    public void showAndConfirm_yPressedWithShortcut_staysOpen() throws Exception {
-        AtomicBoolean isStillShowing = new AtomicBoolean();
-
-        boolean isConfirmed = respond(CARL, dialogPane -> {
-            fire(dialogPane, new KeyEvent(KeyEvent.KEY_PRESSED, "", "", KeyCode.Y, false, true, false, true));
-            isStillShowing.set(isShowing(dialogPane));
-            press(dialogPane, KeyCode.N);
-        });
-
-        assertTrue(isStillShowing.get(), "The dialog closed before N was pressed");
-        assertFalse(isConfirmed);
+    public void showAndConfirm_yPressedWithControl_staysOpen() throws Exception {
+        // On macOS, Control is not the shortcut key, so it must be rejected separately from Meta
+        assertStaysOpenAfter(pressedWith(KeyCode.Y, KeyCode.CONTROL));
     }
 
     @Test
-    public void showAndConfirm_longestNames_fitsSmallScreenWithoutCutOffText() throws Exception {
-        // Valid names are at most 70 characters; "W" is among the widest letters
-        Person longNames = new PersonBuilder().withName("W".repeat(70)).withGuardianName("W".repeat(70)).build();
+    public void showAndConfirm_yPressedWithMeta_staysOpen() throws Exception {
+        assertStaysOpenAfter(pressedWith(KeyCode.Y, KeyCode.META));
+    }
+
+    @Test
+    public void showAndConfirm_yPressedWithAlt_staysOpen() throws Exception {
+        assertStaysOpenAfter(pressedWith(KeyCode.Y, KeyCode.ALT));
+    }
+
+    @Test
+    public void showAndConfirm_nPressedWithControl_staysOpen() throws Exception {
+        assertStaysOpenAfter(pressedWith(KeyCode.N, KeyCode.CONTROL));
+    }
+
+    @Test
+    public void showAndConfirm_yPressedWithShift_confirms() throws Exception {
+        assertTrue(respond(CARL, dialogPane -> fire(dialogPane, pressedWith(KeyCode.Y, KeyCode.SHIFT))));
+    }
+
+    @Test
+    public void showAndConfirm_longestNamesAndFee_fitsSmallScreenWithoutCutOffText() throws Exception {
+        // Valid names are at most 70 characters; "W" is among the widest letters. The fee warning adds height.
+        Person longNames = new PersonBuilder().withName("W".repeat(70)).withGuardianName("W".repeat(70))
+                .withOutstandingFee("99999.99").build();
         AtomicReference<Dimension2D> size = new AtomicReference<>();
         List<String> cutOffTexts = new ArrayList<>();
 
@@ -258,6 +277,30 @@ public class DeleteConfirmationDialogTest {
         action.get(10, TimeUnit.SECONDS);
         assertFalse(isLeftOpen.get(), "The dialog was still open after the user's action");
         return isConfirmed;
+    }
+
+    /**
+     * Asserts that {@code keyPress} leaves the dialog open, so that N then cancels the deletion.
+     */
+    private static void assertStaysOpenAfter(KeyEvent keyPress) throws Exception {
+        AtomicBoolean isStillShowing = new AtomicBoolean();
+
+        boolean isConfirmed = respond(CARL, dialogPane -> {
+            fire(dialogPane, keyPress);
+            isStillShowing.set(isShowing(dialogPane));
+            press(dialogPane, KeyCode.N);
+        });
+
+        assertTrue(isStillShowing.get(), "The dialog closed before N was pressed");
+        assertFalse(isConfirmed);
+    }
+
+    /**
+     * Returns a press of {@code key} with {@code modifier} (Shift, Control, Alt or Meta) held down.
+     */
+    private static KeyEvent pressedWith(KeyCode key, KeyCode modifier) {
+        return new KeyEvent(KeyEvent.KEY_PRESSED, "", "", key, modifier == KeyCode.SHIFT,
+                modifier == KeyCode.CONTROL, modifier == KeyCode.ALT, modifier == KeyCode.META);
     }
 
     /**

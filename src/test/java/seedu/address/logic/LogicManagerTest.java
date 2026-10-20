@@ -146,14 +146,14 @@ public class LogicManagerTest {
 
     @Test
     public void getDeletionTarget_validDelete_returnsDisplayedStudentWithoutDeleting() {
-        model.addPerson(BOB);
         model.addPerson(AMY);
-        model.updateFilteredPersonList(person -> person.equals(AMY));
+        model.addPerson(BOB);
+        model.updateFilteredPersonList(person -> person.equals(BOB));
 
-        // Index 1 is BOB in the full list, but AMY in the displayed list
-        assertEquals(Optional.of(AMY), logic.getDeletionTarget("delete 1"));
-        assertEquals(Optional.of(AMY), logic.getDeletionTarget("  delete   1  "));
-        assertEquals(List.of(BOB, AMY), model.getAddressBook().getPersonList());
+        // Index 1 is AMY in the full list, but BOB, who owes a fee, in the displayed list
+        assertEquals(Optional.of(BOB), logic.getDeletionTarget("delete 1"));
+        assertEquals(Optional.of(BOB), logic.getDeletionTarget("  delete   1  "));
+        assertEquals(List.of(AMY, BOB), model.getAddressBook().getPersonList());
         assertFalse(Files.exists(temporaryFolder.resolve("addressBook.json")));
     }
 
@@ -167,14 +167,6 @@ public class LogicManagerTest {
             assertEquals(Optional.empty(), logic.getDeletionTarget(input), input);
         }
         assertEquals(List.of(AMY), model.getAddressBook().getPersonList());
-    }
-
-    @Test
-    public void getDeletionTarget_studentOwesFee_returnsEmpty() {
-        // BOB owes a fee, so he cannot be deleted and no confirmation is needed
-        model.addPerson(BOB);
-
-        assertEquals(Optional.empty(), logic.getDeletionTarget("delete 1"));
     }
 
     @Test

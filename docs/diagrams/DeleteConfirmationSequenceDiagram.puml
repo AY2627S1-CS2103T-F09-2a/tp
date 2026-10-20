@@ -21,7 +21,7 @@ activate Logic
 Logic --> MainWindow : student
 deactivate Logic
 
-alt student can be deleted
+alt student found
     MainWindow -> Handler : confirmAndDelete("delete 2", student)
     activate Handler
 
