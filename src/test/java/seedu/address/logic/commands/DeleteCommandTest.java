@@ -11,6 +11,7 @@ import static seedu.address.testutil.TypicalIndexes.INDEX_FIRST_PERSON;
 import static seedu.address.testutil.TypicalIndexes.INDEX_SECOND_PERSON;
 import static seedu.address.testutil.TypicalIndexes.INDEX_THIRD_PERSON;
 import static seedu.address.testutil.TypicalPersons.ALICE;
+import static seedu.address.testutil.TypicalPersons.BENSON;
 import static seedu.address.testutil.TypicalPersons.CARL;
 import static seedu.address.testutil.TypicalPersons.getTypicalAddressBook;
 
@@ -97,12 +98,11 @@ public class DeleteCommandTest {
 
     @Test
     public void execute_studentOwesFeeInFilteredList_throwsCommandException() {
-        model.updateFilteredPersonList(person -> person.getOutstandingFee().isPresent());
-        Person studentOwingFee = model.getFilteredPersonList().get(INDEX_SECOND_PERSON.getZeroBased());
-        String expectedMessage = String.format(DeleteCommand.MESSAGE_STUDENT_OWES_FEE, studentOwingFee.getName(),
-                studentOwingFee.getOutstandingFee().orElseThrow());
+        // Only BENSON, who owes S$99999.99, is displayed. Index 1 of the full list is ALICE.
+        showPersonAtIndex(model, INDEX_SECOND_PERSON);
+        String expectedMessage = String.format(DeleteCommand.MESSAGE_STUDENT_OWES_FEE, BENSON.getName(), "99999.99");
 
-        assertCommandFailure(new DeleteCommand(INDEX_SECOND_PERSON), model, expectedMessage);
+        assertCommandFailure(new DeleteCommand(INDEX_FIRST_PERSON), model, expectedMessage);
     }
 
     @Test

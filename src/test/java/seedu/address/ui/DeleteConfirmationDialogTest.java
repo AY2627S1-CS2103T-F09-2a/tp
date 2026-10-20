@@ -172,11 +172,11 @@ public class DeleteConfirmationDialogTest {
                     KeyCode.D, KeyCode.E, KeyCode.L, KeyCode.DIGIT2)) {
                 press(dialogPane, key);
             }
-            isStillShowing.set(dialogPane.getScene().getWindow().isShowing());
+            isStillShowing.set(isShowing(dialogPane));
             press(dialogPane, KeyCode.N);
         });
 
-        assertTrue(isStillShowing.get());
+        assertTrue(isStillShowing.get(), "The dialog closed before N was pressed");
         assertFalse(isConfirmed);
         assertFalse(focusOwner.get() instanceof Button);
     }
@@ -187,11 +187,11 @@ public class DeleteConfirmationDialogTest {
 
         boolean isConfirmed = respond(CARL, dialogPane -> {
             fire(dialogPane, new KeyEvent(KeyEvent.KEY_PRESSED, "", "", KeyCode.Y, false, true, false, true));
-            isStillShowing.set(dialogPane.getScene().getWindow().isShowing());
+            isStillShowing.set(isShowing(dialogPane));
             press(dialogPane, KeyCode.N);
         });
 
-        assertTrue(isStillShowing.get());
+        assertTrue(isStillShowing.get(), "The dialog closed before N was pressed");
         assertFalse(isConfirmed);
     }
 
@@ -234,25 +234,28 @@ public class DeleteConfirmationDialogTest {
     /**
      * Shows a dialog for {@code student}, performs {@code userAction} once it is showing,
      * and returns whether the user confirmed the deletion.
-     * Fails if the dialog is still open after {@code userAction}, instead of waiting for an answer that never comes.
+     * Fails if {@code userAction} throws, or if the dialog is still open after it,
+     * instead of waiting for an answer that never comes.
      */
     private static boolean respond(Person student, Consumer<DialogPane> userAction) throws Exception {
+        DeleteConfirmationDialog dialog = runOnFxThread(() -> newDialog(student));
+        FutureTask<Void> action = new FutureTask<>(() -> userAction.accept(dialog.getDialogPane()), null);
         AtomicBoolean isLeftOpen = new AtomicBoolean();
+
         boolean isConfirmed = runOnFxThread(() -> {
-            DeleteConfirmationDialog dialog = newDialog(student);
-            DialogPane dialogPane = dialog.getDialogPane();
             Platform.runLater(() -> {
-                try {
-                    userAction.accept(dialogPane);
-                } finally {
-                    Window window = dialogPane.getScene().getWindow();
-                    isLeftOpen.set(window.isShowing());
-                    // Hiding the dialog ends showAndConfirm, so the test fails below instead of timing out
-                    window.hide();
-                }
+                // Closing the dialog detaches its pane from the window, so the window is found first
+                Window window = dialog.getDialogPane().getScene().getWindow();
+                action.run();
+                isLeftOpen.set(window.isShowing());
+                // Hiding the dialog ends showAndConfirm, so the test fails below instead of timing out
+                window.hide();
             });
             return dialog.showAndConfirm();
         });
+
+        // Rethrows any exception from userAction, with its original stack trace as the cause
+        action.get(10, TimeUnit.SECONDS);
         assertFalse(isLeftOpen.get(), "The dialog was still open after the user's action");
         return isConfirmed;
     }
@@ -267,11 +270,24 @@ public class DeleteConfirmationDialogTest {
 
     /**
      * Sends {@code keyEvent} to the focused node of the dialog, or to its scene if nothing has focus.
+     * Once the dialog has closed, the event is not sent, as a real one would reach the window behind it.
      */
     private static void fire(DialogPane dialogPane, KeyEvent keyEvent) {
+        if (!isShowing(dialogPane)) {
+            return;
+        }
         Scene scene = dialogPane.getScene();
         EventTarget target = scene.getFocusOwner() != null ? scene.getFocusOwner() : scene;
         Event.fireEvent(target, keyEvent);
+    }
+
+    /**
+     * Returns true if the dialog holding {@code dialogPane} is showing.
+     * A closed dialog detaches its pane, so the pane then has no scene.
+     */
+    private static boolean isShowing(DialogPane dialogPane) {
+        Scene scene = dialogPane.getScene();
+        return scene != null && scene.getWindow().isShowing();
     }
 
     private static <T> T runOnFxThread(Callable<T> callable) throws Exception {
