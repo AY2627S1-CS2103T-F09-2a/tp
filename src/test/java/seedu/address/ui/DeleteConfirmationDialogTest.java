@@ -48,8 +48,11 @@ public class DeleteConfirmationDialogTest {
     private static final double SMALL_SCREEN_WIDTH = 1280 / 1.5;
     private static final double SMALL_SCREEN_HEIGHT = 720 / 1.5 - 48;
 
+    /** Owns every dialog in these tests, as the main window owns every dialog in the app. */
+    private static Stage owner;
+
     @BeforeAll
-    public static void initializeToolkit() {
+    public static void initializeToolkit() throws Exception {
         try {
             Platform.startup(() -> {});
         } catch (IllegalStateException e) {
@@ -57,6 +60,12 @@ public class DeleteConfirmationDialogTest {
         }
         // Closing a test's dialog would otherwise shut JavaFX down, because no other window is showing
         Platform.setImplicitExit(false);
+        owner = runOnFxThread(() -> {
+            Stage stage = new Stage();
+            // A dialog copies its owner's stylesheets, so the owner needs a scene, as the main window has
+            stage.setScene(new Scene(new Pane()));
+            return stage;
+        });
     }
 
     @Test
@@ -212,12 +221,9 @@ public class DeleteConfirmationDialogTest {
     }
 
     /**
-     * Returns a dialog for {@code student} owned by a new window. Must be called on the JavaFX thread.
+     * Returns a dialog for {@code student} owned by the shared owner window. Must be called on the JavaFX thread.
      */
     private static DeleteConfirmationDialog newDialog(Person student) {
-        Stage owner = new Stage();
-        // A dialog copies its owner's stylesheets, so the owner needs a scene, as the main window has
-        owner.setScene(new Scene(new Pane()));
         return new DeleteConfirmationDialog(owner, student);
     }
 
@@ -228,13 +234,27 @@ public class DeleteConfirmationDialogTest {
     /**
      * Shows a dialog for {@code student}, performs {@code userAction} once it is showing,
      * and returns whether the user confirmed the deletion.
+     * Fails if the dialog is still open after {@code userAction}, instead of waiting for an answer that never comes.
      */
     private static boolean respond(Person student, Consumer<DialogPane> userAction) throws Exception {
-        return runOnFxThread(() -> {
+        AtomicBoolean isLeftOpen = new AtomicBoolean();
+        boolean isConfirmed = runOnFxThread(() -> {
             DeleteConfirmationDialog dialog = newDialog(student);
-            Platform.runLater(() -> userAction.accept(dialog.getDialogPane()));
+            DialogPane dialogPane = dialog.getDialogPane();
+            Platform.runLater(() -> {
+                try {
+                    userAction.accept(dialogPane);
+                } finally {
+                    Window window = dialogPane.getScene().getWindow();
+                    isLeftOpen.set(window.isShowing());
+                    // Hiding the dialog ends showAndConfirm, so the test fails below instead of timing out
+                    window.hide();
+                }
+            });
             return dialog.showAndConfirm();
         });
+        assertFalse(isLeftOpen.get(), "The dialog was still open after the user's action");
+        return isConfirmed;
     }
 
     /**

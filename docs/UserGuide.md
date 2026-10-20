@@ -30,7 +30,7 @@ Poco Book is a **desktop application for independent tutors to manage students, 
 
    * `add n/John Doe g/Jane Doe gp/98765432 e/johnd@example.com a/John street, block 123, #01-01` : Adds a student named `John Doe`, with guardian `Jane Doe`, to Poco Book.
 
-   * `delete 2` : Deletes the 2nd student shown in the current list, after you press Y to confirm.
+   * `delete 2` : Deletes the 2nd student shown in the current list, after you press Y to confirm. A student who still owes a fee cannot be deleted.
 
    * `clear` : Deletes all students.
 
