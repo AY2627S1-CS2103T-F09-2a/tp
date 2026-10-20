@@ -74,7 +74,11 @@ The **API** of this component is specified in [`Ui.java`](https://github.com/AY2
 
 ![Structure of the UI Component](images/UiClassDiagram.png)
 
-The UI consists of a `MainWindow` and its parts, such as `CommandBox`, `ResultDisplay`, `PersonListPanel`, `PersonDetailsPanel`, and `StatusBarFooter`. All of these, including `MainWindow`, inherit from the abstract `UiPart` class, which captures common behavior among classes that represent visible GUI parts.
+The UI consists of a `MainWindow` and its parts, such as `CommandBox`, `ResultDisplay`, `PersonListPanel`, `PersonDetailsPanel`, and `StatusBarFooter`. All of these, including `MainWindow`, inherit from the abstract `UiPart` class, which captures common behavior among classes that represent visible GUI parts. `MainWindow` also holds a `DeleteConfirmationHandler` and creates a `DeleteConfirmationDialog` when a deletion needs confirming. These two classes are not `UiPart`s; see [Delete confirmation](#delete-confirmation).
+
+The class diagram below shows the UI classes that inherit from `UiPart`. It is drawn separately from the diagram above so that the lines in both diagrams stay readable.
+
+<img src="images/UiPartClassDiagram.png" width="360" />
 
 The `UI` component uses the JavaFX UI framework. The layouts of these UI parts are defined in matching `.fxml` files in `src/main/resources/view`. For example, [`MainWindow.fxml`](https://github.com/AY2627S1-CS2103T-F09-2a/tp/tree/master/src/main/resources/view/MainWindow.fxml) specifies the layout of [`MainWindow`](https://github.com/AY2627S1-CS2103T-F09-2a/tp/tree/master/src/main/java/seedu/address/ui/MainWindow.java).
 
@@ -95,6 +99,8 @@ Before executing a command, `MainWindow` remembers the selected student. After a
 
 **API** : [`Logic.java`](https://github.com/AY2627S1-CS2103T-F09-2a/tp/tree/master/src/main/java/seedu/address/logic/Logic.java)
 
+Besides `Logic#execute(String)`, the API has `Logic#getDeletionTarget(String)`, which parses a command without executing it and reports which displayed student a `delete` command would remove. The `UI` uses it to ask the tutor to confirm a deletion first; see [Delete confirmation](#delete-confirmation).
+
 Here's a (partial) class diagram of the `Logic` component:
 
 <img src="images/LogicClassDiagram.png" width="550"/>
@@ -102,6 +108,8 @@ Here's a (partial) class diagram of the `Logic` component:
 The sequence diagram below illustrates the interactions within the `Logic` component, taking `execute("delete 1")` API call as an example.
 
 ![Interactions Inside the Logic Component for the `delete 1` Command](images/DeleteSequenceDiagram.png)
+
+For simplicity, the diagram leaves out the check in `DeleteCommand#execute(Model)` that refuses to delete a student who still owes a fee. See [Delete confirmation](#delete-confirmation).
 
 <div markdown="span" class="alert alert-info">:information_source: **Note:** The lifeline for `DeleteCommandParser` should end at the destroy marker (X), but due to a limitation of PlantUML, it continues to the end of the diagram.
 </div>
@@ -169,6 +177,10 @@ This section describes some noteworthy details on how certain features are imple
 
 A student who still owes a fee cannot be deleted, so that an unpaid fee is never lost by accident. `DeleteCommand#isDeletable(Person)` holds this rule. `DeleteCommand#execute(Model)` refuses such a student with an error message that names the student and the amount owed. To delete them, the tutor first records the payment with `paid` or clears the fee with `setoutstanding`. The rule applies only to `delete`: `clear` still removes all students, including those who owe fees.
 
+The activity diagram below shows what happens when the tutor enters `delete INDEX`.
+
+<img src="images/DeleteConfirmationActivityDiagram.png" width="750" />
+
 `MainWindow#executeCommand(String)` decides whether a command needs confirmation:
 
 1. It calls `Logic#getDeletionTarget(String)`. `LogicManager` parses the input with its `AddressBookParser`, the same parser that `Logic#execute(String)` uses. If the input is a `delete` command, `LogicManager` calls `DeleteCommand#getTarget(List)` with the displayed list, so the index refers to the same list, such as `find` or `fees` results, as it does when `DeleteCommand` executes. It returns the student only if `DeleteCommand#isDeletable(Person)` allows the deletion.
@@ -177,7 +189,11 @@ A student who still owes a fee cannot be deleted, so that an unpaid fee is never
 1. If the tutor cancels, the handler returns a `CommandResult` with a cancellation message without calling `Logic#execute(String)`, so nothing is deleted or saved. `MainWindow` then restores the selection as it does after any other successful command.
 1. If the tutor confirms, the handler calls `Logic#getDeletionTarget(String)` again to check that the index still identifies the same student. It then calls `Logic#execute(String)`, which deletes the student and saves the data as before. While the dialog is open, the tutor cannot enter commands, so the displayed list cannot change. The second check is a safeguard in case a future change allows the list to change during confirmation: if a different student now has that index, the handler throws a `CommandException` and deletes nothing.
 
-`DeleteConfirmationDialog` is a JavaFX `Alert` that shows the student's name, phone, guardian name and guardian phone. Together, the name and guardian phone identify a student in Poco Book, so they tell apart students who share a name. The dialog works as follows:
+The sequence diagram below shows these steps for `delete 2`. For simplicity, it leaves out the error that the handler reports if the second check finds a different student.
+
+<img src="images/DeleteConfirmationSequenceDiagram.png" width="800" />
+
+`DeleteConfirmationDialog` shows a JavaFX `Alert` with the student's name, phone, guardian name and guardian phone. Together, the name and guardian phone identify a student in Poco Book, so they tell apart students who share a name. The dialog works as follows:
 
 * Pressing Y deletes the student, and pressing N keeps them. Pressing Esc or closing the window also keeps the student.
 * All other keys, including Enter and Space, are ignored. If the tutor presses Enter twice, or starts typing the next command before noticing the dialog, those keys go to the dialog. No command word starts with Y or N, so the start of the next command cannot answer the dialog, although a Y or N typed later would. D was avoided because `delete` starts with D.

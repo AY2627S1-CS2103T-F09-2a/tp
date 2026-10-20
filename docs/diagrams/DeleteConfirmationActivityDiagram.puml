@@ -1,0 +1,31 @@
+@startuml
+skin rose
+skinparam ActivityFontSize 15
+skinparam ArrowFontSize 12
+start
+:Tutor enters delete INDEX;
+
+'Since the beta syntax does not support placing the condition outside the
+'diamond we place it as the true branch instead.
+
+'The first branch's guard and action are split over two lines, and the padding after [else]
+'(non-breaking spaces) moves that label next to the diamond it leaves from.
+if () then ([INDEX is
+invalid])
+    :Show error
+    message;
+([else]                ) elseif () then ([student owes a fee])
+    :Show error message
+    with the amount owed;
+else ([else])
+    :Show confirmation dialog;
+    if () then ([tutor presses Y])
+        :Delete student and save data;
+        :Show deleted student's details;
+    else ([tutor presses N or Esc,
+    or closes the dialog])
+        :Show "Deletion cancelled";
+    endif
+endif
+stop
+@enduml
