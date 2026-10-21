@@ -7,6 +7,8 @@ import java.util.stream.Stream;
 import seedu.address.logic.commands.EditCommand.EditPersonDescriptor;
 import seedu.address.model.person.Address;
 import seedu.address.model.person.Email;
+import seedu.address.model.person.GuardianName;
+import seedu.address.model.person.GuardianPhone;
 import seedu.address.model.person.Name;
 import seedu.address.model.person.Person;
 import seedu.address.model.person.Phone;
@@ -36,6 +38,8 @@ public class EditPersonDescriptorBuilder {
         person.getPhone().ifPresent(descriptor::setPhone);
         person.getEmail().ifPresent(descriptor::setEmail);
         person.getAddress().ifPresent(descriptor::setAddress);
+        descriptor.setGuardianName(person.getGuardianName());
+        descriptor.setGuardianPhone(person.getGuardianPhone());
         descriptor.setTags(person.getTags());
     }
 
@@ -68,6 +72,22 @@ public class EditPersonDescriptorBuilder {
      */
     public EditPersonDescriptorBuilder withAddress(String address) {
         descriptor.setAddress(new Address(address));
+        return this;
+    }
+
+    /**
+     * Sets the {@code GuardianName} of the {@code EditPersonDescriptor} that we are building.
+     */
+    public EditPersonDescriptorBuilder withGuardianName(String guardianName) {
+        descriptor.setGuardianName(new GuardianName(guardianName));
+        return this;
+    }
+
+    /**
+     * Sets the {@code GuardianPhone} of the {@code EditPersonDescriptor} that we are building.
+     */
+    public EditPersonDescriptorBuilder withGuardianPhone(String guardianPhone) {
+        descriptor.setGuardianPhone(new GuardianPhone(guardianPhone));
         return this;
     }
 
