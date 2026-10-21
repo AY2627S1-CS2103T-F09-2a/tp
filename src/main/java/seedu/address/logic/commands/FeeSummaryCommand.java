@@ -14,7 +14,8 @@ public class FeeSummaryCommand extends Command {
     public static final String COMMAND_WORD = "feesummary";
     public static final String MESSAGE_USAGE = COMMAND_WORD
             + ": Shows the total outstanding fees across all students.\nExample: " + COMMAND_WORD;
-    public static final String MESSAGE_SUCCESS = "%1$d student(s) owe a total of S$%2$s.";
+    public static final String MESSAGE_SUCCESS = "Across all stored students: %1$d student(s) owe a total of S$%2$s. "
+            + "Displayed list unchanged.";
 
     @Override
     public CommandResult execute(Model model) {
