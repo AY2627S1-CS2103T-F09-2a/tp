@@ -83,17 +83,14 @@ public class PersonListPanel extends UiPart<Region> {
     }
 
     /**
-     * Records the students replaced in place by {@code change} to the full list, such as by an edit.
-     * Removed and added students are paired by position, which is correct for a replacement made with
-     * {@code set}. A same-size {@code setAll} on the full list would be paired wrongly.
+     * Records the student replaced in place by {@code change} to the full list, such as by an edit.
+     * Only one-for-one replacements are recorded, as an edit replaces one student. When several students
+     * are replaced at once, such as by a same-size {@code setAll}, they cannot be paired reliably.
      */
     private void recordReplacements(ListChangeListener.Change<? extends Person> change) {
         while (change.next()) {
-            if (!change.wasReplaced() || change.getRemovedSize() != change.getAddedSize()) {
-                continue;
-            }
-            for (int i = 0; i < change.getRemovedSize(); i++) {
-                replacements.put(change.getRemoved().get(i), change.getAddedSubList().get(i));
+            if (change.getRemovedSize() == 1 && change.getAddedSize() == 1) {
+                replacements.put(change.getRemoved().get(0), change.getAddedSubList().get(0));
             }
         }
     }

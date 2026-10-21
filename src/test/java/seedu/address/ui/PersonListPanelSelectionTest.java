@@ -70,4 +70,24 @@ public class PersonListPanelSelectionTest {
         Platform.runLater(assertion);
         assertion.get(10, TimeUnit.SECONDS);
     }
+
+    @Test
+    public void retainSelection_listReplacedBySameSizeList_clearsSelection() throws Exception {
+        FutureTask<Void> assertion = new FutureTask<>(() -> {
+            Person selected = new PersonBuilder().withName("Bernice Yu").build();
+            ObservableList<Person> persons = FXCollections.observableArrayList(
+                    new PersonBuilder().withName("Alex Yeoh").build(), selected);
+            PersonListPanel panel = new PersonListPanel(persons, persons);
+            panel.selectPerson(selected);
+
+            persons.setAll(new PersonBuilder().withName("Charlotte Oliveiro").build(),
+                    new PersonBuilder().withName("David Li").build());
+            panel.retainSelection(selected);
+
+            assertNull(panel.getSelectedPerson());
+            return null;
+        });
+        Platform.runLater(assertion);
+        assertion.get(10, TimeUnit.SECONDS);
+    }
 }
