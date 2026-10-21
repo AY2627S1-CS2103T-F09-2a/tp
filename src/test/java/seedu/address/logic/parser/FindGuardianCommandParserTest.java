@@ -3,6 +3,7 @@ package seedu.address.logic.parser;
 import static seedu.address.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
 import static seedu.address.logic.parser.CommandParserTestUtil.assertParseFailure;
 import static seedu.address.logic.parser.CommandParserTestUtil.assertParseSuccess;
+import static seedu.address.testutil.Assert.assertThrows;
 
 import java.util.List;
 
@@ -17,6 +18,11 @@ public class FindGuardianCommandParserTest {
             String.format(MESSAGE_INVALID_COMMAND_FORMAT, FindGuardianCommand.MESSAGE_USAGE);
 
     private FindGuardianCommandParser parser = new FindGuardianCommandParser();
+
+    @Test
+    public void parse_null_throwsNullPointerException() {
+        assertThrows(NullPointerException.class, () -> parser.parse(null));
+    }
 
     @Test
     public void parse_emptyArg_throwsParseException() {
@@ -45,6 +51,10 @@ public class FindGuardianCommandParserTest {
                 new FindGuardianCommand(new GuardianContainsKeywordsPredicate(List.of("92345678"))));
         assertParseSuccess(parser, "Mei 92345678",
                 new FindGuardianCommand(new GuardianContainsKeywordsPredicate(List.of("Mei", "92345678"))));
+
+        // phone typed with a hyphen is kept as one keyword
+        assertParseSuccess(parser, "9234-5678",
+                new FindGuardianCommand(new GuardianContainsKeywordsPredicate(List.of("9234-5678"))));
     }
 
     @Test

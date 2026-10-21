@@ -1,5 +1,6 @@
 package seedu.address.logic.parser;
 
+import static java.util.Objects.requireNonNull;
 import static seedu.address.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
 
 import java.text.Normalizer;
@@ -11,17 +12,20 @@ import seedu.address.model.person.GuardianContainsKeywordsPredicate;
 import seedu.address.model.person.GuardianName;
 
 /**
- * Parses input arguments and creates a new FindGuardianCommand object
+ * Parses input arguments and creates a new FindGuardianCommand object.
  */
 public class FindGuardianCommandParser implements Parser<FindGuardianCommand> {
 
     /**
      * Parses the given {@code String} of arguments in the context of the FindGuardianCommand
      * and returns a FindGuardianCommand object for execution.
-     * A guardian phone keyword is accepted because guardian names may contain digits.
-     * @throws ParseException if the user input does not conform to the expected format
+     * Phone keywords pass the guardian-name check because guardian names may contain digits and hyphens.
+     *
+     * @throws ParseException If the user input does not conform to the expected format.
      */
+    @Override
     public FindGuardianCommand parse(String args) throws ParseException {
+        requireNonNull(args);
         String trimmedArgs = args.trim();
         if (trimmedArgs.isEmpty()) {
             throw new ParseException(

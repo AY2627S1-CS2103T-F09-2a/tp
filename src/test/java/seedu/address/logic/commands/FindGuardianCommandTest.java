@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.logic.Messages.MESSAGE_PERSONS_LISTED_OVERVIEW;
 import static seedu.address.logic.commands.CommandTestUtil.assertCommandSuccess;
+import static seedu.address.testutil.Assert.assertThrows;
 import static seedu.address.testutil.TypicalPersons.ALICE;
 import static seedu.address.testutil.TypicalPersons.BENSON;
 import static seedu.address.testutil.TypicalPersons.CARL;
@@ -14,6 +15,8 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
+import seedu.address.logic.parser.FindGuardianCommandParser;
+import seedu.address.logic.parser.exceptions.ParseException;
 import seedu.address.model.Model;
 import seedu.address.model.ModelManager;
 import seedu.address.model.UserPrefs;
@@ -28,9 +31,16 @@ import seedu.address.testutil.PersonBuilder;
 public class FindGuardianCommandTest {
     private static final Person ZACK = new PersonBuilder().withName("Zack Lim")
             .withGuardianName("Mary Lim").withGuardianPhone("87654321").build();
+    private static final Person YVONNE = new PersonBuilder().withName("Yvonne Lim")
+            .withGuardianName("Mary Lim").withGuardianPhone("87654321").build();
 
     private Model model = new ModelManager(getTypicalAddressBook(), new UserPrefs());
     private Model expectedModel = new ModelManager(getTypicalAddressBook(), new UserPrefs());
+
+    @Test
+    public void constructor_nullPredicate_throwsNullPointerException() {
+        assertThrows(NullPointerException.class, () -> new FindGuardianCommand(null));
+    }
 
     @Test
     public void equals() {
@@ -83,6 +93,30 @@ public class FindGuardianCommandTest {
     }
 
     @Test
+    public void execute_hyphenatedPhoneKeyword_personFound() throws ParseException {
+        model.addPerson(ZACK);
+        expectedModel.addPerson(ZACK);
+        assertParsedFindGuardianResult("8765-4321", List.of(ZACK));
+    }
+
+    @Test
+    public void execute_sharedGuardian_allSiblingsFoundOnce() throws ParseException {
+        model.addPerson(ZACK);
+        model.addPerson(YVONNE);
+        expectedModel.addPerson(ZACK);
+        expectedModel.addPerson(YVONNE);
+
+        // a prior filter hides both siblings
+        model.updateFilteredPersonList(new NameContainsKeywordsPredicate(List.of("Kurz")));
+
+        // both siblings match the name and the phone, but each is listed once in stored order
+        assertParsedFindGuardianResult("  Mary \t 87654321 ", List.of(ZACK, YVONNE));
+
+        model.updateFilteredPersonList(Model.PREDICATE_SHOW_ALL_PERSONS);
+        assertEquals(expectedModel.getAddressBook(), model.getAddressBook());
+    }
+
+    @Test
     public void execute_partialKeyword_noPersonFound() {
         // "Paul" is only a prefix of "Pauline", and "8765" only part of a phone
         model.addPerson(ZACK);
@@ -123,6 +157,20 @@ public class FindGuardianCommandTest {
     public void shouldSaveAddressBook_findGuardianCommand_returnsFalse() {
         assertFalse(new FindGuardianCommand(new GuardianContainsKeywordsPredicate(List.of("Mei")))
                 .shouldSaveAddressBook());
+    }
+
+    /**
+     * Parses {@code userInput} with {@code FindGuardianCommandParser}, executes the command and asserts
+     * that exactly {@code expectedPersons} are listed, in the given order.
+     */
+    private void assertParsedFindGuardianResult(String userInput, List<Person> expectedPersons)
+            throws ParseException {
+        String expectedMessage = String.format(MESSAGE_PERSONS_LISTED_OVERVIEW, expectedPersons.size());
+        FindGuardianCommand command = new FindGuardianCommandParser().parse(userInput);
+        expectedModel.updateFilteredPersonList(new GuardianContainsKeywordsPredicate(
+                List.of(userInput.trim().split("\\s+"))));
+        assertCommandSuccess(command, model, expectedMessage, expectedModel);
+        assertEquals(expectedPersons, model.getFilteredPersonList());
     }
 
     /**
