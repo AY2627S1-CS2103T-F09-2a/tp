@@ -1,9 +1,14 @@
 package seedu.address.logic.commands;
 
 import static java.util.Objects.requireNonNull;
+import static seedu.address.commons.util.AppUtil.checkArgument;
 
+import java.math.BigDecimal;
 import java.util.function.Predicate;
+import java.util.logging.Logger;
 
+import seedu.address.commons.core.LogsCenter;
+import seedu.address.commons.util.ToStringBuilder;
 import seedu.address.model.Model;
 import seedu.address.model.person.Person;
 
@@ -14,24 +19,67 @@ public class FeesCommand extends Command {
 
     public static final String COMMAND_WORD = "fees";
 
-    public static final String MESSAGE_USAGE = COMMAND_WORD + ": Lists all students with outstanding fees.\n"
-            + "Example: " + COMMAND_WORD;
+    public static final String MESSAGE_USAGE = COMMAND_WORD
+            + ": Lists students with outstanding fees, optionally at least a minimum amount.\n"
+            + "Parameters: [min/AMOUNT]\n"
+            + "AMOUNT must be between 0 and 99999.99, with at most two decimal places and no sign.\n"
+            + "Example: " + COMMAND_WORD + " min/100";
 
     public static final String MESSAGE_SUCCESS = "%1$d student(s) with outstanding fees.";
 
     public static final Predicate<Person> PREDICATE_HAS_OUTSTANDING_FEE =
             person -> person.getOutstandingFee().isPresent();
 
+    private static final Logger logger = LogsCenter.getLogger(FeesCommand.class);
+
+    private final BigDecimal minimumAmount;
+
+    /**
+     * Creates a command listing all students with outstanding fees.
+     */
+    public FeesCommand() {
+        this(BigDecimal.ZERO);
+    }
+
+    /**
+     * Creates a command listing students owing at least the given minimum amount.
+     *
+     * @throws IllegalArgumentException if the minimum amount is negative.
+     */
+    public FeesCommand(BigDecimal minimumAmount) {
+        this.minimumAmount = requireNonNull(minimumAmount);
+        checkArgument(minimumAmount.signum() >= 0, "Minimum amount must not be negative.");
+    }
+
     @Override
     public CommandResult execute(Model model) {
         requireNonNull(model);
-        model.updateFilteredPersonList(PREDICATE_HAS_OUTSTANDING_FEE);
-        return new CommandResult(String.format(MESSAGE_SUCCESS, model.getFilteredPersonList().size()));
+        model.updateFilteredPersonList(minimumAmount.signum() == 0
+                ? PREDICATE_HAS_OUTSTANDING_FEE
+                : person -> person.getOutstandingFee()
+                        .filter(fee -> fee.value.compareTo(minimumAmount) >= 0).isPresent());
+        int matchingStudents = model.getFilteredPersonList().size();
+        logger.info("Outstanding fee filter applied: minimum=" + minimumAmount.toPlainString()
+                + "; matching students=" + matchingStudents);
+        return new CommandResult(String.format(MESSAGE_SUCCESS, matchingStudents));
     }
 
     @Override
     public boolean equals(Object other) {
-        return other == this || other instanceof FeesCommand;
+        return other == this || other instanceof FeesCommand command
+                && minimumAmount.compareTo(command.minimumAmount) == 0;
+    }
+
+    @Override
+    public int hashCode() {
+        return minimumAmount.stripTrailingZeros().hashCode();
+    }
+
+    @Override
+    public String toString() {
+        return new ToStringBuilder(this)
+                .add("minimumAmount", minimumAmount)
+                .toString();
     }
 
     @Override
