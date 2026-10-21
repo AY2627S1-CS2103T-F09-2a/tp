@@ -1037,5 +1037,17 @@ testers are expected to do more *exploratory* testing.
 When registering a new command in `AddressBookParser`, also add its `MESSAGE_USAGE` to
 `HelpCommand.COMMAND_USAGE`, update the UG command list and the `CommandHelpLogicTest` targets,
 and remove that command from `HelpCommandParserTest` invalid targets if present. Verify both the raw command
-and `help COMMAND` through `LogicManager`. For the pending `findguardian` integration (#139), these updates
-must accompany command registration; until then it is deliberately not advertised as available.
+and `help COMMAND` through `LogicManager`. `findguardian` is registered with command-specific help and covered by dispatcher-level search,
+filtered-index payment, invalid-input and persistence regression tests.
+
+### Guardian search and persisted fee updates
+
+1. In a disposable folder, add two students sharing a guardian, with different positive outstanding fees.
+1. Run a student-name search that hides both, then `findguardian GUARDIAN_NAME`.<br>
+   Expected: Both siblings appear once, in stored order. `help findguardian` explains the search without changing it.
+1. Run `paid 1`, then `fees min/100` and `feesummary`.<br>
+   Expected: Only the chosen displayed student's fee is cleared. The minimum filter and all-student total reflect that change.
+1. Restart the app.<br>
+   Expected: The payment and guardian details persist. `findguardian GUARDIAN_PHONE` returns both students.
+1. Try `findguardian`, `findguardian g/NAME`, and `help findguardian extra`.<br>
+   Expected: Invalid-input feedback; records and the current filter remain unchanged.

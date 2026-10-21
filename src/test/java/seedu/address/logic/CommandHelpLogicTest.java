@@ -47,7 +47,7 @@ public class CommandHelpLogicTest {
                 new JsonUserPrefsStorage(directory.resolve("prefs.json"))));
 
         List<String> targets = List.of("add", "clear", "delete", "edit", "exit", "fees", "feesummary", "find",
-                "help", "list", "paid", "setoutstanding", "view");
+                "findguardian", "help", "list", "paid", "setoutstanding", "view");
         assertEquals(String.join(", ", targets), HelpCommand.getAvailableCommands());
         for (String target : targets) {
             CommandResult result = logic.execute("help " + target);
