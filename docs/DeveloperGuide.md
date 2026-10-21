@@ -165,7 +165,7 @@ The all-student fee total (`feesummary`) and full-payment recording (`paid`) ext
 
 #### Implementation
 
-`FeeSummaryCommand` walks every person in the **complete** address book via `Model#getAddressBook()#getPersonList()` rather than the filtered list, keeps a running `BigDecimal` total and a count of students whose fee is present, and formats the result with `toPlainString()` so two decimal places are always shown. Iterating the unfiltered book is what makes the total independent of the current `find`/`fees` filter. The command also overrides `Command#shouldSaveAddressBook()` to return `false`, so `LogicManager` does not write to storage for a pure query. `FeeSummaryCommandParser` rejects any argument with `MESSAGE_INVALID_COMMAND_FORMAT`, which keeps `feesummary 1` from being silently accepted.
+`FeeSummaryCommand` walks every person in the **complete** address book via `Model#getAddressBook()#getPersonList()` rather than the filtered list, keeps a running `BigDecimal` total and a count of students whose fee is present, and formats the result with `toPlainString()` so two decimal places are always shown. The feedback explicitly says "Across all stored students" and "Displayed list unchanged" to make that scope visible in the app. Iterating the unfiltered book is what makes the total independent of the current `find`/`fees` filter. The command also overrides `Command#shouldSaveAddressBook()` to return `false`, so `LogicManager` does not write to storage for a pure query. `FeeSummaryCommandParser` rejects any argument with `MESSAGE_INVALID_COMMAND_FORMAT`, which keeps `feesummary 1` from being silently accepted.
 
 `PaidCommand` holds an `Index` that was validated by `ParserUtil#parseIndex` at parse time. During execution it (i) rejects an index outside the displayed list, (ii) looks up the target `Person` in that displayed list, and (iii) fails with a user-facing `CommandException` when the fee is absent (`Person#getOutstandingFee()` returns an `Optional`). Only after those checks does it construct a replacement `Person` with every other field copied verbatim — name, optional phone/email/address, guardian name and phone, and tags — and call `Model#setPerson(...)`. Because the `Person` is immutable, this copy-then-replace step is what preserves the fields the command does not touch, and because `setPerson` goes through the updated address book, the active filter and the GUI selection are refreshed by the usual `FilteredList`/`ObservableList` listeners.
 
@@ -181,6 +181,28 @@ The corresponding sources are `docs/diagrams/PaidSequenceDiagram.puml`, `FeeSumm
 * **Exact money arithmetic.** Amounts use `BigDecimal` rather than `double`, so totals of many two-decimal fees cannot drift by a cent, and the summary can legitimately exceed the S$99999.99 per-student cap.
 * **Displayed index vs stored index.** Both commands act on the *displayed* list, matching `delete`, `edit`, `view` and `setoutstanding`. This keeps the mental model consistent, at the cost of the user needing to re-run `fees` after a payment because indexes shift.
 * **Alternatives considered.** (a) Making `feesummary` respect the current filter was rejected because a filtered total is easy to misread as the amount still owed overall. (b) Making `paid` accept a partial amount was rejected for v1.4: it needs a payment-history model, which is a larger change than the iteration allows, so `setoutstanding INDEX 0` and `paid INDEX` both clear a whole fee. (c) Reusing `setoutstanding` with amount `0` instead of adding `paid` was considered, but a dedicated command gives clearer feedback (`S$AMOUNT` cleared) and cannot be confused with re-setting a fee.
+
+### Editing guardian contact details
+
+The `edit` command supports updating a student's guardian name (`g/`) and guardian phone number (`gp/`) alongside existing student fields while preserving required-field invariants and duplicate-student checks.
+
+#### Implementation
+
+`EditCommandParser` tokenizes `g/` (`PREFIX_GUARDIAN_NAME`) and `gp/` (`PREFIX_GUARDIAN_PHONE`) together with the existing student prefixes, rejects duplicate `g/` or `gp/` prefixes via `ArgumentMultimap#verifyNoDuplicatePrefixesFor(...)`, and validates any supplied values through `ParserUtil#parseGuardianName` and `ParserUtil#parseGuardianPhone` before storing them on `EditPersonDescriptor`. It also explicitly tokenizes and rejects `f/` (`PREFIX_OUTSTANDING_FEE`) so that fee edits must go through `setoutstanding` or `paid` rather than being absorbed into an adjacent field value.
+
+During execution, `EditCommand#execute(Model)` looks up `personToEdit` from `Model#getFilteredPersonList()` and constructs `editedPerson` via `EditCommand#createEditedPerson(personToEdit, editPersonDescriptor)`. Unedited fields fall back to the existing values on `personToEdit`, including `personToEdit.getOutstandingFee()`. Because student identity in `Person#isSamePerson(Person)` is defined by the combination of student `Name` (case-insensitive, whitespace-normalized) and `GuardianPhone`, editing `gp/` (or `n/`) can change a student's identity. Whenever `!personToEdit.isSamePerson(editedPerson)` holds, `EditCommand` checks `Model#hasPerson(editedPerson)` before calling `Model#setPerson(personToEdit, editedPerson)`, throwing a `CommandException` if the updated `(Name, GuardianPhone)` pair would collide with another existing student.
+
+The sequence diagram below shows the interactions within the `Logic` and `Model` components for `edit 1 g/May Tan gp/98765432`.
+
+![Sequence diagram for editing guardian contact details](images/GuardianEditSequenceDiagram.png)
+
+The corresponding sources are `docs/diagrams/GuardianEditSequenceDiagram.puml`, `EditCommand`, `EditCommand.EditPersonDescriptor` and `EditCommandParser`.
+
+#### Design considerations
+
+* **Guardian fields remain mandatory.** Unlike optional student contact fields (`p/`, `e/`, `a/`), every student record requires a guardian name and guardian phone number, so `g/` and `gp/` cannot be cleared to empty values via `edit`.
+* **Identity-aware duplicate check.** Because `Person#isSamePerson` uses both `Name` and `GuardianPhone`, updating `g/` alone preserves identity whereas updating `gp/` triggers `Model#hasPerson(editedPerson)` to prevent duplicate `(Name, GuardianPhone)` records while still allowing two siblings with different names to share the same guardian phone number.
+* **Alternatives considered.** Introducing a separate `editguardian` command was rejected because tutors frequently correct student and guardian details together after a phone call or form update; extending `edit` with `g/` and `gp/` keeps a single command for field-level updates.
 
 ### \[Proposed\] Undo/redo feature
 
@@ -737,22 +759,23 @@ testers are expected to do more *exploratory* testing.
 
 ### Totalling and recording fee payments
 
-1. Prerequisites: Start with sample data, where Alex Yeoh owes S$120.00, Charlotte Oliveiro owes S$50.00 and Irfan Ibrahim owes S$200.00.
+1. Prerequisites: Start with sample data, where Alex Yeoh owes S$120.00, Charlotte Oliveiro owes S$450.00 and Irfan Ibrahim owes S$250.50.
 
    1. Enter `find Alex` then `feesummary`.<br>
-      Expected: Only Alex is displayed, and the feedback reports `3 student(s) owe a total of S$370.00.` The filter and the displayed list are unchanged.
+      Expected: Only Alex is displayed, and the feedback reports `Across all stored students: 3 student(s) owe a total of S$820.50. Displayed list unchanged.` The filter and the displayed list are unchanged.
 
    1. Enter `fees`, then `paid 1`.<br>
       Expected: Alex's fee is cleared, the feedback states the amount removed, Alex disappears from the `fees` result and the remaining students are re-indexed from 1.
 
-   1. Enter `paid 1` again, then `paid 0`, `paid 01`, `paid 1 2` and `feesummary extra`.<br>
+   1. Enter `list`, then `paid 1` again, `paid 0`, `paid 01`, `paid 1 2` and `feesummary extra`.<br>
       Expected: Each command reports an error and leaves the records and the displayed list unchanged.
 
-   1. Enter `list`, then `paid 2`.<br>
-      Expected: The command acts on the second student of the **full** list, showing that the index follows the displayed list.
+   1. Enter `fees`, then `paid 2`.<br>
+      Expected: Irfan's S$250.50 fee is cleared using index 2 of the filtered list. Charlotte remains owing S$450.00.
 
    1. Enter `feesummary` again, then restart the app and enter `fees`.<br>
-      Expected: The total has dropped by the paid amounts, and the cleared fees are still cleared after the restart.
+      Expected: The total is S$450.00 for one student. After restarting, `fees` shows only Charlotte;
+      Alex and Irfan's fees remain cleared.
 
 ### Viewing a student's complete record
 

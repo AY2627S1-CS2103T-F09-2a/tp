@@ -124,13 +124,13 @@ This command takes no arguments and does not change student records. Use `list` 
 Format: `feesummary`
 
 Shows how many students owe fees and the exact total they owe, counting **every stored student**, even when the displayed list is filtered by `find` or `fees`.
-The feedback reads `N student(s) owe a total of S$AMOUNT.` with exactly two decimal places, so a book with no outstanding fees shows `0 student(s) owe a total of S$0.00.`
+The feedback reads `Across all stored students: N student(s) owe a total of S$AMOUNT. Displayed list unchanged.` with exactly two decimal places, so a book with no outstanding fees shows `Across all stored students: 0 student(s) owe a total of S$0.00. Displayed list unchanged.`
 The total is the sum of all individual amounts and can therefore be larger than the S$99999.99 per-student maximum.
 
 * This command takes no arguments; extra text produces an invalid-command-format message.
 * The displayed list, the selected student and the stored data are unchanged. `feesummary` does not save anything.
 
-Examples: `feesummary` in a book where two students owe S$180.00 and S$75.50 shows `2 student(s) owe a total of S$255.50.`
+Examples: `feesummary` in a book where two students owe S$180.00 and S$75.50 shows `Across all stored students: 2 student(s) owe a total of S$255.50. Displayed list unchanged.`
 
 ### Setting or clearing an outstanding fee: `setoutstanding`
 
