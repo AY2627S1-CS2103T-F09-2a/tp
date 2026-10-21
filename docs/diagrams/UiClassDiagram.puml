@@ -1,14 +1,20 @@
 @startuml
+'Layout notes:
+'- MainWindow's label is padded with non-breaking spaces and blank lines, so that its box is large enough
+'  for the composition diamonds on its bottom edge to be drawn apart from one another.
+'- Each arrow into Logic or Model ends at its own invisible class, so that the arrowheads do not overlap.
+'- Inheritance from UiPart is drawn separately in UiPartClassDiagram.puml, so that its lines do not cross these.
 !include style.puml
 skinparam arrowThickness 1.1
 skinparam arrowColor UI_COLOR_T4
 skinparam classBackgroundColor UI_COLOR
+skinparam groupInheritance 2
+skinparam nodesep 15
 
 package UI <<Rectangle>>{
 Class "<<interface>>\nUi" as Ui
-Class "{abstract}\nUiPart" as UiPart
 Class UiManager
-Class MainWindow
+Class " \n                         MainWindow                         \n " as MainWindow
 Class HelpWindow
 Class ResultDisplay
 Class PersonListPanel
@@ -16,49 +22,50 @@ Class PersonDetailsPanel
 Class PersonCard
 Class StatusBarFooter
 Class CommandBox
+Class DeleteConfirmationHandler
+Class DeleteConfirmationDialog
 }
 
 package Model <<Rectangle>> {
-Class HiddenModel #FFFFFF
+Class HiddenModel1 #FFFFFF
+Class HiddenModel2 #FFFFFF
+Class HiddenModel3 #FFFFFF
 }
 
 package Logic <<Rectangle>> {
-Class HiddenLogic #FFFFFF
+Class HiddenLogic1 #FFFFFF
+Class HiddenLogic2 #FFFFFF
+Class HiddenLogic3 #FFFFFF
 }
 
 Class HiddenOutside #FFFFFF
 HiddenOutside ..> Ui
 
-UiManager .left.|> Ui
-UiManager -down-> "1" MainWindow
-MainWindow *-down->  "1" CommandBox
-MainWindow *-down-> "1" ResultDisplay
-MainWindow *-down-> "1" PersonListPanel
-MainWindow *-down-> "1" PersonDetailsPanel
-MainWindow *-down-> "1" StatusBarFooter
-MainWindow --> "0..1" HelpWindow
-
-PersonListPanel -down-> "*" PersonCard
-
-MainWindow -left-|> UiPart
-
-ResultDisplay --|> UiPart
-CommandBox --|> UiPart
-PersonListPanel --|> UiPart
-PersonDetailsPanel --|> UiPart
-PersonCard --|> UiPart
-StatusBarFooter --|> UiPart
-HelpWindow --|> UiPart
-
-PersonCard ..> Model
-PersonDetailsPanel ..> Model
-UiManager -right-> Logic
-MainWindow -left-> Logic
-
-PersonListPanel -[hidden]left- HelpWindow
-HelpWindow -[hidden]left- CommandBox
-CommandBox -[hidden]left- ResultDisplay
-ResultDisplay -[hidden]left- StatusBarFooter
-
-MainWindow -[hidden]-|> UiPart
+Ui <|.. UiManager
+UiManager --> "1" MainWindow
+UiManager -up-> HiddenLogic1
+MainWindow *--> "1" CommandBox
+MainWindow --> "1" HelpWindow
+MainWindow *--> "1" StatusBarFooter
+MainWindow *--> "1" ResultDisplay
+MainWindow *--> "1" PersonListPanel
+MainWindow *--> "1" PersonDetailsPanel
+PersonListPanel --> "*" PersonCard
+MainWindow -up-> HiddenLogic2
+PersonCard ..> HiddenModel1
+PersonDetailsPanel ..> HiddenModel2
+MainWindow -right-> "1" DeleteConfirmationHandler
+MainWindow ..> DeleteConfirmationDialog
+DeleteConfirmationHandler -up-> HiddenLogic3
+DeleteConfirmationDialog ..> HiddenModel3
+CommandBox -[hidden]right- HelpWindow
+HelpWindow -[hidden]right- StatusBarFooter
+StatusBarFooter -[hidden]right- ResultDisplay
+ResultDisplay -[hidden]right- PersonListPanel
+PersonListPanel -[hidden]right- PersonDetailsPanel
+PersonDetailsPanel -[hidden]right- DeleteConfirmationDialog
+HiddenModel1 -[hidden]right- HiddenModel2
+HiddenModel2 -[hidden]right- HiddenModel3
+HiddenLogic1 -[hidden]right- HiddenLogic2
+HiddenLogic2 -[hidden]right- HiddenLogic3
 @enduml

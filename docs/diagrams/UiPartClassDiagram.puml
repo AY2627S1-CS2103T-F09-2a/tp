@@ -1,0 +1,29 @@
+@startuml
+!include style.puml
+skinparam arrowThickness 1.1
+skinparam arrowColor UI_COLOR_T4
+skinparam classBackgroundColor UI_COLOR
+skinparam groupInheritance 2
+left to right direction
+
+package UI <<Rectangle>>{
+Class "{abstract}\nUiPart" as UiPart
+Class MainWindow
+Class CommandBox
+Class HelpWindow
+Class StatusBarFooter
+Class ResultDisplay
+Class PersonListPanel
+Class PersonDetailsPanel
+Class PersonCard
+}
+
+UiPart <|-- MainWindow
+UiPart <|-- CommandBox
+UiPart <|-- HelpWindow
+UiPart <|-- StatusBarFooter
+UiPart <|-- ResultDisplay
+UiPart <|-- PersonListPanel
+UiPart <|-- PersonDetailsPanel
+UiPart <|-- PersonCard
+@enduml

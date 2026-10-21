@@ -30,7 +30,7 @@ Poco Book is a **desktop application for independent tutors to manage students, 
 
    * `add n/John Doe g/Jane Doe gp/98765432 e/johnd@example.com a/John street, block 123, #01-01` : Adds a student named `John Doe`, with guardian `Jane Doe`, to Poco Book.
 
-   * `delete 3` : Deletes the 3rd student shown in the current list.
+   * `delete 3` : Deletes the 3rd student shown in the current list, after you press Y to confirm.
 
    * `clear` : Deletes all students.
 
@@ -60,19 +60,29 @@ Poco Book is a **desktop application for independent tutors to manage students, 
 
 * For `delete`, `edit`, `view`, and `setoutstanding`, `INDEX` uses ASCII digits without leading zeros, such as `1` or `12`. Leading zeros (`01`), signs (`+1`), decimals, and extra index tokens produce an invalid-command-format message. A positive index larger than `2147483647` produces `The student index provided is invalid.` No record or current list is changed when the index is rejected.
 
-* Extraneous parameters for commands that take no parameters, such as `help`, `list`, `exit`, and `clear`, are ignored.<br>
-  For example, `help 123` is interpreted as `help`.
+* Extraneous parameters for commands that take no parameters, such as `list`, `exit`, and `clear`, are ignored.<br>
+  For example, `list 123` is interpreted as `list`. `help` accepts an optional command word and rejects unknown targets or extra arguments.
 
 * If you are using a PDF version of this document, be careful when copying and pasting commands that span multiple lines as space characters surrounding line-breaks may be omitted when copied over to the application.
 </div>
 
 ### Viewing help: `help`
 
-Shows a message explaining how to access the help page.
+Plain `help` opens the existing help window with the online guide link.
 
-![help message](images/helpMessage.png)
+![help window opened by plain help](images/helpMessage.png)
 
-Format: `help`
+Type `help COMMAND` to read a command’s purpose, syntax and example in the result area without leaving the app.
+For example, `help paid` explains how to clear a displayed student’s full outstanding fee; it does not record a payment.
+
+
+Format: `help [COMMAND]`
+
+* Use one exact, lower-case command word: `add`, `clear`, `delete`, `edit`, `exit`, `fees`, `feesummary`, `find`, `help`, `list`, `paid`, `setoutstanding`, or `view`.
+* `help unknown` and `help paid 1` report an error and list the available command words.
+* Long help instructions wrap in the result area; scroll vertically to read the remaining lines.
+* Help leaves student records, the displayed list and selection unchanged and does not save data.
+* `help clear` and `help exit` show instructions only; they do not clear data or close the app.
 
 
 ### Adding a student: `add`
@@ -114,13 +124,13 @@ This command takes no arguments and does not change student records. Use `list` 
 Format: `feesummary`
 
 Shows how many students owe fees and the exact total they owe, counting **every stored student**, even when the displayed list is filtered by `find` or `fees`.
-The feedback reads `N student(s) owe a total of S$AMOUNT.` with exactly two decimal places, so a book with no outstanding fees shows `0 student(s) owe a total of S$0.00.`
+The feedback reads `Across all stored students: N student(s) owe a total of S$AMOUNT. Displayed list unchanged.` with exactly two decimal places, so a book with no outstanding fees shows `Across all stored students: 0 student(s) owe a total of S$0.00. Displayed list unchanged.`
 The total is the sum of all individual amounts and can therefore be larger than the S$99999.99 per-student maximum.
 
 * This command takes no arguments; extra text produces an invalid-command-format message.
 * The displayed list, the selected student and the stored data are unchanged. `feesummary` does not save anything.
 
-Examples: `feesummary` in a book where two students owe S$180.00 and S$75.50 shows `2 student(s) owe a total of S$255.50.`
+Examples: `feesummary` in a book where two students owe S$180.00 and S$75.50 shows `Across all stored students: 2 student(s) owe a total of S$255.50. Displayed list unchanged.`
 
 ### Setting or clearing an outstanding fee: `setoutstanding`
 
@@ -204,17 +214,39 @@ Example:
 
 ### Deleting a student: `delete`
 
-Deletes the specified student from the address book.
+Deletes the specified student from Poco Book, after you confirm the deletion.
 
 Format: `delete INDEX`
 
 * Deletes the student at the specified `INDEX`.
-* The index refers to the index number shown in the displayed student list.
+* The index refers to the index number shown in the displayed student list, which may be the results of `find` or `fees`.
 * The index **must be a positive integer** 1, 2, 3, …​
+* Before deleting, Poco Book opens a confirmation dialog showing the student's name, phone, guardian name and guardian
+  phone.
+  Check that this is the student you want to delete, then:
+  * Press **Y** (or click **Delete (Y)**) to delete the student. Poco Book saves the change and shows the deleted
+    student's details.
+  * Press **N** (or click **Cancel (N)**) to keep the student. Pressing Esc or closing the dialog also keeps the
+    student. Poco Book shows `Deletion cancelled. No student was deleted.` The same students stay displayed, and the
+    selected student stays selected.
+* All other keys, including Enter and Space, are ignored while the dialog is open, so pressing Enter again by
+  mistake cannot answer it. Y or N pressed together with Control, Alt or Command is ignored too. Answer the dialog
+  before typing your next command: a Y or N that you type is taken as the answer.
+* If the student still owes a fee, the dialog shows a warning icon and a red banner with the amount, such as
+  `This student still owes S$450.00. Deleting them also deletes this unpaid fee.` You can still delete the student.
+* If the index is invalid, Poco Book shows an error message instead of the dialog, and no student is deleted.
+
+<div markdown="span" class="alert alert-warning">:exclamation: **Caution:**
+A deleted student cannot be restored. Their record, including any outstanding fee, is removed.
+</div>
 
 Examples:
-* `list` followed by `delete 2` deletes the 2nd student in the address book.
-* `find Betsy` followed by `delete 1` deletes the 1st student in the results of the `find` command.
+* `list` followed by `delete 2` asks you to confirm deleting the 2nd student in the full list.
+  With the sample data, the dialog shows `Bernice Yu`, phone `99272758`, guardian `Betty Yu` and guardian phone
+  `82345678`.
+  Press Y to delete her, or N to keep her.
+* `fees` followed by `delete 2` asks you to confirm deleting the 2nd student who owes a fee.
+  With the sample data, this is `Charlotte Oliveiro`, and the dialog warns that she still owes `S$450.00`.
 
 ### Clearing all entries: `clear`
 
@@ -267,7 +299,7 @@ Action | Format, Examples
 --------|------------------
 **Add** | `add n/NAME g/GUARDIAN_NAME gp/GUARDIAN_PHONE [p/PHONE] [e/EMAIL] [a/ADDRESS] [f/AMOUNT]` <br> e.g., `add n/Riya Kumar g/Anil Kumar gp/97654321 p/98765432 e/riya@example.com a/12 Clementi Ave 3 f/75.50`
 **Clear** | `clear`
-**Delete** | `delete INDEX`<br> e.g., `delete 3`
+**Delete** | `delete INDEX`, then press Y to confirm or N to cancel<br> e.g., `delete 3`
 **Edit** | `edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [a/ADDRESS] [t/TAG]…​`<br> e.g., `edit 2 n/James Lee e/jameslee@example.com`
 **Find** | `find KEYWORD [MORE_KEYWORDS]`<br> e.g., `find James Jake`
 **List** | `list`
@@ -276,5 +308,5 @@ Action | Format, Examples
 **Fee summary** | `feesummary`
 **Set outstanding fee** | `setoutstanding INDEX AMOUNT`<br> e.g., `setoutstanding 1 150.50`; `setoutstanding 1 0` clears it
 **Record payment** | `paid INDEX`<br> e.g., `paid 1`
-**Help** | `help`
+**Help** | `help [COMMAND]`<br> e.g., `help paid`
 **Exit** | `exit`

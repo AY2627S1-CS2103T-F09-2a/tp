@@ -1,6 +1,7 @@
 package seedu.address.ui;
 
 import java.nio.file.Path;
+import java.util.Optional;
 import java.util.logging.Logger;
 
 import javafx.event.ActionEvent;
@@ -38,6 +39,7 @@ public class MainWindow extends UiPart<Stage> {
     private PersonDetailsPanel personDetailsPanel;
     private ResultDisplay resultDisplay;
     private HelpWindow helpWindow;
+    private DeleteConfirmationHandler deleteConfirmationHandler;
 
     @FXML
     private StackPane commandBoxPlaceholder;
@@ -75,6 +77,8 @@ public class MainWindow extends UiPart<Stage> {
         setAccelerators();
 
         helpWindow = new HelpWindow();
+        deleteConfirmationHandler = new DeleteConfirmationHandler(logic, student ->
+                new DeleteConfirmationDialog(primaryStage, student).showAndConfirm());
     }
 
     public Stage getPrimaryStage() {
@@ -183,13 +187,18 @@ public class MainWindow extends UiPart<Stage> {
 
     /**
      * Executes the command and returns the result.
+     * A {@code delete} command for a displayed student is executed only after the user confirms it.
      *
      * @see seedu.address.logic.Logic#execute(String)
+     * @see DeleteConfirmationHandler#confirmAndDelete(String, Person)
      */
     private CommandResult executeCommand(String commandText) throws CommandException, ParseException {
         Person previouslySelected = personListPanel.getSelectedPerson();
         try {
-            CommandResult commandResult = logic.execute(commandText);
+            Optional<Person> studentToDelete = logic.getDeletionTarget(commandText);
+            CommandResult commandResult = (studentToDelete.isPresent())
+                    ? deleteConfirmationHandler.confirmAndDelete(commandText, studentToDelete.get())
+                    : logic.execute(commandText);
             logger.info("Result: " + commandResult.getFeedbackToUser());
             resultDisplay.setFeedbackToUser(commandResult.getFeedbackToUser());
 

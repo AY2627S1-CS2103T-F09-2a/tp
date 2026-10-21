@@ -1,7 +1,9 @@
 package seedu.address.logic;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
 import static seedu.address.logic.Messages.MESSAGE_INVALID_STUDENT_DISPLAYED_INDEX;
 import static seedu.address.logic.Messages.MESSAGE_UNKNOWN_COMMAND;
@@ -13,12 +15,14 @@ import static seedu.address.logic.commands.CommandTestUtil.NAME_DESC_AMY;
 import static seedu.address.logic.commands.CommandTestUtil.PHONE_DESC_AMY;
 import static seedu.address.testutil.Assert.assertThrows;
 import static seedu.address.testutil.TypicalPersons.AMY;
+import static seedu.address.testutil.TypicalPersons.BOB;
 
 import java.io.IOException;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -28,15 +32,18 @@ import seedu.address.logic.commands.AddCommand;
 import seedu.address.logic.commands.CommandResult;
 import seedu.address.logic.commands.DeleteCommand;
 import seedu.address.logic.commands.EditCommand;
+import seedu.address.logic.commands.FeeSummaryCommand;
 import seedu.address.logic.commands.ListCommand;
 import seedu.address.logic.commands.ViewCommand;
 import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.logic.parser.exceptions.ParseException;
+import seedu.address.model.AddressBook;
 import seedu.address.model.Model;
 import seedu.address.model.ModelManager;
 import seedu.address.model.ReadOnlyAddressBook;
 import seedu.address.model.UserPrefs;
 import seedu.address.model.person.Person;
+import seedu.address.model.util.SampleDataUtil;
 import seedu.address.storage.JsonAddressBookStorage;
 import seedu.address.storage.JsonUserPrefsStorage;
 import seedu.address.storage.StorageManager;
@@ -59,6 +66,93 @@ public class LogicManagerTest {
         JsonUserPrefsStorage userPrefsStorage = new JsonUserPrefsStorage(temporaryFolder.resolve("userPrefs.json"));
         StorageManager storage = new StorageManager(addressBookStorage, userPrefsStorage);
         logic = new LogicManager(model, storage);
+    }
+
+    @Test
+    public void execute_feeSummaryWithHiddenFees_preservesFilterAndDoesNotCreateFile() throws Exception {
+        Person hidden = new PersonBuilder().withName("Hidden Student").withOutstandingFee("99999.99").build();
+        Person visible = new PersonBuilder().withName("Visible Student").withOutstandingFee("0.01").build();
+        model.addPerson(hidden);
+        model.addPerson(visible);
+        AddressBook before = new AddressBook(model.getAddressBook());
+        logic.execute("find Visible");
+
+        CommandResult result = logic.execute("feesummary");
+
+        assertEquals(String.format(FeeSummaryCommand.MESSAGE_SUCCESS, 2, "100000.00"), result.getFeedbackToUser());
+        assertFalse(result.isShowHelp());
+        assertFalse(result.isExit());
+        assertTrue(result.getViewedPerson().isEmpty());
+        assertEquals(List.of(visible), model.getFilteredPersonList());
+        assertEquals(before, model.getAddressBook());
+        assertFalse(Files.exists(temporaryFolder.resolve("addressBook.json")));
+    }
+
+    @Test
+    public void execute_feeSummaryWithEmptyFilter_reportsHiddenSampleTotal() throws Exception {
+        model.setAddressBook(SampleDataUtil.getSampleAddressBook());
+        AddressBook before = new AddressBook(model.getAddressBook());
+        logic.execute("find Nobody");
+
+        assertEquals(String.format(FeeSummaryCommand.MESSAGE_SUCCESS, 3, "820.50"),
+                logic.execute("feesummary").getFeedbackToUser());
+        assertEquals(List.of(), model.getFilteredPersonList());
+        assertEquals(before, model.getAddressBook());
+        assertFalse(Files.exists(temporaryFolder.resolve("addressBook.json")));
+    }
+
+    @Test
+    public void execute_feeSummaryExtraArguments_reportsUsageWithoutChangingState() throws Exception {
+        model.setAddressBook(SampleDataUtil.getSampleAddressBook());
+        AddressBook before = new AddressBook(model.getAddressBook());
+        logic.execute("find Alex");
+        List<Person> displayed = List.copyOf(model.getFilteredPersonList());
+
+        String expectedMessage = String.format(MESSAGE_INVALID_COMMAND_FORMAT, FeeSummaryCommand.MESSAGE_USAGE);
+        assertThrows(ParseException.class, expectedMessage, () -> logic.execute("feesummary extra"));
+        assertEquals(displayed, model.getFilteredPersonList());
+        assertEquals(before, model.getAddressBook());
+        assertFalse(Files.exists(temporaryFolder.resolve("addressBook.json")));
+    }
+
+    @Test
+    public void execute_feeSummary_preservesExistingFileBytes() throws Exception {
+        model.setAddressBook(SampleDataUtil.getSampleAddressBook());
+        Path data = temporaryFolder.resolve("addressBook.json");
+        byte[] sentinel = {0, 1, 2, 10, 13, (byte) 255};
+        Files.write(data, sentinel);
+        logic.execute("find Alex");
+
+        logic.execute("feesummary");
+
+        assertArrayEquals(sentinel, Files.readAllBytes(data));
+    }
+
+    @Test
+    public void execute_feeSummary_preservesLiveFeesPredicate() throws Exception {
+        model.setAddressBook(SampleDataUtil.getSampleAddressBook());
+        logic.execute("fees");
+        List<Person> displayed = List.copyOf(model.getFilteredPersonList());
+        AddressBook before = new AddressBook(model.getAddressBook());
+
+        logic.execute("feesummary");
+
+        assertEquals(displayed, model.getFilteredPersonList());
+        assertEquals(before, model.getAddressBook());
+        assertFalse(Files.exists(temporaryFolder.resolve("addressBook.json")));
+        logic.execute("setoutstanding 1 0");
+        assertEquals(displayed.subList(1, 3), model.getFilteredPersonList());
+        assertEquals(6, model.getAddressBook().getPersonList().size());
+        assertTrue(model.getAddressBook().getPersonList().getFirst().getOutstandingFee().isEmpty());
+    }
+
+    @Test
+    public void execute_feeSummarySampleData_matchesDocumentedFeedback() throws Exception {
+        model.setAddressBook(SampleDataUtil.getSampleAddressBook());
+        logic.execute("find Alex");
+
+        assertEquals("Across all stored students: 3 student(s) owe a total of S$820.50. Displayed list unchanged.",
+                logic.execute("feesummary").getFeedbackToUser());
     }
 
     @Test
@@ -140,6 +234,36 @@ public class LogicManagerTest {
     public void execute_storageThrowsAdException_throwsCommandException() {
         assertCommandFailureForExceptionFromStorage(DUMMY_AD_EXCEPTION, String.format(
                 LogicManager.FILE_OPS_PERMISSION_ERROR_FORMAT, DUMMY_AD_EXCEPTION.getMessage()));
+    }
+
+    @Test
+    public void getDeletionTarget_validDelete_returnsDisplayedStudentWithoutDeleting() {
+        model.addPerson(AMY);
+        model.addPerson(BOB);
+        model.updateFilteredPersonList(person -> person.equals(BOB));
+
+        // Index 1 is AMY in the full list, but BOB, who owes a fee, in the displayed list
+        assertEquals(Optional.of(BOB), logic.getDeletionTarget("delete 1"));
+        assertEquals(Optional.of(BOB), logic.getDeletionTarget("  delete   1  "));
+        assertEquals(List.of(AMY, BOB), model.getAddressBook().getPersonList());
+        assertFalse(Files.exists(temporaryFolder.resolve("addressBook.json")));
+    }
+
+    @Test
+    public void getDeletionTarget_notValidDeleteForDisplayedStudent_returnsEmpty() {
+        model.addPerson(AMY);
+
+        // Out-of-range index, malformed delete commands, another command, and an unknown command
+        for (String input : List.of("delete 2", "delete 2147483648", "delete", "delete 0", "delete 01", "delete x",
+                "delete 1 2", "DELETE 1", "view 1", "remove 1")) {
+            assertEquals(Optional.empty(), logic.getDeletionTarget(input), input);
+        }
+        assertEquals(List.of(AMY), model.getAddressBook().getPersonList());
+    }
+
+    @Test
+    public void getDeletionTarget_null_throwsNullPointerException() {
+        assertThrows(NullPointerException.class, () -> logic.getDeletionTarget(null));
     }
 
     @Test

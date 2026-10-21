@@ -1,0 +1,63 @@
+@startuml
+!include style.puml
+skinparam ArrowFontStyle plain
+skinparam BoxPadding 2
+
+box UI UI_COLOR_T1
+participant ":MainWindow" as MainWindow UI_COLOR
+participant ":DeleteConfirmationHandler" as Handler UI_COLOR
+participant ":DeletionConfirmer" as Confirmer UI_COLOR
+end box
+
+box Logic LOGIC_COLOR_T1
+participant ":Logic" as Logic LOGIC_COLOR
+end box
+
+[-> MainWindow : executeCommand("delete 2")
+activate MainWindow
+
+MainWindow -> Logic : getDeletionTarget("delete 2")
+activate Logic
+Logic --> MainWindow : student
+deactivate Logic
+
+alt student found
+    MainWindow -> Handler : confirmAndDelete("delete 2", student)
+    activate Handler
+
+    Handler -> Confirmer : confirm(student)
+    activate Confirmer
+    note over Confirmer
+    Shows a
+    DeleteConfirmationDialog and
+    waits for the tutor's answer.
+    end note
+    Confirmer --> Handler : isConfirmed
+    deactivate Confirmer
+
+    alt isConfirmed
+        Handler -> Logic : getDeletionTarget("delete 2")
+        activate Logic
+        deactivate Logic
+
+        Handler -> Logic : execute("delete 2")
+        activate Logic
+        Logic --> Handler : deleted student's details
+        deactivate Logic
+
+        Handler --> MainWindow : deleted student's details
+    else else
+        Handler --> MainWindow : deletion cancelled message
+    end
+    deactivate Handler
+
+else else
+    MainWindow -> Logic : execute("delete 2")
+    activate Logic
+    Logic --> MainWindow : throws CommandException\nwith error message
+    deactivate Logic
+end
+
+[<-- MainWindow : CommandResult\nor CommandException
+deactivate MainWindow
+@enduml

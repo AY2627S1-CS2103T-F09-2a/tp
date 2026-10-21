@@ -55,6 +55,8 @@ The *Sequence Diagram* below shows how the components interact with each other f
 
 <img src="images/ArchitectureSequenceDiagram.png" width="574" />
 
+For simplicity, the diagram leaves out the confirmation that `delete` asks for before `Logic` executes it. See [Delete confirmation](#delete-confirmation).
+
 Each of the four main components (also shown in the diagram above),
 
 * defines its *API* in an `interface` with the same name as the Component.
@@ -72,7 +74,11 @@ The **API** of this component is specified in [`Ui.java`](https://github.com/AY2
 
 ![Structure of the UI Component](images/UiClassDiagram.png)
 
-The UI consists of a `MainWindow` and its parts, such as `CommandBox`, `ResultDisplay`, `PersonListPanel`, `PersonDetailsPanel`, and `StatusBarFooter`. All of these, including `MainWindow`, inherit from the abstract `UiPart` class, which captures common behavior among classes that represent visible GUI parts.
+The UI consists of a `MainWindow` and its parts, such as `CommandBox`, `ResultDisplay`, `PersonListPanel`, `PersonDetailsPanel`, and `StatusBarFooter`. All of these, including `MainWindow`, inherit from the abstract `UiPart` class, which captures common behavior among classes that represent visible GUI parts. `MainWindow` also holds a `DeleteConfirmationHandler` and creates a `DeleteConfirmationDialog` when a deletion needs confirming. These two classes are not `UiPart`s; see [Delete confirmation](#delete-confirmation).
+
+The class diagram below shows the UI classes that inherit from `UiPart`. It is drawn separately from the diagram above so that the lines in both diagrams stay readable.
+
+<img src="images/UiPartClassDiagram.png" width="360" />
 
 The `UI` component uses the JavaFX UI framework. The layouts of these UI parts are defined in matching `.fxml` files in `src/main/resources/view`. For example, [`MainWindow.fxml`](https://github.com/AY2627S1-CS2103T-F09-2a/tp/tree/master/src/main/resources/view/MainWindow.fxml) specifies the layout of [`MainWindow`](https://github.com/AY2627S1-CS2103T-F09-2a/tp/tree/master/src/main/java/seedu/address/ui/MainWindow.java).
 
@@ -84,6 +90,8 @@ The `UI` component,
 * depends on some classes in the `Model` component because it displays `Person` objects from the model.
 
 For `view INDEX`, `ViewCommand` reads the student at that index in the filtered list and returns the `Person` in `CommandResult` with a feedback message. It does not update the filter or model. `LogicManager` skips the storage write because `ViewCommand.shouldSaveAddressBook()` returns false. `MainWindow` selects that person in `PersonListPanel`; the list selection updates `PersonDetailsPanel`, which shows all stored fields. The details pane unwraps optional student contact fields and shows `Not provided` when a field is absent. It formats an outstanding fee as `S$` followed by two decimal places, or `None` when absent. A failed parse or out-of-range index produces no `CommandResult`, so the current selection and details remain unchanged.
+
+For `delete INDEX`, `MainWindow` asks the tutor to confirm before `Logic` executes the command. See [Delete confirmation](#delete-confirmation).
 
 Before running a command, `MainWindow` notes which student is selected. After a successful command other than `view`, it calls `PersonListPanel#retainSelection`, which does one of the following:
 
@@ -98,6 +106,8 @@ To find out which records a command replaced, `PersonListPanel` listens to the f
 ### Logic component
 
 **API** : [`Logic.java`](https://github.com/AY2627S1-CS2103T-F09-2a/tp/tree/master/src/main/java/seedu/address/logic/Logic.java)
+
+Besides `Logic#execute(String)`, the API has `Logic#getDeletionTarget(String)`, which parses a command without executing it and reports which displayed student a `delete` command would remove. The `UI` uses it to ask the tutor to confirm a deletion first; see [Delete confirmation](#delete-confirmation).
 
 Here's a (partial) class diagram of the `Logic` component:
 
@@ -167,13 +177,84 @@ Classes used by multiple components are in the `seedu.address.commons` package.
 
 This section describes some noteworthy details on how certain features are implemented.
 
+### Minimum outstanding-fee filtering
+
+The `fees [min/AMOUNT]` command replaces the displayed-list filter with one that selects students owing at least the given amount. It searches all stored students, not just the previous search results, and preserves their stored order.
+
+#### Implementation
+
+`AddressBookParser` delegates the arguments to `FeesCommandParser`. Plain `fees` creates a `FeesCommand` with a zero minimum. Otherwise, the parser requires exactly one `min/` prefix with no preamble, validates the amount using `OutstandingFee.VALIDATION_REGEX`, and checks that it does not exceed `99999.99`. The accepted threshold is an unsigned decimal from `0` to `99999.99`, with at most two decimal places. Invalid arguments cause a `ParseException` before command execution, leaving the records and current filter unchanged.
+
+The sequence diagram below shows a successful `fees min/100` call. Tokenization, predicate evaluation and result construction are summarized in notes rather than shown as separate lifelines.
+
+![Sequence diagram for minimum outstanding-fee filtering](images/FeesSequenceDiagram.png)
+
+Diagram source: [FeesSequenceDiagram.puml](diagrams/FeesSequenceDiagram.puml).
+
+`FeesCommand#execute` calls `Model#updateFilteredPersonList` with a predicate. For a positive minimum, it selects only students with a present outstanding fee whose `BigDecimal` value compares greater than or equal to the minimum. Plain `fees` and `fees min/0` use `PREDICATE_HAS_OUTSTANDING_FEE`; students without a fee remain excluded. The command counts the resulting list and returns the existing `N student(s) with outstanding fees.` feedback. `LogicManager` skips saving because `FeesCommand#shouldSaveAddressBook()` returns `false`.
+
+`ModelManager` installs the predicate on its existing `FilteredList`, rather than taking a snapshot. Subsequent fee replacements are therefore re-evaluated against the same minimum: after `fees min/100`, changing a displayed student's fee to `99.99` removes that student from the results, while changing it to exactly `100` retains them. Commands accepting an index continue to use the current displayed list; `list` restores all students.
+
+#### Design considerations
+
+* **Exact, inclusive comparison.** `BigDecimal.compareTo` avoids floating-point rounding and treats thresholds such as `100` and `100.00` identically. The threshold may be zero even though a stored `OutstandingFee` must be positive.
+* **Live filter rather than a copied result list.** Reusing the model's filtering mechanism preserves automatic updates when fees change, without adding a separate collection or changing the storage schema.
+* **Read-only query.** Filtering changes only the displayed view, not student records. Skipping the storage write avoids unnecessary disk access and unrelated save errors.
+
+### Delete confirmation
+
+`delete INDEX` asks the tutor to confirm before a student is deleted, because a deleted student cannot be restored. Asking for confirmation is UI behaviour, so it is handled in the `UI` component. `Logic` gains only a query method, `Logic#getDeletionTarget(String)`, which reports which student a command would delete without executing it. `Model` and `Storage` are unchanged, and deletion and saving still use the existing path.
+
+The activity diagram below shows what happens when the tutor enters `delete INDEX`.
+
+<img src="images/DeleteConfirmationActivityDiagram.png" width="750" />
+
+`MainWindow#executeCommand(String)` decides whether a command needs confirmation:
+
+1. It calls `Logic#getDeletionTarget(String)`. `LogicManager` parses the input with its `AddressBookParser`, the same parser that `Logic#execute(String)` uses. If the input is a `delete` command, `LogicManager` calls `DeleteCommand#getTarget(List)` with the displayed list, so the index refers to the same list, such as `find` or `fees` results, as it does when `DeleteCommand` executes.
+1. If there is no target, `MainWindow` passes the input to `Logic#execute(String)`, as it did before this feature. This happens when the input is another command, cannot be parsed, or has an index beyond the end of the list. Invalid `delete` commands therefore report the usual errors without opening a dialog.
+1. Otherwise, `MainWindow` calls `DeleteConfirmationHandler#confirmAndDelete(String, Person)` with the target. The handler asks its `DeletionConfirmer` whether to delete the student. In the app, `MainWindow` supplies a confirmer that opens a `DeleteConfirmationDialog` over the main window and waits for the tutor to respond.
+1. If the tutor cancels, the handler returns a `CommandResult` with a cancellation message without calling `Logic#execute(String)`, so nothing is deleted or saved. `MainWindow` then restores the selection as it does after any other successful command.
+1. If the tutor confirms, the handler calls `Logic#getDeletionTarget(String)` again to check that the index still identifies the same student. It then calls `Logic#execute(String)`, which deletes the student and saves the data as before. While the dialog is open, the tutor cannot enter commands, so the displayed list cannot change. The second check is a safeguard in case a future change allows the list to change during confirmation: if a different student now has that index, the handler throws a `CommandException` and deletes nothing.
+
+The sequence diagram below shows these steps for `delete 2`. For simplicity, it leaves out the error that the handler reports if the second check finds a different student.
+
+<img src="images/DeleteConfirmationSequenceDiagram.png" width="800" />
+
+`DeleteConfirmationDialog` shows a JavaFX `Alert` with the student's name, phone, guardian name and guardian phone. Together, the name and guardian phone identify a student in Poco Book, so they tell apart students who share a name. The dialog works as follows:
+
+* Pressing Y deletes the student, and pressing N keeps them. Pressing Esc or closing the window also keeps the student.
+* Y or N pressed together with Control, Command (Meta) or Alt is ignored, so a key combination cannot answer the dialog. Each of these keys is checked separately, because `KeyEvent#isShortcutDown()` checks only Command on macOS. Shift is allowed, so an uppercase Y or N still answers.
+* All other key presses except Esc, including Enter and Space, are consumed without answering the dialog, so no button or keyboard shortcut in the dialog can act on them. Esc is left to the **Cancel (N)** button. If the tutor presses Enter twice, or starts typing the next command before noticing the dialog, those keys go to the dialog. No command word starts with Y or N, so the start of the next command cannot answer the dialog, although a Y or N typed later would. D was avoided because `delete` starts with D.
+* The **Delete (Y)** and **Cancel (N)** buttons can be clicked, but the keyboard cannot reach them: Tab does not move to them, and Enter and Space do not press them. When a dialog opens, JavaFX gives keyboard focus to its main button. The Delete button is therefore created as a secondary button (`ButtonData.APPLY`) rather than the main one (`ButtonData.OK_DONE`), so that it never starts with focus.
+* If the student still owes a fee, the dialog shows a warning icon and a red banner stating the amount, because deleting the student also deletes the unpaid fee. Pressing Y still deletes the student.
+* The dialog is 520 pixels wide, and long names wrap rather than widening it. With the longest valid names and a fee, it measured 520 by 416 pixels on macOS. A 1280x720 screen at 150% scaling leaves about 853 by 432 pixels above a Windows 11 taskbar.
+
+#### Design considerations
+
+**Aspect: Where to ask for confirmation**
+
+* **Alternative 1 (current choice):** Ask in the `UI`, which first calls `Logic#getDeletionTarget(String)`.
+  * Pros: `Logic` contains no UI code and never waits for the tutor. The `UI` uses only the `Logic` API, and deletion and saving still use the existing path.
+  * Cons: The `Logic` API gains a method that only `delete` uses. Asking and deleting are separate steps, so the target must be checked again after confirmation. Every command is parsed twice, and a confirmed `delete` three times, but parsing is fast.
+* **Alternative 2:** Let `DeleteCommand#execute(Model)` call a confirmation callback that the `UI` provides.
+  * Pros: Each command is parsed once. Asking and deleting happen in one step, so no second check is needed.
+  * Cons: `Logic` would wait on a UI dialog in the middle of a command. The `UI` can only provide the callback after `Logic` is created, so `Logic` would need a setter. The callback would also have to reach each `DeleteCommand`, either through `AddressBookParser` and `DeleteCommandParser`, or by `LogicManager` handing it over after parsing.
+* **Alternative 3:** Let the `UI` parse the input with its own `AddressBookParser`.
+  * Pros: The `Logic` API is unchanged.
+  * Cons: The `UI` would depend on classes that are internal to `Logic`, breaking the rule that components interact only through each other's APIs.
+
+**Testing**
+
+`DeleteConfirmationHandlerTest` replaces the dialog with a confirmer that records each request and returns a fixed answer. It covers confirming, cancelling, deleting from `find` and `fees` results, and a list that changes or empties, or a student whose details change, during confirmation, all without a display. `LogicManagerTest` checks that `Logic#getDeletionTarget(String)` finds the displayed student for a valid `delete` command, and finds no student for other commands or for invalid or malformed indexes. `DeleteConfirmationDialogTest` checks the dialog's content, fee warning, keys, buttons and size with JavaFX. It checks that Enter, Tab, Space, the letters of a typed command, Y with Control, Command (Meta) or Alt, and N with Control each leave the dialog open, and that such key presses cannot reach a keyboard shortcut. It also checks that Shift+Y, and Y for a student who owes a fee, still confirm, and that the longest valid names fit with a fee warning without cut-off text. Like the other JavaFX tests, it runs only when the environment variable `POCO_UI_TESTS` is `true`. The branch in `MainWindow#executeCommand(String)` that connects these parts needs the full main window, so the manual tests in [Deleting a student](#deleting-a-student) check it instead.
+
 ### Fee summary and full-payment commands
 
 The all-student fee total (`feesummary`) and full-payment recording (`paid`) extend the outstanding-fee feature described under the Logic and Model components. Both commands work on the immutable `OutstandingFee` value object, so no `Person`, `Model` or storage-format change was needed for v1.4.
 
 #### Implementation
 
-`FeeSummaryCommand` walks every person in the **complete** address book via `Model#getAddressBook()#getPersonList()` rather than the filtered list, keeps a running `BigDecimal` total and a count of students whose fee is present, and formats the result with `toPlainString()` so two decimal places are always shown. Iterating the unfiltered book is what makes the total independent of the current `find`/`fees` filter. The command also overrides `Command#shouldSaveAddressBook()` to return `false`, so `LogicManager` does not write to storage for a pure query. `FeeSummaryCommandParser` rejects any argument with `MESSAGE_INVALID_COMMAND_FORMAT`, which keeps `feesummary 1` from being silently accepted.
+`FeeSummaryCommand` walks every person in the **complete** address book via `Model#getAddressBook()#getPersonList()` rather than the filtered list, keeps a running `BigDecimal` total and a count of students whose fee is present, and formats the result with `toPlainString()` so two decimal places are always shown. The feedback explicitly says "Across all stored students" and "Displayed list unchanged" to make that scope visible in the app. Iterating the unfiltered book is what makes the total independent of the current `find`/`fees` filter. The command also overrides `Command#shouldSaveAddressBook()` to return `false`, so `LogicManager` does not write to storage for a pure query. `FeeSummaryCommandParser` rejects any argument with `MESSAGE_INVALID_COMMAND_FORMAT`, which keeps `feesummary 1` from being silently accepted.
 
 `PaidCommand` holds an `Index` that was validated by `ParserUtil#parseIndex` at parse time. During execution it (i) rejects an index outside the displayed list, (ii) looks up the target `Person` in that displayed list, and (iii) fails with a user-facing `CommandException` when the fee is absent (`Person#getOutstandingFee()` returns an `Optional`). Only after those checks does it construct a replacement `Person` with every other field copied verbatim — name, optional phone/email/address, guardian name and phone, and tags — and call `Model#setPerson(...)`. Because the `Person` is immutable, this copy-then-replace step is what preserves the fields the command does not touch, and because `setPerson` goes through the updated address book, the active filter and the GUI selection are refreshed by the usual `FilteredList`/`ObservableList` listeners.
 
@@ -189,6 +270,28 @@ The corresponding sources are `docs/diagrams/PaidSequenceDiagram.puml`, `FeeSumm
 * **Exact money arithmetic.** Amounts use `BigDecimal` rather than `double`, so totals of many two-decimal fees cannot drift by a cent, and the summary can legitimately exceed the S$99999.99 per-student cap.
 * **Displayed index vs stored index.** Both commands act on the *displayed* list, matching `delete`, `edit`, `view` and `setoutstanding`. This keeps the mental model consistent, at the cost of the user needing to re-run `fees` after a payment because indexes shift.
 * **Alternatives considered.** (a) Making `feesummary` respect the current filter was rejected because a filtered total is easy to misread as the amount still owed overall. (b) Making `paid` accept a partial amount was rejected for v1.4: it needs a payment-history model, which is a larger change than the iteration allows, so `setoutstanding INDEX 0` and `paid INDEX` both clear a whole fee. (c) Reusing `setoutstanding` with amount `0` instead of adding `paid` was considered, but a dedicated command gives clearer feedback (`S$AMOUNT` cleared) and cannot be confused with re-setting a fee.
+
+### Editing guardian contact details
+
+The `edit` command supports updating a student's guardian name (`g/`) and guardian phone number (`gp/`) alongside existing student fields while preserving required-field invariants and duplicate-student checks.
+
+#### Implementation
+
+`EditCommandParser` tokenizes `g/` (`PREFIX_GUARDIAN_NAME`) and `gp/` (`PREFIX_GUARDIAN_PHONE`) together with the existing student prefixes, rejects duplicate `g/` or `gp/` prefixes via `ArgumentMultimap#verifyNoDuplicatePrefixesFor(...)`, and validates any supplied values through `ParserUtil#parseGuardianName` and `ParserUtil#parseGuardianPhone` before storing them on `EditPersonDescriptor`. It also explicitly tokenizes and rejects `f/` (`PREFIX_OUTSTANDING_FEE`) so that fee edits must go through `setoutstanding` or `paid` rather than being absorbed into an adjacent field value.
+
+During execution, `EditCommand#execute(Model)` looks up `personToEdit` from `Model#getFilteredPersonList()` and constructs `editedPerson` via `EditCommand#createEditedPerson(personToEdit, editPersonDescriptor)`. Unedited fields fall back to the existing values on `personToEdit`, including `personToEdit.getOutstandingFee()`. Because student identity in `Person#isSamePerson(Person)` is defined by the combination of student `Name` (case-insensitive, whitespace-normalized) and `GuardianPhone`, editing `gp/` (or `n/`) can change a student's identity. Whenever `!personToEdit.isSamePerson(editedPerson)` holds, `EditCommand` checks `Model#hasPerson(editedPerson)` before calling `Model#setPerson(personToEdit, editedPerson)`, throwing a `CommandException` if the updated `(Name, GuardianPhone)` pair would collide with another existing student.
+
+The sequence diagram below shows the interactions within the `Logic` and `Model` components for `edit 1 g/May Tan gp/98765432`.
+
+![Sequence diagram for editing guardian contact details](images/GuardianEditSequenceDiagram.png)
+
+The corresponding sources are `docs/diagrams/GuardianEditSequenceDiagram.puml`, `EditCommand`, `EditCommand.EditPersonDescriptor` and `EditCommandParser`.
+
+#### Design considerations
+
+* **Guardian fields remain mandatory.** Unlike optional student contact fields (`p/`, `e/`, `a/`), every student record requires a guardian name and guardian phone number, so `g/` and `gp/` cannot be cleared to empty values via `edit`.
+* **Identity-aware duplicate check.** Because `Person#isSamePerson` uses both `Name` and `GuardianPhone`, updating `g/` alone preserves identity whereas updating `gp/` triggers `Model#hasPerson(editedPerson)` to prevent duplicate `(Name, GuardianPhone)` records while still allowing two siblings with different names to share the same guardian phone number.
+* **Alternatives considered.** Introducing a separate `editguardian` command was rejected because tutors frequently correct student and guardian details together after a phone call or form update; extending `edit` with `g/` and `gp/` keeps a single command for field-level updates.
 
 ### \[Proposed\] Undo/redo feature
 
@@ -273,6 +376,22 @@ The following activity diagram summarizes what happens when a user executes a ne
   * Cons: We must ensure that the implementation of each individual command is correct.
 
 _{more aspects and alternatives to be added}_
+
+### Command-specific help
+
+`help` continues to open the help window. `HelpCommandParser` accepts one optional, exact command word;
+`help COMMAND` returns that command's usage in the result area without invoking its parser or action.
+Unknown targets and extra arguments fail with usage instructions and an alphabetical list of available commands.
+
+`HelpCommand` reuses existing `MESSAGE_USAGE` constants for implemented commands, adding index/payment constraints
+where needed. Commands without usage constants have short local entries. The available-command list is derived
+from those entries, so it cannot drift from the supported help targets. When registering a new command, add its
+help entry and update `CommandHelpLogicTest` in the same integration PR; do not advertise unmerged commands.
+
+Targeted help returns a normal `CommandResult` with no help-window, exit or viewed-person action. The command
+never changes the model or filter and returns `false` from `shouldSaveAddressBook()`. Integration tests exercise
+all supported targets, including `clear`, `exit`, `paid` and `list`, against filtered records and an existing data
+file to catch accidental execution, filter replacement or storage writes.
 
 ### \[Proposed\] Data archiving
 
@@ -461,7 +580,9 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 1.  Tutor <u>finds the student by name (UC02)</u>.
 2.  Tutor requests to delete a specific student in the displayed list.
-3.  Poco Book deletes the student, together with their guardian contact and outstanding fee, saves the data, and shows the deleted student's details.
+3.  Poco Book asks the tutor to confirm, showing the student's name, phone, guardian name, guardian phone and any outstanding fee.
+4.  Tutor confirms the deletion.
+5.  Poco Book deletes the student, together with their guardian contact and outstanding fee, saves the data, and shows the deleted student's details.
 
     Use case ends.
 
@@ -477,13 +598,19 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 * 2a. The index given by the tutor in the list of students displayed is invalid.
 
-    * 2a1. Poco Book shows an error message.
+    * 2a1. Poco Book shows an error message without asking for confirmation.
 
       Use case resumes at step 2.
 
-* 3a. Poco Book is unable to save the data.
+* 4a. Tutor cancels the deletion.
 
-    * 3a1. Poco Book shows an error message that the data could not be saved. The change is kept only until Poco Book is closed.
+    * 4a1. Poco Book keeps the student and shows that no student was deleted.
+
+      Use case ends.
+
+* 5a. Poco Book is unable to save the data.
+
+    * 5a1. Poco Book shows an error message that the data could not be saved. The change is kept only until Poco Book is closed.
 
       Use case ends.
 
@@ -719,9 +846,9 @@ testers are expected to do more *exploratory* testing.
 1. Enter `setoutstanding 1 1.234`, `setoutstanding 01 10`, and `fees extra`.<br>
    Expected: Each command reports an error; Charlotte and Irfan remain displayed with their original fees.
 
-1. Enter `delete 1` while the fee filter is active.<br>
-   Expected: Charlotte is deleted, rather than the first student of the unfiltered list. Irfan becomes index 1.
-   The confirmation includes Charlotte's guardian and outstanding-fee details.
+1. Enter `delete 1` while the fee filter is active, then press Y in the confirmation dialog.<br>
+   Expected: The dialog names Charlotte Oliveiro and warns in red that she still owes S$450.00. Charlotte is deleted, rather than the first student of the unfiltered list. Irfan becomes index 1.
+   The result message shows the details of the deleted student.
 
 1. Restart the app and enter `fees`.<br>
    Expected: Only Irfan remains owing fees; Alex's fee stays cleared and Charlotte stays deleted.
@@ -729,22 +856,23 @@ testers are expected to do more *exploratory* testing.
 
 ### Totalling and recording fee payments
 
-1. Prerequisites: Start with sample data, where Alex Yeoh owes S$120.00, Charlotte Oliveiro owes S$50.00 and Irfan Ibrahim owes S$200.00.
+1. Prerequisites: Start with sample data, where Alex Yeoh owes S$120.00, Charlotte Oliveiro owes S$450.00 and Irfan Ibrahim owes S$250.50.
 
    1. Enter `find Alex` then `feesummary`.<br>
-      Expected: Only Alex is displayed, and the feedback reports `3 student(s) owe a total of S$370.00.` The filter and the displayed list are unchanged.
+      Expected: Only Alex is displayed, and the feedback reports `Across all stored students: 3 student(s) owe a total of S$820.50. Displayed list unchanged.` The filter and the displayed list are unchanged.
 
    1. Enter `fees`, then `paid 1`.<br>
       Expected: Alex's fee is cleared, the feedback states the amount removed, Alex disappears from the `fees` result and the remaining students are re-indexed from 1.
 
-   1. Enter `paid 1` again, then `paid 0`, `paid 01`, `paid 1 2` and `feesummary extra`.<br>
+   1. Enter `list`, then `paid 1` again, `paid 0`, `paid 01`, `paid 1 2` and `feesummary extra`.<br>
       Expected: Each command reports an error and leaves the records and the displayed list unchanged.
 
-   1. Enter `list`, then `paid 2`.<br>
-      Expected: The command acts on the second student of the **full** list, showing that the index follows the displayed list.
+   1. Enter `fees`, then `paid 2`.<br>
+      Expected: Irfan's S$250.50 fee is cleared using index 2 of the filtered list. Charlotte remains owing S$450.00.
 
    1. Enter `feesummary` again, then restart the app and enter `fees`.<br>
-      Expected: The total has dropped by the paid amounts, and the cleared fees are still cleared after the restart.
+      Expected: The total is S$450.00 for one student. After restarting, `fees` shows only Charlotte;
+      Alex and Irfan's fees remain cleared.
 
 ### Viewing a student's complete record
 
@@ -778,20 +906,64 @@ testers are expected to do more *exploratory* testing.
    `Outstanding fee: S$75.50`. Enter `fees`, then `setoutstanding 1 0`.<br>
    Expected: Alex disappears from the filtered list, and the selection and details pane clear.
 
-### Deleting a person
+### Deleting a student
 
-1. Deleting a person while all persons are being shown
+`delete` asks the tutor to confirm in a dialog before it deletes a student. While testing, pay attention to these points:
 
-   1. Prerequisites: List all persons using the `list` command, with multiple persons in the list.
+* The dialog names the student at the given index in the *displayed* list, including after `find` or `fees`.
+* Only Y deletes the student. N, Esc and the dialog's window close button keep the student. Enter, Space, Tab and
+  other keys do nothing, and so does Y pressed with Control, Alt or Command.
+* After a cancellation, no student is deleted, and the displayed students and the selected student stay the same.
+* A student who owes a fee is shown with a warning icon and a red banner stating the amount.
+* Other commands, and `delete` commands with an invalid index, never open the dialog.
+* The whole dialog stays visible and readable, including on a small screen. The two buttons follow the operating
+  system's usual order, so their order may differ between computers.
 
-   1. Test case: `delete 1`<br>
-      Expected: The first contact is deleted from the list. The status message shows the deleted contact's details.
+1. Prerequisites: Start with sample data in a fresh application folder and enter `list`. Six students are shown.
 
-   1. Test case: `delete 0`<br>
-      Expected: No person is deleted. The status message shows error details.
+1. Enter `find Bernice`, `view 1`, `fees`, and `list` in turn.<br>
+   Expected: Each command works as usual, and no confirmation dialog opens. Only a `delete` command for a displayed
+   student opens the dialog.
 
-   1. Other incorrect delete commands to try: `delete`, `delete x`, `...` (where x is larger than the list size)<br>
-      Expected: Similar to previous.
+1. Enter `view 2`, then `delete 2`.<br>
+   Expected: A confirmation dialog opens over the main window. It shows `Name: Bernice Yu`, `Phone: 99272758`,
+   `Guardian: Betty Yu`, `Guardian phone: 82345678` and `Press Y to delete this student, or N to cancel.`
+   There is no fee warning.
+
+1. Press Enter, Tab and Space, then Control+Y and Alt+Y (on macOS, also Command+Y), then type `delete 3`.<br>
+   Expected: The dialog stays open, and no student is deleted.
+
+1. Press N.<br>
+   Expected: The dialog closes and the result shows `Deletion cancelled. No student was deleted.` Bernice is still
+   index 2 and still selected, and her details are still shown.
+
+1. Enter `delete 2` and press Esc. Then enter `delete 2` again and close the dialog with its window's close button.
+   Then enter `delete 2` again and click **Cancel (N)**.<br>
+   Expected: Same as the previous step each time.
+
+1. Enter `delete 2` and press Y.<br>
+   Expected: Bernice is deleted. The result shows `Deleted student:` followed by her details. Charlotte Oliveiro
+   becomes index 2, and the selection and details pane clear.
+
+1. Enter `fees`, then `delete 3`.<br>
+   Expected: The dialog shows Irfan Ibrahim, phone 92492021, guardian Ismail Ibrahim and guardian phone 85678901,
+   with the warning icon and a red banner: `This student still owes S$250.50. Deleting them also deletes this unpaid
+   fee.`
+   Click **Delete (Y)**. Irfan is deleted and the fee list shows two students. Restart the app and enter `list`:
+   four students remain, without Bernice or Irfan.
+
+1. Enter `delete 0`, `delete 01`, `delete x`, `delete`, and `delete 99` in turn.<br>
+   Expected: Each command shows an error message. No dialog opens and no student is deleted.
+
+1. Enter `add n/Maximilian Alexander Bartholomew Fitzgerald-Montgomery Worthington II g/Rani Tan gp/96789013 f/99999.99`,
+   then `find Maximilian` and `delete 1`.<br>
+   Expected: The full name is shown, wrapping onto a second line if it does not fit, and is not cut off with `...`.
+   `Phone: Not provided` is shown, the red banner states `S$99999.99`, and both buttons are visible without resizing
+   the dialog. Press N.
+
+1. If possible, set your display to a resolution of 1280x720 with 150% scaling, then repeat the previous step.<br>
+   Expected: The whole dialog, including the yellow line that names the Y and N keys and both buttons, fits on the
+   screen and is readable.
 
 ### Outstanding-fee labels on student cards
 
@@ -802,7 +974,8 @@ testers are expected to do more *exploratory* testing.
 
 1. Run `add n/Test Student g/Test Guardian gp/92345678 p/91234567 e/test@example.com a/Test address`.
    The new card should have no fee label.
-   Run `delete 7`; the new card should disappear, and the other students' labels should remain unchanged.
+   Run `delete 7` and press Y; the new card should disappear, and the other students' labels should remain
+   unchanged.
 
 1. Run `find Alex`, then `setoutstanding 1 99999.99`. The feedback should show
    `Set outstanding fee for Alex Yeoh: S$99999.99`. His card should show `S$99999.99 outstanding` at the minimum
@@ -811,6 +984,28 @@ testers are expected to do more *exploratory* testing.
 1. Run `setoutstanding 1 0`. The feedback should show `Set outstanding fee for Alex Yeoh: S$0.00` and his card
    should have no fee label. Run `fees` to verify that Alex is excluded. Restart the app and run `find Alex` to
    verify that the fee remains cleared.
+
+### Reading command-specific help
+
+1. Prerequisites: Start a fresh disposable application folder with the supplied sample data, then enter `find Alex`.
+   Only Alex Yeoh should be displayed. Do not reuse a folder with previously edited data.
+
+   1. Resize the window to its minimum size (750 × 450), then enter `help add`.<br>
+      Expected: The instructions wrap in the result area. Scroll vertically to read the required guardian
+      fields, optional fields, example and fee constraints without horizontal scrolling.
+
+   1. Enter `help paid`.<br>
+      Expected: The result area shows the payment syntax, an example and the whole-fee/displayed-index constraints.
+      No payment is recorded, the displayed list is unchanged and no help window opens.
+
+   1. Enter `help clear`, `help exit` and `help list`.<br>
+      Expected: Each shows instructions only. The app stays open, no student is deleted and the filter is unchanged.
+
+   1. Enter `help unknown` and `help paid 1`.<br>
+      Expected: Each reports invalid format, explains `help [COMMAND]` and lists the available command words.
+
+   1. Enter `help`.<br>
+      Expected: The existing help window opens with the online guide link. Close the help window to continue.
 
 ### Saving data
 
@@ -836,3 +1031,11 @@ testers are expected to do more *exploratory* testing.
 
 1. Launch the JAR by its absolute path from a different empty working folder.<br>
    Expected: Data, preferences and logs remain beside the JAR; the unrelated working folder remains empty.
+
+### Maintaining command-specific help
+
+When registering a new command in `AddressBookParser`, also add its `MESSAGE_USAGE` to
+`HelpCommand.COMMAND_USAGE`, update the UG command list and the `CommandHelpLogicTest` targets,
+and remove that command from `HelpCommandParserTest` invalid targets if present. Verify both the raw command
+and `help COMMAND` through `LogicManager`. For the pending `findguardian` integration (#139), these updates
+must accompany command registration; until then it is deliberately not advertised as available.
