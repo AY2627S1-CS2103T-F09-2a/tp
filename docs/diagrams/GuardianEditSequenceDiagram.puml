@@ -1,0 +1,112 @@
+@startuml
+!include style.puml
+skinparam ArrowFontStyle plain
+
+box Logic LOGIC_COLOR_T1
+participant ":LogicManager" as LogicManager LOGIC_COLOR
+participant ":AddressBookParser" as AddressBookParser LOGIC_COLOR
+participant ":EditCommandParser" as EditCommandParser LOGIC_COLOR
+participant "d:EditPersonDescriptor" as EditPersonDescriptor LOGIC_COLOR
+participant "e:EditCommand" as EditCommand LOGIC_COLOR
+participant "r:CommandResult" as CommandResult LOGIC_COLOR
+end box
+
+box Model MODEL_COLOR_T1
+participant "m:Model" as Model MODEL_COLOR
+end box
+
+[-> LogicManager : execute("edit 1 g/May Tan gp/98765432")
+activate LogicManager
+
+LogicManager -> AddressBookParser : parseCommand("edit 1 g/May Tan gp/98765432")
+activate AddressBookParser
+
+create EditCommandParser
+AddressBookParser -> EditCommandParser
+activate EditCommandParser
+
+EditCommandParser --> AddressBookParser
+deactivate EditCommandParser
+
+AddressBookParser -> EditCommandParser : parse(" 1 g/May Tan gp/98765432")
+activate EditCommandParser
+
+create EditPersonDescriptor
+EditCommandParser -> EditPersonDescriptor
+activate EditPersonDescriptor
+
+EditPersonDescriptor --> EditCommandParser : d
+deactivate EditPersonDescriptor
+
+EditCommandParser -> EditPersonDescriptor : setGuardianName(gn)
+activate EditPersonDescriptor
+EditPersonDescriptor --> EditCommandParser
+deactivate EditPersonDescriptor
+
+EditCommandParser -> EditPersonDescriptor : setGuardianPhone(gp)
+activate EditPersonDescriptor
+EditPersonDescriptor --> EditCommandParser
+deactivate EditPersonDescriptor
+
+create EditCommand
+EditCommandParser -> EditCommand : EditCommand(1, d)
+activate EditCommand
+
+EditCommand --> EditCommandParser : e
+deactivate EditCommand
+
+EditCommandParser --> AddressBookParser : e
+deactivate EditCommandParser
+'Hidden arrow to position the destroy marker below the end of the activation bar.
+EditCommandParser -[hidden]-> AddressBookParser
+destroy EditCommandParser
+
+AddressBookParser --> LogicManager : e
+deactivate AddressBookParser
+
+LogicManager -> EditCommand : execute(m)
+activate EditCommand
+
+EditCommand -> Model : getFilteredPersonList()
+activate Model
+
+Model --> EditCommand : lastShownList
+deactivate Model
+
+EditCommand -> EditCommand : createEditedPerson(personToEdit, d)
+activate EditCommand
+
+EditCommand --> EditCommand : editedPerson
+deactivate EditCommand
+
+EditCommand -> Model : hasPerson(editedPerson)
+activate Model
+
+Model --> EditCommand : false
+deactivate Model
+
+EditCommand -> Model : setPerson(personToEdit, editedPerson)
+activate Model
+
+Model --> EditCommand
+deactivate Model
+
+EditCommand -> Model : updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS)
+activate Model
+
+Model --> EditCommand
+deactivate Model
+
+create CommandResult
+EditCommand -> CommandResult
+activate CommandResult
+
+CommandResult --> EditCommand : r
+deactivate CommandResult
+
+EditCommand --> LogicManager : r
+deactivate EditCommand
+
+[<-- LogicManager : r
+deactivate LogicManager
+@enduml

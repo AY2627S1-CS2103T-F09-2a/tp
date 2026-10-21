@@ -1,7 +1,9 @@
 package seedu.address.logic;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
 import static seedu.address.logic.Messages.MESSAGE_INVALID_STUDENT_DISPLAYED_INDEX;
 import static seedu.address.logic.Messages.MESSAGE_UNKNOWN_COMMAND;
@@ -30,15 +32,18 @@ import seedu.address.logic.commands.AddCommand;
 import seedu.address.logic.commands.CommandResult;
 import seedu.address.logic.commands.DeleteCommand;
 import seedu.address.logic.commands.EditCommand;
+import seedu.address.logic.commands.FeeSummaryCommand;
 import seedu.address.logic.commands.ListCommand;
 import seedu.address.logic.commands.ViewCommand;
 import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.logic.parser.exceptions.ParseException;
+import seedu.address.model.AddressBook;
 import seedu.address.model.Model;
 import seedu.address.model.ModelManager;
 import seedu.address.model.ReadOnlyAddressBook;
 import seedu.address.model.UserPrefs;
 import seedu.address.model.person.Person;
+import seedu.address.model.util.SampleDataUtil;
 import seedu.address.storage.JsonAddressBookStorage;
 import seedu.address.storage.JsonUserPrefsStorage;
 import seedu.address.storage.StorageManager;
@@ -61,6 +66,93 @@ public class LogicManagerTest {
         JsonUserPrefsStorage userPrefsStorage = new JsonUserPrefsStorage(temporaryFolder.resolve("userPrefs.json"));
         StorageManager storage = new StorageManager(addressBookStorage, userPrefsStorage);
         logic = new LogicManager(model, storage);
+    }
+
+    @Test
+    public void execute_feeSummaryWithHiddenFees_preservesFilterAndDoesNotCreateFile() throws Exception {
+        Person hidden = new PersonBuilder().withName("Hidden Student").withOutstandingFee("99999.99").build();
+        Person visible = new PersonBuilder().withName("Visible Student").withOutstandingFee("0.01").build();
+        model.addPerson(hidden);
+        model.addPerson(visible);
+        AddressBook before = new AddressBook(model.getAddressBook());
+        logic.execute("find Visible");
+
+        CommandResult result = logic.execute("feesummary");
+
+        assertEquals(String.format(FeeSummaryCommand.MESSAGE_SUCCESS, 2, "100000.00"), result.getFeedbackToUser());
+        assertFalse(result.isShowHelp());
+        assertFalse(result.isExit());
+        assertTrue(result.getViewedPerson().isEmpty());
+        assertEquals(List.of(visible), model.getFilteredPersonList());
+        assertEquals(before, model.getAddressBook());
+        assertFalse(Files.exists(temporaryFolder.resolve("addressBook.json")));
+    }
+
+    @Test
+    public void execute_feeSummaryWithEmptyFilter_reportsHiddenSampleTotal() throws Exception {
+        model.setAddressBook(SampleDataUtil.getSampleAddressBook());
+        AddressBook before = new AddressBook(model.getAddressBook());
+        logic.execute("find Nobody");
+
+        assertEquals(String.format(FeeSummaryCommand.MESSAGE_SUCCESS, 3, "820.50"),
+                logic.execute("feesummary").getFeedbackToUser());
+        assertEquals(List.of(), model.getFilteredPersonList());
+        assertEquals(before, model.getAddressBook());
+        assertFalse(Files.exists(temporaryFolder.resolve("addressBook.json")));
+    }
+
+    @Test
+    public void execute_feeSummaryExtraArguments_reportsUsageWithoutChangingState() throws Exception {
+        model.setAddressBook(SampleDataUtil.getSampleAddressBook());
+        AddressBook before = new AddressBook(model.getAddressBook());
+        logic.execute("find Alex");
+        List<Person> displayed = List.copyOf(model.getFilteredPersonList());
+
+        String expectedMessage = String.format(MESSAGE_INVALID_COMMAND_FORMAT, FeeSummaryCommand.MESSAGE_USAGE);
+        assertThrows(ParseException.class, expectedMessage, () -> logic.execute("feesummary extra"));
+        assertEquals(displayed, model.getFilteredPersonList());
+        assertEquals(before, model.getAddressBook());
+        assertFalse(Files.exists(temporaryFolder.resolve("addressBook.json")));
+    }
+
+    @Test
+    public void execute_feeSummary_preservesExistingFileBytes() throws Exception {
+        model.setAddressBook(SampleDataUtil.getSampleAddressBook());
+        Path data = temporaryFolder.resolve("addressBook.json");
+        byte[] sentinel = {0, 1, 2, 10, 13, (byte) 255};
+        Files.write(data, sentinel);
+        logic.execute("find Alex");
+
+        logic.execute("feesummary");
+
+        assertArrayEquals(sentinel, Files.readAllBytes(data));
+    }
+
+    @Test
+    public void execute_feeSummary_preservesLiveFeesPredicate() throws Exception {
+        model.setAddressBook(SampleDataUtil.getSampleAddressBook());
+        logic.execute("fees");
+        List<Person> displayed = List.copyOf(model.getFilteredPersonList());
+        AddressBook before = new AddressBook(model.getAddressBook());
+
+        logic.execute("feesummary");
+
+        assertEquals(displayed, model.getFilteredPersonList());
+        assertEquals(before, model.getAddressBook());
+        assertFalse(Files.exists(temporaryFolder.resolve("addressBook.json")));
+        logic.execute("setoutstanding 1 0");
+        assertEquals(displayed.subList(1, 3), model.getFilteredPersonList());
+        assertEquals(6, model.getAddressBook().getPersonList().size());
+        assertTrue(model.getAddressBook().getPersonList().getFirst().getOutstandingFee().isEmpty());
+    }
+
+    @Test
+    public void execute_feeSummarySampleData_matchesDocumentedFeedback() throws Exception {
+        model.setAddressBook(SampleDataUtil.getSampleAddressBook());
+        logic.execute("find Alex");
+
+        assertEquals("Across all stored students: 3 student(s) owe a total of S$820.50. Displayed list unchanged.",
+                logic.execute("feesummary").getFeedbackToUser());
     }
 
     @Test

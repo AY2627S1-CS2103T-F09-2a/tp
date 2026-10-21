@@ -60,19 +60,29 @@ Poco Book is a **desktop application for independent tutors to manage students, 
 
 * For `delete`, `edit`, `view`, and `setoutstanding`, `INDEX` uses ASCII digits without leading zeros, such as `1` or `12`. Leading zeros (`01`), signs (`+1`), decimals, and extra index tokens produce an invalid-command-format message. A positive index larger than `2147483647` produces `The student index provided is invalid.` No record or current list is changed when the index is rejected.
 
-* Extraneous parameters for commands that take no parameters, such as `help`, `list`, `exit`, and `clear`, are ignored.<br>
-  For example, `help 123` is interpreted as `help`.
+* Extraneous parameters for commands that take no parameters, such as `list`, `exit`, and `clear`, are ignored.<br>
+  For example, `list 123` is interpreted as `list`. `help` accepts an optional command word and rejects unknown targets or extra arguments.
 
 * If you are using a PDF version of this document, be careful when copying and pasting commands that span multiple lines as space characters surrounding line-breaks may be omitted when copied over to the application.
 </div>
 
 ### Viewing help: `help`
 
-Shows a message explaining how to access the help page.
+Plain `help` opens the existing help window with the online guide link.
 
-![help message](images/helpMessage.png)
+![help window opened by plain help](images/helpMessage.png)
 
-Format: `help`
+Type `help COMMAND` to read a command’s purpose, syntax and example in the result area without leaving the app.
+For example, `help paid` explains how to clear a displayed student’s full outstanding fee; it does not record a payment.
+
+
+Format: `help [COMMAND]`
+
+* Use one exact, lower-case command word: `add`, `clear`, `delete`, `edit`, `exit`, `fees`, `feesummary`, `find`, `help`, `list`, `paid`, `setoutstanding`, or `view`.
+* `help unknown` and `help paid 1` report an error and list the available command words.
+* Long help instructions wrap in the result area; scroll vertically to read the remaining lines.
+* Help leaves student records, the displayed list and selection unchanged and does not save data.
+* `help clear` and `help exit` show instructions only; they do not clear data or close the app.
 
 
 ### Adding a student: `add`
@@ -114,13 +124,13 @@ This command takes no arguments and does not change student records. Use `list` 
 Format: `feesummary`
 
 Shows how many students owe fees and the exact total they owe, counting **every stored student**, even when the displayed list is filtered by `find` or `fees`.
-The feedback reads `N student(s) owe a total of S$AMOUNT.` with exactly two decimal places, so a book with no outstanding fees shows `0 student(s) owe a total of S$0.00.`
+The feedback reads `Across all stored students: N student(s) owe a total of S$AMOUNT. Displayed list unchanged.` with exactly two decimal places, so a book with no outstanding fees shows `Across all stored students: 0 student(s) owe a total of S$0.00. Displayed list unchanged.`
 The total is the sum of all individual amounts and can therefore be larger than the S$99999.99 per-student maximum.
 
 * This command takes no arguments; extra text produces an invalid-command-format message.
 * The displayed list, the selected student and the stored data are unchanged. `feesummary` does not save anything.
 
-Examples: `feesummary` in a book where two students owe S$180.00 and S$75.50 shows `2 student(s) owe a total of S$255.50.`
+Examples: `feesummary` in a book where two students owe S$180.00 and S$75.50 shows `Across all stored students: 2 student(s) owe a total of S$255.50. Displayed list unchanged.`
 
 ### Setting or clearing an outstanding fee: `setoutstanding`
 
@@ -298,5 +308,5 @@ Action | Format, Examples
 **Fee summary** | `feesummary`
 **Set outstanding fee** | `setoutstanding INDEX AMOUNT`<br> e.g., `setoutstanding 1 150.50`; `setoutstanding 1 0` clears it
 **Record payment** | `paid INDEX`<br> e.g., `paid 1`
-**Help** | `help`
+**Help** | `help [COMMAND]`<br> e.g., `help paid`
 **Exit** | `exit`

@@ -169,6 +169,30 @@ Classes used by multiple components are in the `seedu.address.commons` package.
 
 This section describes some noteworthy details on how certain features are implemented.
 
+### Minimum outstanding-fee filtering
+
+The `fees [min/AMOUNT]` command replaces the displayed-list filter with one that selects students owing at least the given amount. It searches all stored students, not just the previous search results, and preserves their stored order.
+
+#### Implementation
+
+`AddressBookParser` delegates the arguments to `FeesCommandParser`. Plain `fees` creates a `FeesCommand` with a zero minimum. Otherwise, the parser requires exactly one `min/` prefix with no preamble, validates the amount using `OutstandingFee.VALIDATION_REGEX`, and checks that it does not exceed `99999.99`. The accepted threshold is an unsigned decimal from `0` to `99999.99`, with at most two decimal places. Invalid arguments cause a `ParseException` before command execution, leaving the records and current filter unchanged.
+
+The sequence diagram below shows a successful `fees min/100` call. Tokenization, predicate evaluation and result construction are summarized in notes rather than shown as separate lifelines.
+
+![Sequence diagram for minimum outstanding-fee filtering](images/FeesSequenceDiagram.png)
+
+Diagram source: [FeesSequenceDiagram.puml](diagrams/FeesSequenceDiagram.puml).
+
+`FeesCommand#execute` calls `Model#updateFilteredPersonList` with a predicate. For a positive minimum, it selects only students with a present outstanding fee whose `BigDecimal` value compares greater than or equal to the minimum. Plain `fees` and `fees min/0` use `PREDICATE_HAS_OUTSTANDING_FEE`; students without a fee remain excluded. The command counts the resulting list and returns the existing `N student(s) with outstanding fees.` feedback. `LogicManager` skips saving because `FeesCommand#shouldSaveAddressBook()` returns `false`.
+
+`ModelManager` installs the predicate on its existing `FilteredList`, rather than taking a snapshot. Subsequent fee replacements are therefore re-evaluated against the same minimum: after `fees min/100`, changing a displayed student's fee to `99.99` removes that student from the results, while changing it to exactly `100` retains them. Commands accepting an index continue to use the current displayed list; `list` restores all students.
+
+#### Design considerations
+
+* **Exact, inclusive comparison.** `BigDecimal.compareTo` avoids floating-point rounding and treats thresholds such as `100` and `100.00` identically. The threshold may be zero even though a stored `OutstandingFee` must be positive.
+* **Live filter rather than a copied result list.** Reusing the model's filtering mechanism preserves automatic updates when fees change, without adding a separate collection or changing the storage schema.
+* **Read-only query.** Filtering changes only the displayed view, not student records. Skipping the storage write avoids unnecessary disk access and unrelated save errors.
+
 ### Delete confirmation
 
 `delete INDEX` asks the tutor to confirm before a student is deleted, because a deleted student cannot be restored. Asking for confirmation is UI behaviour, so it is handled in the `UI` component. `Logic` gains only a query method, `Logic#getDeletionTarget(String)`, which reports which student a command would delete without executing it. `Model` and `Storage` are unchanged, and deletion and saving still use the existing path.
@@ -222,7 +246,7 @@ The all-student fee total (`feesummary`) and full-payment recording (`paid`) ext
 
 #### Implementation
 
-`FeeSummaryCommand` walks every person in the **complete** address book via `Model#getAddressBook()#getPersonList()` rather than the filtered list, keeps a running `BigDecimal` total and a count of students whose fee is present, and formats the result with `toPlainString()` so two decimal places are always shown. Iterating the unfiltered book is what makes the total independent of the current `find`/`fees` filter. The command also overrides `Command#shouldSaveAddressBook()` to return `false`, so `LogicManager` does not write to storage for a pure query. `FeeSummaryCommandParser` rejects any argument with `MESSAGE_INVALID_COMMAND_FORMAT`, which keeps `feesummary 1` from being silently accepted.
+`FeeSummaryCommand` walks every person in the **complete** address book via `Model#getAddressBook()#getPersonList()` rather than the filtered list, keeps a running `BigDecimal` total and a count of students whose fee is present, and formats the result with `toPlainString()` so two decimal places are always shown. The feedback explicitly says "Across all stored students" and "Displayed list unchanged" to make that scope visible in the app. Iterating the unfiltered book is what makes the total independent of the current `find`/`fees` filter. The command also overrides `Command#shouldSaveAddressBook()` to return `false`, so `LogicManager` does not write to storage for a pure query. `FeeSummaryCommandParser` rejects any argument with `MESSAGE_INVALID_COMMAND_FORMAT`, which keeps `feesummary 1` from being silently accepted.
 
 `PaidCommand` holds an `Index` that was validated by `ParserUtil#parseIndex` at parse time. During execution it (i) rejects an index outside the displayed list, (ii) looks up the target `Person` in that displayed list, and (iii) fails with a user-facing `CommandException` when the fee is absent (`Person#getOutstandingFee()` returns an `Optional`). Only after those checks does it construct a replacement `Person` with every other field copied verbatim — name, optional phone/email/address, guardian name and phone, and tags — and call `Model#setPerson(...)`. Because the `Person` is immutable, this copy-then-replace step is what preserves the fields the command does not touch, and because `setPerson` goes through the updated address book, the active filter and the GUI selection are refreshed by the usual `FilteredList`/`ObservableList` listeners.
 
@@ -238,6 +262,28 @@ The corresponding sources are `docs/diagrams/PaidSequenceDiagram.puml`, `FeeSumm
 * **Exact money arithmetic.** Amounts use `BigDecimal` rather than `double`, so totals of many two-decimal fees cannot drift by a cent, and the summary can legitimately exceed the S$99999.99 per-student cap.
 * **Displayed index vs stored index.** Both commands act on the *displayed* list, matching `delete`, `edit`, `view` and `setoutstanding`. This keeps the mental model consistent, at the cost of the user needing to re-run `fees` after a payment because indexes shift.
 * **Alternatives considered.** (a) Making `feesummary` respect the current filter was rejected because a filtered total is easy to misread as the amount still owed overall. (b) Making `paid` accept a partial amount was rejected for v1.4: it needs a payment-history model, which is a larger change than the iteration allows, so `setoutstanding INDEX 0` and `paid INDEX` both clear a whole fee. (c) Reusing `setoutstanding` with amount `0` instead of adding `paid` was considered, but a dedicated command gives clearer feedback (`S$AMOUNT` cleared) and cannot be confused with re-setting a fee.
+
+### Editing guardian contact details
+
+The `edit` command supports updating a student's guardian name (`g/`) and guardian phone number (`gp/`) alongside existing student fields while preserving required-field invariants and duplicate-student checks.
+
+#### Implementation
+
+`EditCommandParser` tokenizes `g/` (`PREFIX_GUARDIAN_NAME`) and `gp/` (`PREFIX_GUARDIAN_PHONE`) together with the existing student prefixes, rejects duplicate `g/` or `gp/` prefixes via `ArgumentMultimap#verifyNoDuplicatePrefixesFor(...)`, and validates any supplied values through `ParserUtil#parseGuardianName` and `ParserUtil#parseGuardianPhone` before storing them on `EditPersonDescriptor`. It also explicitly tokenizes and rejects `f/` (`PREFIX_OUTSTANDING_FEE`) so that fee edits must go through `setoutstanding` or `paid` rather than being absorbed into an adjacent field value.
+
+During execution, `EditCommand#execute(Model)` looks up `personToEdit` from `Model#getFilteredPersonList()` and constructs `editedPerson` via `EditCommand#createEditedPerson(personToEdit, editPersonDescriptor)`. Unedited fields fall back to the existing values on `personToEdit`, including `personToEdit.getOutstandingFee()`. Because student identity in `Person#isSamePerson(Person)` is defined by the combination of student `Name` (case-insensitive, whitespace-normalized) and `GuardianPhone`, editing `gp/` (or `n/`) can change a student's identity. Whenever `!personToEdit.isSamePerson(editedPerson)` holds, `EditCommand` checks `Model#hasPerson(editedPerson)` before calling `Model#setPerson(personToEdit, editedPerson)`, throwing a `CommandException` if the updated `(Name, GuardianPhone)` pair would collide with another existing student.
+
+The sequence diagram below shows the interactions within the `Logic` and `Model` components for `edit 1 g/May Tan gp/98765432`.
+
+![Sequence diagram for editing guardian contact details](images/GuardianEditSequenceDiagram.png)
+
+The corresponding sources are `docs/diagrams/GuardianEditSequenceDiagram.puml`, `EditCommand`, `EditCommand.EditPersonDescriptor` and `EditCommandParser`.
+
+#### Design considerations
+
+* **Guardian fields remain mandatory.** Unlike optional student contact fields (`p/`, `e/`, `a/`), every student record requires a guardian name and guardian phone number, so `g/` and `gp/` cannot be cleared to empty values via `edit`.
+* **Identity-aware duplicate check.** Because `Person#isSamePerson` uses both `Name` and `GuardianPhone`, updating `g/` alone preserves identity whereas updating `gp/` triggers `Model#hasPerson(editedPerson)` to prevent duplicate `(Name, GuardianPhone)` records while still allowing two siblings with different names to share the same guardian phone number.
+* **Alternatives considered.** Introducing a separate `editguardian` command was rejected because tutors frequently correct student and guardian details together after a phone call or form update; extending `edit` with `g/` and `gp/` keeps a single command for field-level updates.
 
 ### \[Proposed\] Undo/redo feature
 
@@ -322,6 +368,22 @@ The following activity diagram summarizes what happens when a user executes a ne
   * Cons: We must ensure that the implementation of each individual command is correct.
 
 _{more aspects and alternatives to be added}_
+
+### Command-specific help
+
+`help` continues to open the help window. `HelpCommandParser` accepts one optional, exact command word;
+`help COMMAND` returns that command's usage in the result area without invoking its parser or action.
+Unknown targets and extra arguments fail with usage instructions and an alphabetical list of available commands.
+
+`HelpCommand` reuses existing `MESSAGE_USAGE` constants for implemented commands, adding index/payment constraints
+where needed. Commands without usage constants have short local entries. The available-command list is derived
+from those entries, so it cannot drift from the supported help targets. When registering a new command, add its
+help entry and update `CommandHelpLogicTest` in the same integration PR; do not advertise unmerged commands.
+
+Targeted help returns a normal `CommandResult` with no help-window, exit or viewed-person action. The command
+never changes the model or filter and returns `false` from `shouldSaveAddressBook()`. Integration tests exercise
+all supported targets, including `clear`, `exit`, `paid` and `list`, against filtered records and an existing data
+file to catch accidental execution, filter replacement or storage writes.
 
 ### \[Proposed\] Data archiving
 
@@ -786,22 +848,23 @@ testers are expected to do more *exploratory* testing.
 
 ### Totalling and recording fee payments
 
-1. Prerequisites: Start with sample data, where Alex Yeoh owes S$120.00, Charlotte Oliveiro owes S$50.00 and Irfan Ibrahim owes S$200.00.
+1. Prerequisites: Start with sample data, where Alex Yeoh owes S$120.00, Charlotte Oliveiro owes S$450.00 and Irfan Ibrahim owes S$250.50.
 
    1. Enter `find Alex` then `feesummary`.<br>
-      Expected: Only Alex is displayed, and the feedback reports `3 student(s) owe a total of S$370.00.` The filter and the displayed list are unchanged.
+      Expected: Only Alex is displayed, and the feedback reports `Across all stored students: 3 student(s) owe a total of S$820.50. Displayed list unchanged.` The filter and the displayed list are unchanged.
 
    1. Enter `fees`, then `paid 1`.<br>
       Expected: Alex's fee is cleared, the feedback states the amount removed, Alex disappears from the `fees` result and the remaining students are re-indexed from 1.
 
-   1. Enter `paid 1` again, then `paid 0`, `paid 01`, `paid 1 2` and `feesummary extra`.<br>
+   1. Enter `list`, then `paid 1` again, `paid 0`, `paid 01`, `paid 1 2` and `feesummary extra`.<br>
       Expected: Each command reports an error and leaves the records and the displayed list unchanged.
 
-   1. Enter `list`, then `paid 2`.<br>
-      Expected: The command acts on the second student of the **full** list, showing that the index follows the displayed list.
+   1. Enter `fees`, then `paid 2`.<br>
+      Expected: Irfan's S$250.50 fee is cleared using index 2 of the filtered list. Charlotte remains owing S$450.00.
 
    1. Enter `feesummary` again, then restart the app and enter `fees`.<br>
-      Expected: The total has dropped by the paid amounts, and the cleared fees are still cleared after the restart.
+      Expected: The total is S$450.00 for one student. After restarting, `fees` shows only Charlotte;
+      Alex and Irfan's fees remain cleared.
 
 ### Viewing a student's complete record
 
@@ -910,6 +973,28 @@ testers are expected to do more *exploratory* testing.
    should have no fee label. Run `fees` to verify that Alex is excluded. Restart the app and run `find Alex` to
    verify that the fee remains cleared.
 
+### Reading command-specific help
+
+1. Prerequisites: Start a fresh disposable application folder with the supplied sample data, then enter `find Alex`.
+   Only Alex Yeoh should be displayed. Do not reuse a folder with previously edited data.
+
+   1. Resize the window to its minimum size (750 × 450), then enter `help add`.<br>
+      Expected: The instructions wrap in the result area. Scroll vertically to read the required guardian
+      fields, optional fields, example and fee constraints without horizontal scrolling.
+
+   1. Enter `help paid`.<br>
+      Expected: The result area shows the payment syntax, an example and the whole-fee/displayed-index constraints.
+      No payment is recorded, the displayed list is unchanged and no help window opens.
+
+   1. Enter `help clear`, `help exit` and `help list`.<br>
+      Expected: Each shows instructions only. The app stays open, no student is deleted and the filter is unchanged.
+
+   1. Enter `help unknown` and `help paid 1`.<br>
+      Expected: Each reports invalid format, explains `help [COMMAND]` and lists the available command words.
+
+   1. Enter `help`.<br>
+      Expected: The existing help window opens with the online guide link. Close the help window to continue.
+
 ### Saving data
 
 1. In a disposable application folder, add a student and change their fee. Close and restart the app.<br>
@@ -925,3 +1010,11 @@ testers are expected to do more *exploratory* testing.
 
 1. Launch the JAR by its absolute path from a different empty working folder.<br>
    Expected: Data, preferences and logs remain beside the JAR; the unrelated working folder remains empty.
+
+### Maintaining command-specific help
+
+When registering a new command in `AddressBookParser`, also add its `MESSAGE_USAGE` to
+`HelpCommand.COMMAND_USAGE`, update the UG command list and the `CommandHelpLogicTest` targets,
+and remove that command from `HelpCommandParserTest` invalid targets if present. Verify both the raw command
+and `help COMMAND` through `LogicManager`. For the pending `findguardian` integration (#139), these updates
+must accompany command registration; until then it is deliberately not advertised as available.
