@@ -2,8 +2,9 @@ package seedu.address.logic;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static seedu.address.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
+import static seedu.address.testutil.Assert.assertThrows;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -60,9 +61,19 @@ public class CommandHelpLogicTest {
             assertEquals("Existing data must not be overwritten by help.", Files.readString(data));
         }
 
+        String paidHelp = logic.execute("help paid").getFeedbackToUser();
+        assertTrue(paidHelp.contains("whole outstanding fee"));
+        assertTrue(paidHelp.contains("current displayed index, starting at 1, without leading zeros"));
+        String feeHelp = logic.execute("help setoutstanding").getFeedbackToUser();
+        assertTrue(feeHelp.contains("between 0 and 99999.99, with at most two decimal places"));
+        assertTrue(feeHelp.contains("Use 0 to clear the fee"));
+        assertTrue(feeHelp.contains("current displayed index, starting at 1, without leading zeros"));
+
         assertTrue(logic.execute("help").isShowHelp());
-        assertThrows(ParseException.class, () -> logic.execute("help paid 1"));
-        assertThrows(ParseException.class, () -> logic.execute("help unknown"));
+        String invalidHelpMessage = String.format(MESSAGE_INVALID_COMMAND_FORMAT, HelpCommand.MESSAGE_USAGE)
+                + "\nAvailable commands: " + HelpCommand.getAvailableCommands();
+        assertThrows(ParseException.class, invalidHelpMessage, () -> logic.execute("help paid 1"));
+        assertThrows(ParseException.class, invalidHelpMessage, () -> logic.execute("help unknown"));
         assertEquals(List.of(visible), model.getFilteredPersonList());
         assertEquals(before, model.getAddressBook());
         assertEquals("Existing data must not be overwritten by help.", Files.readString(data));

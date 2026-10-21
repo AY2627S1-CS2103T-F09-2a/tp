@@ -69,15 +69,18 @@ Poco Book is a **desktop application for independent tutors to manage students, 
 ### Viewing help: `help`
 
 Plain `help` opens the existing help window with the online guide link.
+
+![help window opened by plain help](images/helpMessage.png)
+
 Type `help COMMAND` to read a command’s purpose, syntax and example in the result area without leaving the app.
 For example, `help paid` explains how to clear a displayed student’s full outstanding fee; it does not record a payment.
 
-![help message](images/helpMessage.png)
 
 Format: `help [COMMAND]`
 
 * Use one exact, lower-case command word: `add`, `clear`, `delete`, `edit`, `exit`, `fees`, `feesummary`, `find`, `help`, `list`, `paid`, `setoutstanding`, or `view`.
 * `help unknown` and `help paid 1` report an error and list the available command words.
+* Long help instructions wrap in the result area; scroll vertically to read the remaining lines.
 * Help leaves student records, the displayed list and selection unchanged and does not save data.
 * `help clear` and `help exit` show instructions only; they do not clear data or close the app.
 

@@ -21,6 +21,7 @@ public class SetOutstandingCommand extends Command {
     public static final String MESSAGE_USAGE = COMMAND_WORD
             + ": Sets the outstanding fee of the student identified by the displayed index.\n"
             + "Parameters: INDEX AMOUNT\n"
+            + "Use the current displayed index, starting at 1, without leading zeros.\n"
             + "Example: " + COMMAND_WORD + " 1 50.00";
     public static final String MESSAGE_SUCCESS = "Set outstanding fee for %1$s: S$%2$s";
     public static final String MESSAGE_INVALID_AMOUNT =

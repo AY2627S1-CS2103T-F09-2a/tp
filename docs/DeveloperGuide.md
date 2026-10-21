@@ -818,7 +818,12 @@ testers are expected to do more *exploratory* testing.
 
 ### Reading command-specific help
 
-1. Prerequisites: Keep two students in a disposable book, with only one shown by `find`.
+1. Prerequisites: Start a fresh disposable application folder with the supplied sample data, then enter `find Alex`.
+   Only Alex Yeoh should be displayed. Do not reuse a folder with previously edited data.
+
+   1. Resize the window to its minimum size (750 × 450), then enter `help add`.<br>
+      Expected: The instructions wrap in the result area. Scroll vertically to read the required guardian
+      fields, optional fields, example and fee constraints without horizontal scrolling.
 
    1. Enter `help paid`.<br>
       Expected: The result area shows the payment syntax, an example and the whole-fee/displayed-index constraints.
@@ -848,3 +853,11 @@ testers are expected to do more *exploratory* testing.
 
 1. Launch the JAR by its absolute path from a different empty working folder.<br>
    Expected: Data, preferences and logs remain beside the JAR; the unrelated working folder remains empty.
+
+### Maintaining command-specific help
+
+When registering a new command in `AddressBookParser`, also add its `MESSAGE_USAGE` to
+`HelpCommand.COMMAND_USAGE`, update the UG command list and the `CommandHelpLogicTest` targets,
+and remove that command from `HelpCommandParserTest` invalid targets if present. Verify both the raw command
+and `help COMMAND` through `LogicManager`. For the pending `findguardian` integration (#139), these updates
+must accompany command registration; until then it is deliberately not advertised as available.
