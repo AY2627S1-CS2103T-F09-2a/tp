@@ -1,0 +1,67 @@
+@startuml
+!include style.puml
+skinparam ArrowFontStyle plain
+
+box Logic LOGIC_COLOR_T1
+participant ":LogicManager" as Logic LOGIC_COLOR
+participant ":AddressBookParser" as Parser LOGIC_COLOR
+participant ":FeesCommandParser" as FeesParser LOGIC_COLOR
+participant "c:FeesCommand" as Fees LOGIC_COLOR
+end box
+
+box Model MODEL_COLOR_T1
+participant "m:Model" as Model MODEL_COLOR
+end box
+
+[-> Logic : execute("fees min/100")
+activate Logic
+Logic -> Parser : parseCommand("fees min/100")
+activate Parser
+create FeesParser
+Parser -> FeesParser : new FeesCommandParser()
+Parser -> FeesParser : parse(" min/100")
+activate FeesParser
+note over FeesParser
+Validate exactly one min/ argument,
+decimal syntax and range.
+minimumAmount = BigDecimal("100")
+end note
+create Fees
+FeesParser -> Fees : new FeesCommand(minimumAmount)
+FeesParser --> Parser : c
+deactivate FeesParser
+Parser --> Logic : c
+deactivate Parser
+
+Logic -> Fees : execute(m)
+activate Fees
+Fees -> Model : updateFilteredPersonList(predicate)
+activate Model
+note over Model
+Replace the active filter over all students.
+Match only a present fee >= minimumAmount.
+Keep stored order and the live predicate.
+end note
+Model --> Fees
+deactivate Model
+Fees -> Model : getFilteredPersonList()
+activate Model
+Model --> Fees : filtered students
+deactivate Model
+note over Fees
+Count matches with size().
+Create CommandResult with
+"N student(s) with outstanding fees."
+end note
+Fees --> Logic : commandResult
+deactivate Fees
+Logic -> Fees : shouldSaveAddressBook()
+activate Fees
+Fees --> Logic : false
+deactivate Fees
+note over Logic
+Skip saving: stored records are unchanged.
+end note
+[<-- Logic : commandResult
+deactivate Logic
+@enduml

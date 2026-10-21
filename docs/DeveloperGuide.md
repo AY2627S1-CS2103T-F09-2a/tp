@@ -159,6 +159,30 @@ Classes used by multiple components are in the `seedu.address.commons` package.
 
 This section describes some noteworthy details on how certain features are implemented.
 
+### Minimum outstanding-fee filtering
+
+The `fees [min/AMOUNT]` command replaces the displayed-list filter with one that selects students owing at least the given amount. It searches all stored students, not just the previous search results, and preserves their stored order.
+
+#### Implementation
+
+`AddressBookParser` delegates the arguments to `FeesCommandParser`. Plain `fees` creates a `FeesCommand` with a zero minimum. Otherwise, the parser requires exactly one `min/` prefix with no preamble, validates the amount using `OutstandingFee.VALIDATION_REGEX`, and checks that it does not exceed `99999.99`. The accepted threshold is an unsigned decimal from `0` to `99999.99`, with at most two decimal places. Invalid arguments cause a `ParseException` before command execution, leaving the records and current filter unchanged.
+
+The sequence diagram below shows a successful `fees min/100` call. Tokenization, predicate evaluation and result construction are summarized in notes rather than shown as separate lifelines.
+
+![Sequence diagram for minimum outstanding-fee filtering](images/FeesSequenceDiagram.png)
+
+Diagram source: [FeesSequenceDiagram.puml](diagrams/FeesSequenceDiagram.puml).
+
+`FeesCommand#execute` calls `Model#updateFilteredPersonList` with a predicate. For a positive minimum, it selects only students with a present outstanding fee whose `BigDecimal` value compares greater than or equal to the minimum. Plain `fees` and `fees min/0` use `PREDICATE_HAS_OUTSTANDING_FEE`; students without a fee remain excluded. The command counts the resulting list and returns the existing `N student(s) with outstanding fees.` feedback. `LogicManager` skips saving because `FeesCommand#shouldSaveAddressBook()` returns `false`.
+
+`ModelManager` installs the predicate on its existing `FilteredList`, rather than taking a snapshot. Subsequent fee replacements are therefore re-evaluated against the same minimum: after `fees min/100`, changing a displayed student's fee to `99.99` removes that student from the results, while changing it to exactly `100` retains them. Commands accepting an index continue to use the current displayed list; `list` restores all students.
+
+#### Design considerations
+
+* **Exact, inclusive comparison.** `BigDecimal.compareTo` avoids floating-point rounding and treats thresholds such as `100` and `100.00` identically. The threshold may be zero even though a stored `OutstandingFee` must be positive.
+* **Live filter rather than a copied result list.** Reusing the model's filtering mechanism preserves automatic updates when fees change, without adding a separate collection or changing the storage schema.
+* **Read-only query.** Filtering changes only the displayed view, not student records. Skipping the storage write avoids unnecessary disk access and unrelated save errors.
+
 ### Fee summary and full-payment commands
 
 The all-student fee total (`feesummary`) and full-payment recording (`paid`) extend the outstanding-fee feature described under the Logic and Model components. Both commands work on the immutable `OutstandingFee` value object, so no `Person`, `Model` or storage-format change was needed for v1.4.
