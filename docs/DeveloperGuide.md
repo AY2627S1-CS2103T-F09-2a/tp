@@ -721,22 +721,23 @@ testers are expected to do more *exploratory* testing.
 
 ### Totalling and recording fee payments
 
-1. Prerequisites: Start with sample data, where Alex Yeoh owes S$120.00, Charlotte Oliveiro owes S$50.00 and Irfan Ibrahim owes S$200.00.
+1. Prerequisites: Start with sample data, where Alex Yeoh owes S$120.00, Charlotte Oliveiro owes S$450.00 and Irfan Ibrahim owes S$250.50.
 
    1. Enter `find Alex` then `feesummary`.<br>
-      Expected: Only Alex is displayed, and the feedback reports `Across all stored students: 3 student(s) owe a total of S$370.00. Displayed list unchanged.` The filter and the displayed list are unchanged.
+      Expected: Only Alex is displayed, and the feedback reports `Across all stored students: 3 student(s) owe a total of S$820.50. Displayed list unchanged.` The filter and the displayed list are unchanged.
 
    1. Enter `fees`, then `paid 1`.<br>
       Expected: Alex's fee is cleared, the feedback states the amount removed, Alex disappears from the `fees` result and the remaining students are re-indexed from 1.
 
-   1. Enter `paid 1` again, then `paid 0`, `paid 01`, `paid 1 2` and `feesummary extra`.<br>
+   1. Enter `list`, then `paid 1` again, `paid 0`, `paid 01`, `paid 1 2` and `feesummary extra`.<br>
       Expected: Each command reports an error and leaves the records and the displayed list unchanged.
 
-   1. Enter `list`, then `paid 2`.<br>
-      Expected: The command acts on the second student of the **full** list, showing that the index follows the displayed list.
+   1. Enter `fees`, then `paid 2`.<br>
+      Expected: Irfan's S$250.50 fee is cleared using index 2 of the filtered list. Charlotte remains owing S$450.00.
 
    1. Enter `feesummary` again, then restart the app and enter `fees`.<br>
-      Expected: The total has dropped by the paid amounts, and the cleared fees are still cleared after the restart.
+      Expected: The total is S$450.00 for one student. After restarting, `fees` shows only Charlotte;
+      Alex and Irfan's fees remain cleared.
 
 ### Viewing a student's complete record
 
