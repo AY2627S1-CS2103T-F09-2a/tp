@@ -33,6 +33,7 @@ import seedu.address.model.person.Person;
 import seedu.address.storage.JsonAddressBookStorage;
 import seedu.address.storage.JsonUserPrefsStorage;
 import seedu.address.storage.StorageManager;
+import seedu.address.testutil.PersonBuilder;
 
 /**
  * Tests that {@code DeleteConfirmationHandler} deletes a student only after the user confirms,
@@ -154,6 +155,21 @@ public class DeleteConfirmationHandlerTest {
         assertThrows(CommandException.class, DeleteConfirmationHandler.MESSAGE_TARGET_CHANGED, () ->
                 confirmAndDelete(handler, "delete 1"));
         assertEquals(getTypicalAddressBook(), model.getAddressBook());
+    }
+
+    @Test
+    public void confirmAndDelete_displayedStudentEditedBeforeConfirmation_throwsWithoutDeleting() {
+        // The confirmer changes ALICE's fee, so the details that the user confirmed are out of date
+        Person aliceWithNewFee = new PersonBuilder(ALICE).withOutstandingFee("100.00").build();
+        DeleteConfirmationHandler handler = new DeleteConfirmationHandler(logic, student -> {
+            model.setPerson(student, aliceWithNewFee);
+            return true;
+        });
+
+        assertThrows(CommandException.class, DeleteConfirmationHandler.MESSAGE_TARGET_CHANGED, () ->
+                confirmAndDelete(handler, "delete 1"));
+        assertEquals(aliceWithNewFee, model.getAddressBook().getPersonList().get(0));
+        assertEquals(getTypicalAddressBook().getPersonList().size(), model.getAddressBook().getPersonList().size());
     }
 
     /**

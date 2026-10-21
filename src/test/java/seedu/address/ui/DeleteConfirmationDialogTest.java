@@ -29,6 +29,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.DialogPane;
 import javafx.scene.control.Label;
 import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.Pane;
 import javafx.scene.text.Text;
@@ -47,6 +48,8 @@ public class DeleteConfirmationDialogTest {
     /** Usable area of a 1280x720 screen at 150% scaling, above a 48-pixel Windows 11 taskbar. */
     private static final double SMALL_SCREEN_WIDTH = 1280 / 1.5;
     private static final double SMALL_SCREEN_HEIGHT = 720 / 1.5 - 48;
+
+    private static final Person STUDENT_OWING_FEE = new PersonBuilder(CARL).withOutstandingFee("450.00").build();
 
     /** Owns every dialog in these tests, as the main window owns every dialog in the app. */
     private static Stage owner;
@@ -98,10 +101,8 @@ public class DeleteConfirmationDialogTest {
 
     @Test
     public void constructor_feeOwed_showsFeeWarningWithWarningIcon() throws Exception {
-        Person studentOwingFee = new PersonBuilder(CARL).withOutstandingFee("450.00").build();
-
         runOnFxThread(() -> {
-            DialogPane dialogPane = newDialog(studentOwingFee).getDialogPane();
+            DialogPane dialogPane = newDialog(STUDENT_OWING_FEE).getDialogPane();
 
             assertEquals("This student still owes S$450.00. Deleting them also deletes this unpaid fee.",
                     labelText(dialogPane, DeleteConfirmationDialog.FEE_WARNING_STYLE_CLASS));
@@ -130,6 +131,12 @@ public class DeleteConfirmationDialogTest {
     @Test
     public void showAndConfirm_yPressed_confirms() throws Exception {
         assertTrue(respond(CARL, dialogPane -> press(dialogPane, KeyCode.Y)));
+    }
+
+    @Test
+    public void showAndConfirm_yPressedForStudentOwingFee_confirms() throws Exception {
+        // The fee warning must not stop the tutor from confirming the deletion
+        assertTrue(respond(STUDENT_OWING_FEE, dialogPane -> press(dialogPane, KeyCode.Y)));
     }
 
     @Test
@@ -188,6 +195,21 @@ public class DeleteConfirmationDialogTest {
     }
 
     @Test
+    public void showAndConfirm_otherKeyPressed_doesNotReachKeyboardShortcuts() throws Exception {
+        AtomicBoolean isShortcutRun = new AtomicBoolean();
+        Runnable shortcut = () -> isShortcutRun.set(true);
+
+        boolean isConfirmed = respond(CARL, dialogPane -> {
+            dialogPane.getScene().getAccelerators().put(new KeyCodeCombination(KeyCode.D), shortcut);
+            press(dialogPane, KeyCode.D);
+            press(dialogPane, KeyCode.N);
+        });
+
+        assertFalse(isShortcutRun.get(), "A key press that does not answer the dialog reached a keyboard shortcut");
+        assertFalse(isConfirmed);
+    }
+
+    @Test
     public void showAndConfirm_yPressedWithControl_staysOpen() throws Exception {
         // On macOS, Control is not the shortcut key, so it must be rejected separately from Meta
         assertStaysOpenAfter(pressedWith(KeyCode.Y, KeyCode.CONTROL));
@@ -221,7 +243,7 @@ public class DeleteConfirmationDialogTest {
         AtomicReference<Dimension2D> size = new AtomicReference<>();
         List<String> cutOffTexts = new ArrayList<>();
 
-        respond(longNames, dialogPane -> {
+        boolean isConfirmed = respond(longNames, dialogPane -> {
             Window window = dialogPane.getScene().getWindow();
             size.set(new Dimension2D(window.getWidth(), window.getHeight()));
             for (Node node : dialogPane.getContent().lookupAll(".label")) {
@@ -237,6 +259,7 @@ public class DeleteConfirmationDialogTest {
         assertTrue(size.get().getWidth() <= SMALL_SCREEN_WIDTH, "Dialog is too wide: " + size.get());
         assertTrue(size.get().getHeight() <= SMALL_SCREEN_HEIGHT, "Dialog is too tall: " + size.get());
         assertEquals(List.of(), cutOffTexts);
+        assertFalse(isConfirmed);
     }
 
     /**

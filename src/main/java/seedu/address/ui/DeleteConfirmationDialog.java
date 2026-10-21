@@ -140,34 +140,32 @@ public class DeleteConfirmationDialog {
 
     /**
      * Answers the dialog when the user presses Y or N, with or without Shift. Escape is left to the Cancel button.
-     * Combinations with Control, Meta (Command on macOS) or Alt do not answer it.
-     * Enter and Space are blocked as a safeguard: no button can be focused or default, but if one ever were,
-     * these keys would activate it.
+     * Every other key press is consumed without answering, including Y or N with Control, Meta (Command on macOS)
+     * or Alt. No button, mnemonic or keyboard shortcut in the dialog can then act on it.
      */
     private void handleKeyPressed(KeyEvent event) {
         KeyCode key = event.getCode();
-        if (key == KeyCode.ENTER || key == KeyCode.SPACE) {
-            event.consume();
+        if (key == KeyCode.ESCAPE) {
             return;
         }
+        event.consume();
         // Not isShortcutDown(), which on macOS checks only Command and would let Control+Y through
         if (event.isControlDown() || event.isMetaDown() || event.isAltDown()) {
             return;
         }
 
         if (key == DELETE_KEY) {
-            answer(DELETE, event);
+            answer(DELETE);
         } else if (key == CANCEL_KEY) {
-            answer(CANCEL, event);
+            answer(CANCEL);
         }
     }
 
     /**
      * Closes the dialog with {@code buttonType} as the answer, just as clicking that button would.
      */
-    private void answer(ButtonType buttonType, KeyEvent event) {
+    private void answer(ButtonType buttonType) {
         Button button = (Button) alert.getDialogPane().lookupButton(buttonType);
         button.fire();
-        event.consume();
     }
 }
