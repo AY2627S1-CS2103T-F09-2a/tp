@@ -85,7 +85,15 @@ The `UI` component,
 
 For `view INDEX`, `ViewCommand` reads the student at that index in the filtered list and returns the `Person` in `CommandResult` with a feedback message. It does not update the filter or model. `LogicManager` skips the storage write because `ViewCommand.shouldSaveAddressBook()` returns false. `MainWindow` selects that person in `PersonListPanel`; the list selection updates `PersonDetailsPanel`, which shows all stored fields. The details pane unwraps optional student contact fields and shows `Not provided` when a field is absent. It formats an outstanding fee as `S$` followed by two decimal places, or `None` when absent. A failed parse or out-of-range index produces no `CommandResult`, so the current selection and details remain unchanged.
 
-Before executing a command, `MainWindow` remembers the selected student. After a successful command that does not explicitly select a student, it restores that selection by student identity if the student remains in the displayed list. This selects the current record after a fee change, so the details pane shows the updated amount. Otherwise it clears the selection and details pane. This also prevents a search from transferring the highlight to a different student at the same list index.
+Before running a command, `MainWindow` notes which student is selected. After a successful command other than `view`, it calls `PersonListPanel#retainSelection`, which does one of the following:
+
+* If the student is still in the displayed list, it selects them again, even if their index has changed.
+* If the command replaced the student's record (`edit`, `setoutstanding` or `paid`) and the new record is still displayed, it selects the new record, so the details pane shows the updated fields. `edit` also resets the list to show all students, so an edited student always stays displayed.
+* Otherwise, it clears the selection, which also clears the details pane.
+
+A command can also fail after it has changed the data. For example, if saving to the data file fails, `paid 1` has already cleared the fee in memory when the error is shown. The list then chooses the highlighted row by position, not by student, so it may highlight a different student, such as Charlotte after `fees`, `view 1`, `paid 1`. So when a command fails, `MainWindow` calls `PersonListPanel#retainSelectionAfterFailure`. If the highlight has moved off the previously selected student, this corrects it as `retainSelection` does. Otherwise, such as after `view 99`, it changes nothing. It does not simply call `retainSelection`, because that also scrolls the list to bring the selected student to the top (or as far as the list can scroll), so the list would jump after every typing mistake.
+
+To find out which records a command replaced, `PersonListPanel` listens to the full student list from `Logic#getPersonList()`. When a command replaces a record, that list reports the old record replaced by the new one. The panel does not use changes to the displayed list, because a search reports one change that removes all of the old results and adds all of the new ones. If the old and new results have the same number of students, pairing them by position would treat the student now at the selected index as the selected student's new record. For example, `find David`, `view 1`, `find Irfan` would then select Irfan. A search does not change the full list, so it never moves the selection to a different student. It keeps the selected student if the results include them, and clears the selection otherwise.
 
 ### Logic component
 
@@ -758,6 +766,10 @@ testers are expected to do more *exploratory* testing.
    Expected: Alex Yeoh remains selected and his details remain visible. Next, enter `find Bernice`.<br>
    Expected: Bernice is displayed but not selected, and the details pane is cleared.
 
+1. Enter `find Alex Bernice`, `view 2`, then `find Bernice David`.<br>
+   Expected: Bernice Yu moves to index 1 and remains selected, and the details pane still shows Bernice's record.
+   David Li is not selected.
+
 1. Enter `add n/Zara Tan g/Mira Tan gp/97654321`, then `find Zara` and `view 1`.<br>
    Expected: The details pane shows `Phone: Not provided`, `Email: Not provided`, `Address: Not provided`, and `Outstanding fee: None`.
 
@@ -812,6 +824,15 @@ testers are expected to do more *exploratory* testing.
 
 1. Relaunch and execute a valid `add` command.<br>
    Expected: The new record is saved as valid JSON, replacing the invalid file. Restore the backup if needed.
+
+1. In a disposable application folder with sample data, enter `setoutstanding 1 75.50` so that `data/addressbook.json`
+   is saved. Make that file read-only (for example, `chmod 444 data/addressbook.json` on macOS or Linux, or
+   `attrib +r data\addressbook.json` on Windows).
+   Enter `fees`, `view 1`, then `paid 1`.<br>
+   Expected: An error says the data could not be saved. Alex Yeoh leaves the displayed list, no student is selected,
+   and the details pane is cleared. Make the file writable again (`chmod 644 data/addressbook.json`, or
+   `attrib -r data\addressbook.json`) and restart the app. `fees` still shows Alex owing S$75.50, because the payment
+   was not saved.
 
 1. Launch the JAR by its absolute path from a different empty working folder.<br>
    Expected: Data, preferences and logs remain beside the JAR; the unrelated working folder remains empty.

@@ -119,7 +119,7 @@ public class MainWindow extends UiPart<Stage> {
      * Fills up all the placeholders of this window.
      */
     void fillInnerParts() {
-        personListPanel = new PersonListPanel(logic.getFilteredPersonList());
+        personListPanel = new PersonListPanel(logic.getFilteredPersonList(), logic.getPersonList());
         personListPanelPlaceholder.getChildren().add(personListPanel.getRoot());
 
         personDetailsPanel = new PersonDetailsPanel();
@@ -187,8 +187,8 @@ public class MainWindow extends UiPart<Stage> {
      * @see seedu.address.logic.Logic#execute(String)
      */
     private CommandResult executeCommand(String commandText) throws CommandException, ParseException {
+        Person previouslySelected = personListPanel.getSelectedPerson();
         try {
-            Person previouslySelected = personListPanel.getSelectedPerson();
             CommandResult commandResult = logic.execute(commandText);
             logger.info("Result: " + commandResult.getFeedbackToUser());
             resultDisplay.setFeedbackToUser(commandResult.getFeedbackToUser());
@@ -208,6 +208,7 @@ public class MainWindow extends UiPart<Stage> {
         } catch (CommandException | ParseException e) {
             logger.info("An error occurred while executing command: " + commandText);
             resultDisplay.setFeedbackToUser(e.getMessage());
+            personListPanel.retainSelectionAfterFailure(previouslySelected);
             throw e;
         }
     }

@@ -38,7 +38,7 @@ public class PersonListPanelSelectionTest {
             Person original = new PersonBuilder().withOutstandingFee("15.50").build();
             Person updated = new PersonBuilder(original).withOutstandingFee("20.00").build();
             ObservableList<Person> persons = FXCollections.observableArrayList(original);
-            PersonListPanel panel = new PersonListPanel(persons);
+            PersonListPanel panel = new PersonListPanel(persons, persons);
             panel.selectPerson(original);
 
             persons.set(0, updated);
@@ -58,7 +58,7 @@ public class PersonListPanelSelectionTest {
             Person cleared = new PersonBuilder(original).withoutOutstandingFee().build();
             ObservableList<Person> persons = FXCollections.observableArrayList(original);
             FilteredList<Person> fees = new FilteredList<>(persons, person -> person.getOutstandingFee().isPresent());
-            PersonListPanel panel = new PersonListPanel(fees);
+            PersonListPanel panel = new PersonListPanel(fees, persons);
             panel.selectPerson(original);
 
             persons.set(0, cleared);
