@@ -18,7 +18,7 @@ public class PaidCommand extends Command {
     public static final String COMMAND_WORD = "paid";
     public static final String MESSAGE_USAGE = COMMAND_WORD
             + ": Marks a displayed student's outstanding fee as paid.\n"
-            + "Parameters: INDEX (current displayed index, starting at 1, without leading zeros)\n"
+            + "Parameters: INDEX (" + Messages.MESSAGE_INDEX_CONSTRAINTS + ")\n"
             + "Example: " + COMMAND_WORD + " 1";
     public static final String MESSAGE_SUCCESS = "Marked outstanding fee as paid for %1$s: S$%2$s";
     public static final String MESSAGE_NO_FEE = "This student has no outstanding fee to mark as paid: %1$s";

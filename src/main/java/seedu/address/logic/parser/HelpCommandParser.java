@@ -13,14 +13,14 @@ public class HelpCommandParser implements Parser<HelpCommand> {
     @Override
     public HelpCommand parse(String args) throws ParseException {
         requireNonNull(args);
-        String commandWord = args.strip();
-        if (commandWord.isEmpty()) {
+        String trimmedArgs = args.strip();
+        if (trimmedArgs.isEmpty()) {
             return new HelpCommand();
         }
-        if (!HelpCommand.isSupportedCommand(commandWord)) {
+        if (!HelpCommand.isSupportedCommand(trimmedArgs)) {
             throw new ParseException(String.format(MESSAGE_INVALID_COMMAND_FORMAT, HelpCommand.MESSAGE_USAGE)
                     + "\nAvailable commands: " + HelpCommand.getAvailableCommands());
         }
-        return new HelpCommand(commandWord);
+        return new HelpCommand(trimmedArgs);
     }
 }

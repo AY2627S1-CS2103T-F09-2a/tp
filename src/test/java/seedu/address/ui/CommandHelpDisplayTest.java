@@ -16,6 +16,7 @@ import org.junit.jupiter.api.io.TempDir;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.geometry.Orientation;
+import javafx.scene.Node;
 import javafx.scene.control.ScrollBar;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
@@ -70,7 +71,7 @@ public class CommandHelpDisplayTest {
                 assertTrue(result.getText().contains("99999.99"));
                 assertEquals(0, model.getAddressBook().getPersonList().size());
                 boolean verticalScrollAvailable = false;
-                for (javafx.scene.Node node : result.lookupAll(".scroll-bar")) {
+                for (Node node : result.lookupAll(".scroll-bar")) {
                     ScrollBar bar = (ScrollBar) node;
                     if (bar.getOrientation() == Orientation.HORIZONTAL) {
                         assertFalse(bar.isVisible());
