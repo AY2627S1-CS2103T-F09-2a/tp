@@ -18,8 +18,6 @@ import static seedu.address.logic.commands.CommandTestUtil.VALID_TAG_HUSBAND;
 import org.junit.jupiter.api.Test;
 
 import seedu.address.logic.commands.EditCommand.EditPersonDescriptor;
-import seedu.address.model.person.GuardianName;
-import seedu.address.model.person.GuardianPhone;
 import seedu.address.testutil.EditPersonDescriptorBuilder;
 
 public class EditPersonDescriptorTest {
@@ -59,18 +57,21 @@ public class EditPersonDescriptorTest {
         assertFalse(DESC_AMY.equals(editedAmy));
 
         // different guardian name -> returns false
-        EditPersonDescriptor amyWithGuardian = new EditPersonDescriptor(DESC_AMY);
-        amyWithGuardian.setGuardianName(new GuardianName(VALID_GUARDIAN_NAME_AMY));
-        amyWithGuardian.setGuardianPhone(new GuardianPhone(VALID_GUARDIAN_PHONE_AMY));
+        EditPersonDescriptor amyWithGuardian = new EditPersonDescriptorBuilder(DESC_AMY)
+                .withGuardianName(VALID_GUARDIAN_NAME_AMY)
+                .withGuardianPhone(VALID_GUARDIAN_PHONE_AMY)
+                .build();
         assertTrue(amyWithGuardian.equals(new EditPersonDescriptor(amyWithGuardian)));
 
-        editedAmy = new EditPersonDescriptor(amyWithGuardian);
-        editedAmy.setGuardianName(new GuardianName(VALID_GUARDIAN_NAME_BOB));
+        editedAmy = new EditPersonDescriptorBuilder(amyWithGuardian)
+                .withGuardianName(VALID_GUARDIAN_NAME_BOB)
+                .build();
         assertFalse(amyWithGuardian.equals(editedAmy));
 
         // different guardian phone -> returns false
-        editedAmy = new EditPersonDescriptor(amyWithGuardian);
-        editedAmy.setGuardianPhone(new GuardianPhone(VALID_GUARDIAN_PHONE_BOB));
+        editedAmy = new EditPersonDescriptorBuilder(amyWithGuardian)
+                .withGuardianPhone(VALID_GUARDIAN_PHONE_BOB)
+                .build();
         assertFalse(amyWithGuardian.equals(editedAmy));
 
         // different tags -> returns false
