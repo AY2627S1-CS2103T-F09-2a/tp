@@ -4,7 +4,9 @@ import static java.util.Objects.requireNonNull;
 
 import java.math.BigDecimal;
 import java.util.function.Predicate;
+import java.util.logging.Logger;
 
+import seedu.address.commons.core.LogsCenter;
 import seedu.address.model.Model;
 import seedu.address.model.person.Person;
 
@@ -25,6 +27,8 @@ public class FeesCommand extends Command {
 
     public static final Predicate<Person> PREDICATE_HAS_OUTSTANDING_FEE =
             person -> person.getOutstandingFee().isPresent();
+
+    private static final Logger logger = LogsCenter.getLogger(FeesCommand.class);
 
     private final BigDecimal minimumAmount;
 
@@ -49,7 +53,10 @@ public class FeesCommand extends Command {
                 ? PREDICATE_HAS_OUTSTANDING_FEE
                 : person -> person.getOutstandingFee()
                         .filter(fee -> fee.value.compareTo(minimumAmount) >= 0).isPresent());
-        return new CommandResult(String.format(MESSAGE_SUCCESS, model.getFilteredPersonList().size()));
+        int matchingStudents = model.getFilteredPersonList().size();
+        logger.info("Outstanding fee filter applied: minimum=" + minimumAmount.toPlainString()
+                + "; matching students=" + matchingStudents);
+        return new CommandResult(String.format(MESSAGE_SUCCESS, matchingStudents));
     }
 
     @Override
