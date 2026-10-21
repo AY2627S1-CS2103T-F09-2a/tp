@@ -3,6 +3,7 @@ package seedu.address.logic.commands;
 import static java.util.Objects.requireNonNull;
 
 import java.util.List;
+import java.util.Optional;
 
 import seedu.address.commons.core.index.Index;
 import seedu.address.commons.util.ToStringBuilder;
@@ -27,22 +28,34 @@ public class DeleteCommand extends Command {
 
     private final Index targetIndex;
 
+    /**
+     * Creates a {@code DeleteCommand} that deletes the student at {@code targetIndex} in the displayed list.
+     */
     public DeleteCommand(Index targetIndex) {
+        requireNonNull(targetIndex);
         this.targetIndex = targetIndex;
     }
 
     @Override
     public CommandResult execute(Model model) throws CommandException {
         requireNonNull(model);
-        List<Person> lastShownList = model.getFilteredPersonList();
+        Person personToDelete = getTarget(model.getFilteredPersonList())
+                .orElseThrow(() -> new CommandException(Messages.MESSAGE_INVALID_STUDENT_DISPLAYED_INDEX));
 
-        if (targetIndex.getZeroBased() >= lastShownList.size()) {
-            throw new CommandException(Messages.MESSAGE_INVALID_STUDENT_DISPLAYED_INDEX);
-        }
-
-        Person personToDelete = lastShownList.get(targetIndex.getZeroBased());
         model.deletePerson(personToDelete);
         return new CommandResult(String.format(MESSAGE_DELETE_PERSON_SUCCESS, Messages.format(personToDelete)));
+    }
+
+    /**
+     * Returns the student that this command would delete from {@code displayedList},
+     * or an empty {@code Optional} if the target index is beyond the end of the list.
+     */
+    public Optional<Person> getTarget(List<Person> displayedList) {
+        requireNonNull(displayedList);
+        if (targetIndex.getZeroBased() >= displayedList.size()) {
+            return Optional.empty();
+        }
+        return Optional.of(displayedList.get(targetIndex.getZeroBased()));
     }
 
     @Override

@@ -1,0 +1,24 @@
+@startuml
+skin rose
+skinparam ActivityFontSize 15
+skinparam ArrowFontSize 12
+start
+:Tutor enters delete INDEX;
+
+'Since the beta syntax does not support placing the condition outside the
+'diamond we place it as the true branch instead.
+
+if () then ([INDEX is invalid])
+    :Show error message;
+else ([else])
+    :Show confirmation dialog;
+    if () then ([tutor presses Y])
+        :Delete student and save data;
+        :Show deleted student's details;
+    else ([tutor presses N or Esc,
+    or closes the dialog])
+        :Show "Deletion cancelled";
+    endif
+endif
+stop
+@enduml

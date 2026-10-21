@@ -30,7 +30,7 @@ Poco Book is a **desktop application for independent tutors to manage students, 
 
    * `add n/John Doe g/Jane Doe gp/98765432 e/johnd@example.com a/John street, block 123, #01-01` : Adds a student named `John Doe`, with guardian `Jane Doe`, to Poco Book.
 
-   * `delete 3` : Deletes the 3rd student shown in the current list.
+   * `delete 3` : Deletes the 3rd student shown in the current list, after you press Y to confirm.
 
    * `clear` : Deletes all students.
 
@@ -214,17 +214,39 @@ Example:
 
 ### Deleting a student: `delete`
 
-Deletes the specified student from the address book.
+Deletes the specified student from Poco Book, after you confirm the deletion.
 
 Format: `delete INDEX`
 
 * Deletes the student at the specified `INDEX`.
-* The index refers to the index number shown in the displayed student list.
+* The index refers to the index number shown in the displayed student list, which may be the results of `find` or `fees`.
 * The index **must be a positive integer** 1, 2, 3, …​
+* Before deleting, Poco Book opens a confirmation dialog showing the student's name, phone, guardian name and guardian
+  phone.
+  Check that this is the student you want to delete, then:
+  * Press **Y** (or click **Delete (Y)**) to delete the student. Poco Book saves the change and shows the deleted
+    student's details.
+  * Press **N** (or click **Cancel (N)**) to keep the student. Pressing Esc or closing the dialog also keeps the
+    student. Poco Book shows `Deletion cancelled. No student was deleted.` The same students stay displayed, and the
+    selected student stays selected.
+* All other keys, including Enter and Space, are ignored while the dialog is open, so pressing Enter again by
+  mistake cannot answer it. Y or N pressed together with Control, Alt or Command is ignored too. Answer the dialog
+  before typing your next command: a Y or N that you type is taken as the answer.
+* If the student still owes a fee, the dialog shows a warning icon and a red banner with the amount, such as
+  `This student still owes S$450.00. Deleting them also deletes this unpaid fee.` You can still delete the student.
+* If the index is invalid, Poco Book shows an error message instead of the dialog, and no student is deleted.
+
+<div markdown="span" class="alert alert-warning">:exclamation: **Caution:**
+A deleted student cannot be restored. Their record, including any outstanding fee, is removed.
+</div>
 
 Examples:
-* `list` followed by `delete 2` deletes the 2nd student in the address book.
-* `find Betsy` followed by `delete 1` deletes the 1st student in the results of the `find` command.
+* `list` followed by `delete 2` asks you to confirm deleting the 2nd student in the full list.
+  With the sample data, the dialog shows `Bernice Yu`, phone `99272758`, guardian `Betty Yu` and guardian phone
+  `82345678`.
+  Press Y to delete her, or N to keep her.
+* `fees` followed by `delete 2` asks you to confirm deleting the 2nd student who owes a fee.
+  With the sample data, this is `Charlotte Oliveiro`, and the dialog warns that she still owes `S$450.00`.
 
 ### Clearing all entries: `clear`
 
@@ -277,7 +299,7 @@ Action | Format, Examples
 --------|------------------
 **Add** | `add n/NAME g/GUARDIAN_NAME gp/GUARDIAN_PHONE [p/PHONE] [e/EMAIL] [a/ADDRESS] [f/AMOUNT]` <br> e.g., `add n/Riya Kumar g/Anil Kumar gp/97654321 p/98765432 e/riya@example.com a/12 Clementi Ave 3 f/75.50`
 **Clear** | `clear`
-**Delete** | `delete INDEX`<br> e.g., `delete 3`
+**Delete** | `delete INDEX`, then press Y to confirm or N to cancel<br> e.g., `delete 3`
 **Edit** | `edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [a/ADDRESS] [t/TAG]…​`<br> e.g., `edit 2 n/James Lee e/jameslee@example.com`
 **Find** | `find KEYWORD [MORE_KEYWORDS]`<br> e.g., `find James Jake`
 **List** | `list`
