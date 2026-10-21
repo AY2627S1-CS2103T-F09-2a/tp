@@ -11,6 +11,8 @@ import seedu.address.model.Model;
 public class ListCommand extends Command {
 
     public static final String COMMAND_WORD = "list";
+    public static final String MESSAGE_USAGE = COMMAND_WORD
+            + ": Shows all stored students and replaces the current filter.\nExample: " + COMMAND_WORD;
 
     public static final String MESSAGE_SUCCESS = "Listed all students.";
 
