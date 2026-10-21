@@ -123,7 +123,7 @@ public class MainWindow extends UiPart<Stage> {
      * Fills up all the placeholders of this window.
      */
     void fillInnerParts() {
-        personListPanel = new PersonListPanel(logic.getFilteredPersonList());
+        personListPanel = new PersonListPanel(logic.getFilteredPersonList(), logic.getPersonList());
         personListPanelPlaceholder.getChildren().add(personListPanel.getRoot());
 
         personDetailsPanel = new PersonDetailsPanel();
@@ -193,8 +193,8 @@ public class MainWindow extends UiPart<Stage> {
      * @see DeleteConfirmationHandler#confirmAndDelete(String, Person)
      */
     private CommandResult executeCommand(String commandText) throws CommandException, ParseException {
+        Person previouslySelected = personListPanel.getSelectedPerson();
         try {
-            Person previouslySelected = personListPanel.getSelectedPerson();
             Optional<Person> studentToDelete = logic.getDeletionTarget(commandText);
             CommandResult commandResult = (studentToDelete.isPresent())
                     ? deleteConfirmationHandler.confirmAndDelete(commandText, studentToDelete.get())
@@ -217,6 +217,7 @@ public class MainWindow extends UiPart<Stage> {
         } catch (CommandException | ParseException e) {
             logger.info("An error occurred while executing command: " + commandText);
             resultDisplay.setFeedbackToUser(e.getMessage());
+            personListPanel.retainSelectionAfterFailure(previouslySelected);
             throw e;
         }
     }

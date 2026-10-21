@@ -271,6 +271,19 @@ public class LogicManagerTest {
         assertThrows(UnsupportedOperationException.class, () -> logic.getFilteredPersonList().remove(0));
     }
 
+    @Test
+    public void getPersonList_filterHidesStudent_includesStudent() {
+        model.addPerson(AMY);
+        model.updateFilteredPersonList(person -> false);
+        assertEquals(List.of(AMY), logic.getPersonList());
+    }
+
+    @Test
+    public void getPersonList_modifyList_throwsUnsupportedOperationException() {
+        model.addPerson(AMY);
+        assertThrows(UnsupportedOperationException.class, () -> logic.getPersonList().remove(0));
+    }
+
     /**
      * Executes the command and confirms that
      * - no exceptions are thrown <br>
