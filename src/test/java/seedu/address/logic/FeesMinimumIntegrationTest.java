@@ -31,7 +31,7 @@ public class FeesMinimumIntegrationTest {
     private Path directory;
 
     @Test
-    public void execute_minimumQueries_doNotWriteData() throws Exception {
+    public void execute_minimumQueries_filterInclusivelyWithoutSaving() throws Exception {
         Model model = new ModelManager();
         Person below = new PersonBuilder().withName("Below Student").withOutstandingFee("99.99").build();
         Person equal = new PersonBuilder().withName("Equal Student").withOutstandingFee("100").build();

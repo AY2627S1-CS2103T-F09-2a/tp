@@ -148,6 +148,18 @@ public class FeesCommandTest {
     }
 
     @Test
+    public void constructor_negativeMinimum_throwsIllegalArgumentException() {
+        assertThrows(IllegalArgumentException.class, () -> new FeesCommand(new BigDecimal("-10")));
+        assertThrows(IllegalArgumentException.class, () -> new FeesCommand(new BigDecimal("-0.01")));
+    }
+
+    @Test
+    public void toString_minimumAmount_includesThreshold() {
+        FeesCommand command = new FeesCommand(new BigDecimal("100.00"));
+        assertEquals(FeesCommand.class.getCanonicalName() + "{minimumAmount=100.00}", command.toString());
+    }
+
+    @Test
     public void equals_thresholds_comparesNumericAmounts() {
         FeesCommand command = new FeesCommand(new BigDecimal("100"));
         assertEquals(command, command);

@@ -1,12 +1,14 @@
 package seedu.address.logic.commands;
 
 import static java.util.Objects.requireNonNull;
+import static seedu.address.commons.util.AppUtil.checkArgument;
 
 import java.math.BigDecimal;
 import java.util.function.Predicate;
 import java.util.logging.Logger;
 
 import seedu.address.commons.core.LogsCenter;
+import seedu.address.commons.util.ToStringBuilder;
 import seedu.address.model.Model;
 import seedu.address.model.person.Person;
 
@@ -41,9 +43,12 @@ public class FeesCommand extends Command {
 
     /**
      * Creates a command listing students owing at least the given minimum amount.
+     *
+     * @throws IllegalArgumentException if the minimum amount is negative.
      */
     public FeesCommand(BigDecimal minimumAmount) {
         this.minimumAmount = requireNonNull(minimumAmount);
+        checkArgument(minimumAmount.signum() >= 0, "Minimum amount must not be negative.");
     }
 
     @Override
@@ -68,6 +73,13 @@ public class FeesCommand extends Command {
     @Override
     public int hashCode() {
         return minimumAmount.stripTrailingZeros().hashCode();
+    }
+
+    @Override
+    public String toString() {
+        return new ToStringBuilder(this)
+                .add("minimumAmount", minimumAmount)
+                .toString();
     }
 
     @Override

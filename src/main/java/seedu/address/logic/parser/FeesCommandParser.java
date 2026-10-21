@@ -1,5 +1,6 @@
 package seedu.address.logic.parser;
 
+import static java.util.Objects.requireNonNull;
 import static seedu.address.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
 
 import java.math.BigDecimal;
@@ -25,6 +26,7 @@ public class FeesCommandParser implements Parser<FeesCommand> {
      * @throws ParseException if the user input does not conform to the expected format.
      */
     public FeesCommand parse(String args) throws ParseException {
+        requireNonNull(args);
         if (args.trim().isEmpty()) {
             logger.fine("Parsing fees command without a minimum amount.");
             return new FeesCommand();
