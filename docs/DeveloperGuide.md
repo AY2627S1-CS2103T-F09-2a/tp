@@ -293,6 +293,34 @@ The corresponding sources are `docs/diagrams/GuardianEditSequenceDiagram.puml`, 
 * **Identity-aware duplicate check.** Because `Person#isSamePerson` uses both `Name` and `GuardianPhone`, updating `g/` alone preserves identity whereas updating `gp/` triggers `Model#hasPerson(editedPerson)` to prevent duplicate `(Name, GuardianPhone)` records while still allowing two siblings with different names to share the same guardian phone number.
 * **Alternatives considered.** Introducing a separate `editguardian` command was rejected because tutors frequently correct student and guardian details together after a phone call or form update; extending `edit` with `g/` and `gp/` keeps a single command for field-level updates.
 
+### Guardian search
+
+The `findguardian KEYWORD [MORE_KEYWORDS]...` command lists students whose guardian matches any keyword, so a tutor can identify a student when a guardian calls or messages. Like `find`, it searches all stored students, keeps their stored order and re-indexes the results.
+
+#### Implementation
+
+`AddressBookParser` passes the arguments to `FindGuardianCommandParser`. The parser trims the arguments, normalizes them to Unicode NFC and splits them on whitespace. It rejects empty input, and any keyword containing a character not allowed in a guardian name (such as the `/` in `g/Mei`), with a `ParseException`, so the current filter is left unchanged. The keywords are wrapped in a `GuardianContainsKeywordsPredicate`, which is passed to a new `FindGuardianCommand`.
+
+The sequence diagram below shows a successful `findguardian mei 9234-5678` call.
+
+![Sequence diagram for guardian search](images/FindGuardianSequenceDiagram.png)
+
+Diagram source: [FindGuardianSequenceDiagram.puml](diagrams/FindGuardianSequenceDiagram.puml).
+
+`FindGuardianCommand#execute` calls `Model#updateFilteredPersonList` with the predicate. `GuardianContainsKeywordsPredicate#test` returns true when any keyword
+
+* equals a whole word of the guardian name, ignoring case (`StringUtil#containsWordIgnoreCase`), or
+* is a valid `GuardianPhone` that equals the stored guardian phone after its spaces and hyphens are removed, so `9234-5678` matches a guardian stored as `92345678`.
+
+The command then reports the size of the filtered list with the shared `N student(s) listed!` message. `FindGuardianCommand#shouldSaveAddressBook()` returns `false`, so `LogicManager` does not write to storage.
+
+#### Design considerations
+
+* **Separate command rather than a `find` option.** Keeping `find` limited to student names follows feature 3 of the specification, which avoids surprising matches through guardian or contact details. A separate `findguardian` makes the searched field explicit.
+* **Whole-word name matching.** Words are split on whitespace only, so `Anne-Marie` matches the keyword `anne-marie` but not `anne`. This is consistent with `find`.
+* **Phone keywords are normalized like stored phones.** Tutors may type a number the way it was entered with `add`, including a hyphen. Partial numbers such as `9234` never match, which keeps results predictable.
+* **Predicate copies its keywords.** `GuardianContainsKeywordsPredicate` stores `List.copyOf(keywords)`, so a caller changing its list later cannot silently change an installed filter.
+
 ### \[Proposed\] Undo/redo feature
 
 #### Proposed Implementation
