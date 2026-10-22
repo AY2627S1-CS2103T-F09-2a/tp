@@ -78,7 +78,7 @@ For example, `help paid` explains how to clear a displayed student’s full outs
 
 Format: `help [COMMAND]`
 
-* Use one exact, lower-case command word: `add`, `clear`, `delete`, `edit`, `exit`, `fees`, `feesummary`, `find`, `help`, `list`, `paid`, `setoutstanding`, or `view`.
+* Use one exact, lower-case command word: `add`, `clear`, `delete`, `edit`, `exit`, `fees`, `feesummary`, `find`, `findguardian`, `help`, `list`, `paid`, `setoutstanding`, or `view`.
 * `help unknown` and `help paid 1` report an error and list the available command words.
 * Long help instructions wrap in the result area; scroll vertically to read the remaining lines.
 * Help leaves student records, the displayed list and selection unchanged and does not save data.
@@ -113,11 +113,32 @@ Format: `list`
 
 ### Listing students with outstanding fees: `fees`
 
-Format: `fees`
+Format: `fees [min/AMOUNT]`
 
-Shows only students with an outstanding fee, in their existing order, with new displayed indexes.
+Shows students with an outstanding fee, in stored order, with new displayed indexes.
 The result states `N student(s) with outstanding fees.` An empty result is successful.
-This command takes no arguments and does not change student records. Use `list` to restore the full list.
+
+* Plain `fees` shows all students with a positive outstanding fee.
+* `fees min/100` shows students owing at least S$100.00, including exactly S$100.00.
+* The minimum must be from `0` to `99999.99`, with at most two decimal places and no sign or exponent.
+* `fees min/0` still excludes students without an outstanding fee.
+* Missing or invalid amounts, duplicate `min/` prefixes, unknown prefixes and extra arguments are rejected.
+* The filter remains active when fees change. A student whose fee falls below the minimum disappears from the list.
+* The command does not change or save records. Use `list` to restore all students.
+
+### Finding students by guardian: `findguardian`
+
+Format: `findguardian KEYWORD [MORE_KEYWORDS]…​`
+
+* Matches whole guardian-name words without regard to case, or an exact guardian phone number.
+* Phone keywords accept hyphens between digits, such as `9234-5678`; a phone containing spaces must be typed without spaces so it remains one keyword.
+* Multiple keywords use OR matching. Partial name words and partial phone numbers do not match.
+* Searches all stored students, replaces the current filter and preserves stored order. Shared guardians can return multiple students.
+* Matching students are re-indexed from 1. Zero matches is a successful empty result.
+* Missing keywords, unsupported punctuation and prefix-style input such as `g/Mei` are rejected.
+* The command preserves records and the saved data file. Use `list` to restore all students.
+
+Examples: `findguardian Mei`, `findguardian 92345678`, `findguardian Mei 9234-5678`.
 
 ### Totalling all outstanding fees: `feesummary`
 
@@ -165,18 +186,21 @@ Examples: `paid 1`, `paid 2`.
 
 Edits an existing student in the address book.
 
-Format: `edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [a/ADDRESS] [t/TAG]…​`
+Format: `edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [a/ADDRESS] [g/GUARDIAN_NAME] [gp/GUARDIAN_PHONE] [t/TAG]…​`
 
 * Edits the student at the specified `INDEX`. The index refers to the index number shown in the displayed student list. The index **must be a positive integer** 1, 2, 3, …​
 * At least one of the optional fields must be provided.
 * Existing values will be updated to the input values.
 * When editing tags, all of the student's existing tags are removed; adding tags is not cumulative.
 * To remove all of a student's tags, enter `t/` without a tag after it.
-* Guardian details and outstanding fees cannot be edited; `g/`, `gp/`, and `f/` produce an invalid-command-format message. Use `setoutstanding` to change a fee.
+* Use `g/` and/or `gp/` to change guardian details. Omitted fields keep their existing values; guardian fields cannot be blank or cleared. Duplicate guardian prefixes are rejected.
+* Outstanding fees cannot be changed with `edit`; `f/` is rejected. Use `setoutstanding` to change a fee.
+* A successful edit returns to the full student list.
 
 Examples:
-*  `edit 1 p/91234567 e/johndoe@example.com` Edits the phone number and email address of the 1st student to be `91234567` and `johndoe@example.com` respectively.
-*  `edit 2 n/Betsy Crower t/` Edits the name of the 2nd student to be `Betsy Crower` and clears all existing tags.
+* `edit 1 g/Mei Tan gp/92345678` Updates the guardian contact while preserving other fields.
+* `edit 1 p/91234567 e/johndoe@example.com` Edits the phone number and email address of the 1st student to be `91234567` and `johndoe@example.com` respectively.
+* `edit 2 n/Betsy Crower t/` Edits the name of the 2nd student to be `Betsy Crower` and clears all existing tags.
 
 ### Locating students by name: `find`
 
@@ -300,11 +324,12 @@ Action | Format, Examples
 **Add** | `add n/NAME g/GUARDIAN_NAME gp/GUARDIAN_PHONE [p/PHONE] [e/EMAIL] [a/ADDRESS] [f/AMOUNT]` <br> e.g., `add n/Riya Kumar g/Anil Kumar gp/97654321 p/98765432 e/riya@example.com a/12 Clementi Ave 3 f/75.50`
 **Clear** | `clear`
 **Delete** | `delete INDEX`, then press Y to confirm or N to cancel<br> e.g., `delete 3`
-**Edit** | `edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [a/ADDRESS] [t/TAG]…​`<br> e.g., `edit 2 n/James Lee e/jameslee@example.com`
+**Edit** | `edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [a/ADDRESS] [g/GUARDIAN_NAME] [gp/GUARDIAN_PHONE] [t/TAG]…​`<br> e.g., `edit 2 n/James Lee e/jameslee@example.com`
 **Find** | `find KEYWORD [MORE_KEYWORDS]`<br> e.g., `find James Jake`
+**Find by guardian** | `findguardian KEYWORD [MORE_KEYWORDS]…​`<br> e.g., `findguardian Mei 92345678`
 **List** | `list`
 **View** | `view INDEX`<br> e.g., `view 1`
-**Fees** | `fees`
+**Fees** | `fees [min/AMOUNT]`<br> e.g., `fees min/100`
 **Fee summary** | `feesummary`
 **Set outstanding fee** | `setoutstanding INDEX AMOUNT`<br> e.g., `setoutstanding 1 150.50`; `setoutstanding 1 0` clears it
 **Record payment** | `paid INDEX`<br> e.g., `paid 1`

@@ -33,6 +33,7 @@ public class HelpCommand extends Command {
             Map.entry(FeeSummaryCommand.COMMAND_WORD, FeeSummaryCommand.MESSAGE_USAGE
                     + "\nIncludes all stored students and leaves the displayed list unchanged."),
             Map.entry(FindCommand.COMMAND_WORD, FindCommand.MESSAGE_USAGE),
+            Map.entry(FindGuardianCommand.COMMAND_WORD, FindGuardianCommand.MESSAGE_USAGE),
             Map.entry(HelpCommand.COMMAND_WORD, HelpCommand.MESSAGE_USAGE),
             Map.entry(ListCommand.COMMAND_WORD, ListCommand.MESSAGE_USAGE),
             Map.entry(PaidCommand.COMMAND_WORD, PaidCommand.MESSAGE_USAGE

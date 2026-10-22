@@ -46,6 +46,13 @@ task coverage(type: JacocoReport) {
     }
 }
 
+def macOs = System.getProperty('os.name').toLowerCase().contains('mac')
+def appleSilicon = macOs && System.getProperty('os.arch') in ['aarch64', 'arm64']
+
+configurations {
+    macArmNatives
+}
+
 dependencies {
     String jUnitVersion = '5.14.4'
     String javaFxVersion = '17.0.7'
@@ -63,6 +70,13 @@ dependencies {
     implementation "org.openjfx:javafx-graphics:${javaFxVersion}:mac"
     implementation "org.openjfx:javafx-graphics:${javaFxVersion}:linux"
 
+    ['base', 'controls', 'fxml', 'graphics'].each { module ->
+        macArmNatives "org.openjfx:javafx-${module}:${javaFxVersion}:mac-aarch64"
+        if (appleSilicon) {
+            testRuntimeOnly "org.openjfx:javafx-${module}:${javaFxVersion}:mac-aarch64"
+        }
+    }
+
     implementation 'com.fasterxml.jackson.core:jackson-databind:2.7.0'
     implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.7.4'
 
@@ -72,8 +86,66 @@ dependencies {
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher:1.14.4'
 }
 
+// JavaFX uses the same resource names for Intel and ARM Mac native libraries.
+// Combine their Mach-O slices instead of allowing one architecture to overwrite the other.
+def universalMacDirectory = layout.buildDirectory.dir('universal-mac-natives')
+tasks.register('universalMacNatives') {
+    onlyIf { macOs }
+    inputs.files(configurations.runtimeClasspath, configurations.macArmNatives)
+    outputs.dir(universalMacDirectory)
+    doLast {
+        File output = universalMacDirectory.get().asFile
+        output.mkdirs()
+        Map<String, File> intel = [:]
+        Map<String, File> arm = [:]
+        [intel: configurations.runtimeClasspath.files.findAll { it.name.endsWith('-mac.jar') },
+         arm: configurations.macArmNatives.files.findAll { it.name.endsWith('-mac-aarch64.jar') }].each { arch, jars ->
+            jars.each { jar ->
+                new java.util.zip.ZipFile(jar).withCloseable { archive ->
+                    archive.entries().each { entry ->
+                        if (entry.name.endsWith('.dylib')) {
+                            File extracted = new File(output, "${arch}/${entry.name}")
+                            extracted.parentFile.mkdirs()
+                            extracted.bytes = archive.getInputStream(entry).bytes
+                            (arch == 'intel' ? intel : arm)[entry.name] = extracted
+                        }
+                    }
+                }
+            }
+        }
+        if (intel.isEmpty() || intel.keySet() != arm.keySet()) {
+            throw new GradleException('Intel and ARM JavaFX native libraries must have matching names.')
+        }
+        intel.each { name, library ->
+            providers.exec {
+                commandLine 'lipo', '-create', library, arm[name], '-output', new File(output, name)
+            }.result.get()
+        }
+    }
+}
+
+if (appleSilicon) {
+    test {
+        classpath = classpath.filter { file ->
+            !(file.name.startsWith('javafx-') &&
+                ['-mac.jar', '-linux.jar', '-win.jar'].any { file.name.endsWith(it) })
+        }
+    }
+}
+
 shadowJar {
     archiveFileName = 'addressbook.jar'
+    if (macOs) {
+        dependsOn tasks.named('universalMacNatives')
+        from(universalMacDirectory) {
+            include '*.dylib'
+        }
+        filesMatching('*.dylib') { details ->
+            if (details.file.parentFile != universalMacDirectory.get().asFile) {
+                details.exclude()
+            }
+        }
+    }
 }
 
 defaultTasks 'clean', 'test'

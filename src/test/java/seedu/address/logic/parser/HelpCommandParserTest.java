@@ -32,7 +32,7 @@ public class HelpCommandParserTest {
         String message = String.format(MESSAGE_INVALID_COMMAND_FORMAT, HelpCommand.MESSAGE_USAGE)
                 + "\nAvailable commands: " + HelpCommand.getAvailableCommands();
         for (String input : new String[]{"unknown", "3", "PAID", "paid 1", "paid\thelp", "fees min/10",
-            "findguardian", "f/10"}) {
+            "findguardian Mei", "f/10"}) {
             assertThrows(ParseException.class, message, () -> parser.parse(input));
         }
     }
