@@ -128,7 +128,7 @@ The result states `N student(s) with outstanding fees.` An empty result is succe
 
 ### Finding students by guardian: `findguardian`
 
-Format: `findguardian KEYWORD [MORE_KEYWORDS]...`
+Format: `findguardian KEYWORD [MORE_KEYWORDS]…​`
 
 * Matches whole guardian-name words without regard to case, or an exact guardian phone number.
 * Phone keywords accept hyphens between digits, such as `9234-5678`; a phone containing spaces must be typed without spaces so it remains one keyword.
@@ -198,9 +198,9 @@ Format: `edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [a/ADDRESS] [g/GUARDIAN_NAME] [
 * A successful edit returns to the full student list.
 
 Examples:
-*  `edit 1 g/Mei Tan gp/92345678` Updates the guardian contact while preserving other fields.
-*  `edit 1 p/91234567 e/johndoe@example.com` Edits the phone number and email address of the 1st student to be `91234567` and `johndoe@example.com` respectively.
-*  `edit 2 n/Betsy Crower t/` Edits the name of the 2nd student to be `Betsy Crower` and clears all existing tags.
+* `edit 1 g/Mei Tan gp/92345678` Updates the guardian contact while preserving other fields.
+* `edit 1 p/91234567 e/johndoe@example.com` Edits the phone number and email address of the 1st student to be `91234567` and `johndoe@example.com` respectively.
+* `edit 2 n/Betsy Crower t/` Edits the name of the 2nd student to be `Betsy Crower` and clears all existing tags.
 
 ### Locating students by name: `find`
 
@@ -326,7 +326,7 @@ Action | Format, Examples
 **Delete** | `delete INDEX`, then press Y to confirm or N to cancel<br> e.g., `delete 3`
 **Edit** | `edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [a/ADDRESS] [g/GUARDIAN_NAME] [gp/GUARDIAN_PHONE] [t/TAG]…​`<br> e.g., `edit 2 n/James Lee e/jameslee@example.com`
 **Find** | `find KEYWORD [MORE_KEYWORDS]`<br> e.g., `find James Jake`
-**Find by guardian** | `findguardian KEYWORD [MORE_KEYWORDS]...`<br> e.g., `findguardian Mei 92345678`
+**Find by guardian** | `findguardian KEYWORD [MORE_KEYWORDS]…​`<br> e.g., `findguardian Mei 92345678`
 **List** | `list`
 **View** | `view INDEX`<br> e.g., `view 1`
 **Fees** | `fees [min/AMOUNT]`<br> e.g., `fees min/100`
