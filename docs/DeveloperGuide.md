@@ -299,7 +299,7 @@ The `findguardian KEYWORD [MORE_KEYWORDS]...` command lists students whose guard
 
 #### Implementation
 
-`AddressBookParser` passes the arguments to `FindGuardianCommandParser`. The parser trims the arguments, normalizes them to Unicode NFC and splits them on whitespace. It rejects empty input, and any keyword containing a character not allowed in a guardian name (such as the `/` in `g/Mei`), with a `ParseException`, so the current filter is left unchanged. The keywords are wrapped in a `GuardianContainsKeywordsPredicate`, which is passed to a new `FindGuardianCommand`.
+`AddressBookParser` passes the arguments to `FindGuardianCommandParser`. The parser trims the arguments, normalizes them to Unicode NFC and splits them on whitespace. Each keyword must match `GuardianName.VALIDATION_REGEX`, so it may contain only letters, combining marks, digits, apostrophes, hyphens, periods and parentheses. Unlike a stored guardian name, a keyword does not need a letter, so phone keywords such as `9234-5678` are accepted. Empty input, or a keyword with any other character (such as the `/` in `g/Mei`), causes a `ParseException`, so the current filter is left unchanged. The keywords are wrapped in a `GuardianContainsKeywordsPredicate`, which is passed to a new `FindGuardianCommand`.
 
 The sequence diagram below shows a successful `findguardian mei 9234-5678` call.
 

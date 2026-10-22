@@ -61,7 +61,8 @@ activate Model
 Model --> FindGuardian : matching students
 deactivate Model
 note right of FindGuardian
-r reports "N student(s) listed!"
+r:CommandResult reports
+"N student(s) listed!"
 end note
 FindGuardian --> Logic : r
 deactivate FindGuardian
