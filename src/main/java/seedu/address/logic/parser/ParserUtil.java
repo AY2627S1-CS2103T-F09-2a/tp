@@ -26,8 +26,12 @@ public class ParserUtil {
 
     public static final String MESSAGE_INVALID_INDEX = "Index must be a positive integer.";
 
-    /** Matches a token that looks like a prefix: letters followed by '/' at the start of a word. */
-    private static final Pattern PREFIX_LIKE_TOKEN = Pattern.compile("(?<=^|\\s)([A-Za-z]+/)");
+    /**
+     * Matches a token that looks like a prefix: letters followed by '/' at the start of a word. S/O and D/O
+     * written as separate words are part of names, not prefixes.
+     */
+    private static final Pattern PREFIX_LIKE_TOKEN =
+            Pattern.compile("(?<=^|\\s)(?![SsDd]/[Oo](?:\\s|$))([A-Za-z]+/)");
 
     /**
      * Parses {@code oneBasedIndex} into an {@code Index} and returns it. Leading and trailing whitespaces will be

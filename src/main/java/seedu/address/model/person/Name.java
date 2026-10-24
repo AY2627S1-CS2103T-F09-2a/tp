@@ -14,8 +14,10 @@ public class Name {
 
     public static final String MESSAGE_CONSTRAINTS =
             "Names must be 1-70 characters long, contain at least one letter, and use only letters, numbers, "
-            + "spaces, apostrophes, hyphens, periods, or parentheses.";
+            + "spaces, apostrophes, hyphens, periods, parentheses, or S/O and D/O as separate words.";
     public static final String VALIDATION_REGEX = "[\\p{L}\\p{M}0-9 '.()\\-]+";
+    /** Matches S/O or D/O (son of, daughter of) written as a separate word, in any case. */
+    public static final String PATRONYMIC_REGEX = "(?<=^| )[SsDd]/[Oo](?= |$)";
 
     private static final int MIN_NAME_LENGTH = 1;
     private static final int MAX_NAME_LENGTH = 70;
@@ -42,7 +44,7 @@ public class Name {
         String normalized = normalize(test);
         int length = normalized.codePointCount(0, normalized.length());
         return length >= MIN_NAME_LENGTH && length <= MAX_NAME_LENGTH
-                && normalized.matches(VALIDATION_REGEX)
+                && normalized.replaceAll(PATRONYMIC_REGEX, "SO").matches(VALIDATION_REGEX)
                 && normalized.codePoints().anyMatch(Character::isLetter);
     }
 

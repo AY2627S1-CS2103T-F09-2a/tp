@@ -92,7 +92,21 @@ public class GuardianNameTest {
     @Test
     public void messageConstraints_namesGuardianField() {
         assertEquals("Guardian names must be 1-70 characters long, contain at least one letter, and use only letters, "
-                + "numbers, spaces, apostrophes, hyphens, periods, or parentheses.",
+                + "numbers, spaces, apostrophes, hyphens, periods, parentheses, or S/O and D/O as separate words.",
                 GuardianName.MESSAGE_CONSTRAINTS);
+    }
+
+    @Test
+    public void isValidName_patronymic() {
+        // S/O and D/O as whole words, in any case
+        assertTrue(GuardianName.isValidName("Ravi S/O Raj"));
+        assertTrue(GuardianName.isValidName("Priya d/o Kumar"));
+        assertTrue(GuardianName.isValidName("Ravi s/O Raj"));
+
+        // other slashes are still rejected
+        assertFalse(GuardianName.isValidName("Ravi A/B Raj"));
+        assertFalse(GuardianName.isValidName("Ravi S/Oh Raj"));
+        assertFalse(GuardianName.isValidName("Ravi XS/O Raj"));
+        assertFalse(GuardianName.isValidName("Ravi / Raj"));
     }
 }

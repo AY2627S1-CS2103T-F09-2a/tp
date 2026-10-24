@@ -14,7 +14,7 @@ public final class GuardianName {
 
     public static final String MESSAGE_CONSTRAINTS =
             "Guardian names must be 1-70 characters long, contain at least one letter, and use only letters, "
-            + "numbers, spaces, apostrophes, hyphens, periods, or parentheses.";
+            + "numbers, spaces, apostrophes, hyphens, periods, parentheses, or S/O and D/O as separate words.";
     public static final String VALIDATION_REGEX = "[\\p{L}\\p{M}0-9 '.()\\-]+";
 
     private static final int MIN_NAME_LENGTH = 1;
@@ -42,7 +42,7 @@ public final class GuardianName {
         String normalized = normalize(test);
         int length = normalized.codePointCount(0, normalized.length());
         return length >= MIN_NAME_LENGTH && length <= MAX_NAME_LENGTH
-                && normalized.matches(VALIDATION_REGEX)
+                && normalized.replaceAll(Name.PATRONYMIC_REGEX, "SO").matches(VALIDATION_REGEX)
                 && normalized.codePoints().anyMatch(Character::isLetter);
     }
 

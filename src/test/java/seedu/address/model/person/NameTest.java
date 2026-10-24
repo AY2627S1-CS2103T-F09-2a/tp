@@ -77,4 +77,18 @@ public class NameTest {
         // different values -> returns false
         assertFalse(name.equals(new Name("Other Valid Name")));
     }
+
+    @Test
+    public void isValidName_patronymic() {
+        // S/O and D/O as whole words, in any case
+        assertTrue(Name.isValidName("Ravi S/O Raj"));
+        assertTrue(Name.isValidName("Priya d/o Kumar"));
+        assertTrue(Name.isValidName("Ravi s/O Raj"));
+
+        // other slashes are still rejected
+        assertFalse(Name.isValidName("Ravi A/B Raj"));
+        assertFalse(Name.isValidName("Ravi S/Oh Raj"));
+        assertFalse(Name.isValidName("Ravi XS/O Raj"));
+        assertFalse(Name.isValidName("Ravi / Raj"));
+    }
 }
