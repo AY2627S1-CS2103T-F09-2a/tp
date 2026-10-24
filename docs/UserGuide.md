@@ -87,7 +87,7 @@ Format: `help [COMMAND]`
 
 ### Adding a student: `add`
 
-Adds a student to the address book with their required guardian contact and optional personal contact or outstanding fee details.
+Adds a student to Poco Book with their required guardian contact and optional personal contact or outstanding fee details.
 
 Format: `add n/NAME g/GUARDIAN_NAME gp/GUARDIAN_PHONE [p/PHONE] [e/EMAIL] [a/ADDRESS] [f/AMOUNT]`
 
@@ -104,7 +104,7 @@ Examples:
 
 ### Listing all students: `list`
 
-Shows a list of all students in the address book.
+Shows a list of all students in Poco Book.
 
 Each student card shows the student's guardian contact as `Guardian: GUARDIAN_NAME (GUARDIAN_PHONE)`, together with any provided student phone, address, email, and tags.
 Students with an outstanding fee also display an `S$AMOUNT outstanding` label on their cards, with the amount shown to two decimal places; students without an outstanding fee do not display this label. The same card details appear in `find` and `fees` results.
@@ -184,7 +184,7 @@ Examples: `paid 1`, `paid 2`.
 
 ### Editing a student: `edit`
 
-Edits an existing student in the address book.
+Edits an existing student in Poco Book.
 
 Format: `edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [a/ADDRESS] [g/GUARDIAN_NAME] [gp/GUARDIAN_PHONE] [t/TAG]…​`
 
@@ -274,7 +274,7 @@ Examples:
 
 ### Clearing all entries: `clear`
 
-Clears all entries from the address book.
+Clears all students from Poco Book.
 
 Format: `clear`
 
@@ -293,7 +293,7 @@ Poco Book saves student data automatically. You do not need to save manually.
 Poco Book data is saved automatically as a JSON file `[JAR file location]/data/addressbook.json`. Advanced users are welcome to update data directly by editing that data file.
 
 <div markdown="span" class="alert alert-warning">:exclamation: **Caution:**
-If an edit makes the data file invalid, Poco Book starts with an empty address book next time. The invalid file stays on disk until a command that changes data, such as `add`, overwrites it. Commands that only display data, such as `list`, `find`, `fees`, `view`, `help`, and `exit`, do not save. Back up the file before editing it.<br>
+If an edit makes the data file invalid, Poco Book starts with no students next time. The invalid file stays on disk until a command that changes data, such as `add`, overwrites it. Commands that only display data, such as `list`, `find`, `fees`, `view`, `help`, and `exit`, do not save. Back up the file before editing it.<br>
 Furthermore, certain edits can cause Poco Book to behave in unexpected ways (e.g., if a value entered is outside of the acceptable range). Therefore, edit the data file only if you are confident that you can update it correctly.
 </div>
 
