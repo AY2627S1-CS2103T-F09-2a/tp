@@ -17,6 +17,7 @@ import static seedu.address.logic.commands.CommandTestUtil.INVALID_GUARDIAN_NAME
 import static seedu.address.logic.commands.CommandTestUtil.INVALID_GUARDIAN_PHONE_DESC;
 import static seedu.address.logic.commands.CommandTestUtil.INVALID_NAME_DESC;
 import static seedu.address.logic.commands.CommandTestUtil.INVALID_PHONE_DESC;
+import static seedu.address.logic.commands.CommandTestUtil.INVALID_TAG_DESC;
 import static seedu.address.logic.commands.CommandTestUtil.NAME_DESC_AMY;
 import static seedu.address.logic.commands.CommandTestUtil.NAME_DESC_BOB;
 import static seedu.address.logic.commands.CommandTestUtil.PHONE_DESC_AMY;
@@ -24,7 +25,10 @@ import static seedu.address.logic.commands.CommandTestUtil.PHONE_DESC_BOB;
 import static seedu.address.logic.commands.CommandTestUtil.PREAMBLE_NON_EMPTY;
 import static seedu.address.logic.commands.CommandTestUtil.PREAMBLE_WHITESPACE;
 import static seedu.address.logic.commands.CommandTestUtil.TAG_DESC_FRIEND;
+import static seedu.address.logic.commands.CommandTestUtil.TAG_DESC_HUSBAND;
 import static seedu.address.logic.commands.CommandTestUtil.VALID_NAME_BOB;
+import static seedu.address.logic.commands.CommandTestUtil.VALID_TAG_FRIEND;
+import static seedu.address.logic.commands.CommandTestUtil.VALID_TAG_HUSBAND;
 import static seedu.address.logic.parser.AddCommandParser.MESSAGE_MISSING_PARAMETER;
 import static seedu.address.logic.parser.AddCommandParser.MESSAGE_REPEATED_PARAMETER;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_GUARDIAN_NAME;
@@ -45,6 +49,7 @@ import seedu.address.model.person.Name;
 import seedu.address.model.person.OutstandingFee;
 import seedu.address.model.person.Person;
 import seedu.address.model.person.Phone;
+import seedu.address.model.tag.Tag;
 import seedu.address.testutil.PersonBuilder;
 
 public class AddCommandParserTest {
@@ -179,12 +184,38 @@ public class AddCommandParserTest {
     }
 
     @Test
+    public void parse_tagsPresent_success() {
+        // one tag
+        Person expectedPerson = new PersonBuilder(BOB).withTags(VALID_TAG_FRIEND).build();
+        assertParseSuccess(parser, ALL_DESC_BOB + TAG_DESC_FRIEND, new AddCommand(expectedPerson));
+
+        // repeated tag prefix
+        expectedPerson = new PersonBuilder(BOB).withTags(VALID_TAG_FRIEND, VALID_TAG_HUSBAND).build();
+        assertParseSuccess(parser, TAG_DESC_HUSBAND + ALL_DESC_BOB + TAG_DESC_FRIEND, new AddCommand(expectedPerson));
+    }
+
+    @Test
+    public void parse_tagAfterAddress_tagNotStoredInAddress() {
+        Person expectedPerson = new PersonBuilder(BOB).withoutContactDetails().withoutOutstandingFee()
+                .withAddress("Blk 1").withTags(VALID_TAG_FRIEND).build();
+        assertParseSuccess(parser, REQUIRED_DESC_BOB + " a/Blk 1" + TAG_DESC_FRIEND, new AddCommand(expectedPerson));
+    }
+
+    @Test
+    public void parse_invalidTag_failure() {
+        assertParseFailure(parser, ALL_DESC_BOB + INVALID_TAG_DESC, Tag.MESSAGE_CONSTRAINTS);
+
+        // empty tag
+        assertParseFailure(parser, ALL_DESC_BOB + " t/", Tag.MESSAGE_CONSTRAINTS);
+    }
+
+    @Test
     public void parse_unexpectedText_failure() {
         // non-empty preamble
         assertParseFailure(parser, PREAMBLE_NON_EMPTY + ALL_DESC_BOB, MESSAGE_INVALID_FORMAT);
 
         // unknown prefix
-        assertParseFailure(parser, ALL_DESC_BOB + TAG_DESC_FRIEND, MESSAGE_INVALID_FORMAT);
+        assertParseFailure(parser, ALL_DESC_BOB + " x/foo", MESSAGE_INVALID_FORMAT);
 
         // upper-case prefix
         assertParseFailure(parser, " N/Alex Tan" + GUARDIAN_NAME_DESC_BOB + GUARDIAN_PHONE_DESC_BOB,
