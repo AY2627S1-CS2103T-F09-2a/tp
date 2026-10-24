@@ -16,6 +16,7 @@ import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Logger;
+import java.util.stream.Stream;
 
 import seedu.address.commons.core.LogsCenter;
 import seedu.address.commons.core.index.Index;
@@ -28,6 +29,9 @@ import seedu.address.model.tag.Tag;
  * Parses input arguments and creates a new EditCommand object
  */
 public class EditCommandParser implements Parser<EditCommand> {
+
+    public static final String MESSAGE_FEE_NOT_EDITABLE = "Outstanding fees cannot be changed with edit. "
+            + "Use setoutstanding INDEX AMOUNT or paid INDEX instead.";
 
     private static final Logger logger = LogsCenter.getLogger(EditCommandParser.class);
 
@@ -46,6 +50,9 @@ public class EditCommandParser implements Parser<EditCommand> {
 
         // Outstanding fees cannot be edited via edit; reject the prefix rather than absorbing it into another value.
         if (argMultimap.getValue(PREFIX_OUTSTANDING_FEE).isPresent()) {
+            throw new ParseException(MESSAGE_FEE_NOT_EDITABLE);
+        }
+        if (hasUnknownPrefix(argMultimap)) {
             throw new ParseException(String.format(MESSAGE_INVALID_COMMAND_FORMAT, EditCommand.MESSAGE_USAGE));
         }
 
@@ -82,6 +89,17 @@ public class EditCommandParser implements Parser<EditCommand> {
 
         logger.fine("Parsed EditCommand for index " + index.getOneBased());
         return new EditCommand(index, editPersonDescriptor);
+    }
+
+    /**
+     * Returns true if a value other than the address contains a prefix-like token that {@code edit} does not
+     * accept, such as {@code x/}. Addresses may contain such text, for example {@code c/o} or {@code Blk A/B}.
+     */
+    private static boolean hasUnknownPrefix(ArgumentMultimap argMultimap) {
+        return Stream.of(PREFIX_NAME, PREFIX_PHONE, PREFIX_EMAIL, PREFIX_TAG, PREFIX_GUARDIAN_NAME,
+                PREFIX_GUARDIAN_PHONE)
+                .flatMap(prefix -> argMultimap.getAllValues(prefix).stream())
+                .anyMatch(ParserUtil::containsPrefixLikeToken);
     }
 
     /**

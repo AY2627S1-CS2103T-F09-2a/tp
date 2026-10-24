@@ -88,4 +88,11 @@ public class GuardianNameTest {
             assertEquals(first.hashCode(), second.hashCode());
         }
     }
+
+    @Test
+    public void messageConstraints_namesGuardianField() {
+        assertEquals("Guardian names must be 1-70 characters long, contain at least one letter, and use only letters, "
+                + "numbers, spaces, apostrophes, hyphens, periods, or parentheses.",
+                GuardianName.MESSAGE_CONSTRAINTS);
+    }
 }
