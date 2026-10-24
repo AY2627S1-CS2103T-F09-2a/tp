@@ -98,6 +98,8 @@ Format: `add n/NAME g/GUARDIAN_NAME gp/GUARDIAN_PHONE [p/PHONE] [e/EMAIL] [a/ADD
 * `AMOUNT`, if provided, must be a positive amount between `0.01` and `99999.99` with up to 2 decimal places (and is stored to 2 decimal places).
 * Two students are considered duplicates if they share the same normalized student name (case-insensitive, with consecutive spaces collapsed) and the same normalized guardian phone number.
 * `NAME` and `GUARDIAN_NAME` may include `S/O` or `D/O` as a separate word, such as `Ravi S/O Raj`. Other slashes are not allowed in names.
+* Names accept only the straight apostrophe (`'`) and the ASCII hyphen (`-`). Curly apostrophes (`’`) and other dashes (`‐`, `–`), which some keyboards and copied text produce, are rejected; retype them as `'` or `-`.
+* In `EMAIL`, the part before `@` may use only letters, digits, `.`, `_`, `+` and `-`. Addresses with other characters, such as an apostrophe (`o'connor@example.com`), are not supported.
 
 Examples:
 * `add n/Alex Tan g/Mei Tan gp/92345678`
@@ -209,7 +211,7 @@ Finds students whose names contain any of the given keywords.
 
 Format: `find KEYWORD [MORE_KEYWORDS]`
 
-* The search is case-insensitive; for example, `hans` matches `Hans`.
+* The search is case-insensitive; for example, `hans` matches `Hans`. Letters are compared one at a time, so a letter that capitalises to two letters is not matched by them; for example, `STRASSE` does not match `Straße`. The same rule applies when checking for duplicate students.
 * Keyword order does not matter; for example, `Hans Bo` matches `Bo Hans`.
 * The search considers only student names. Guardian details, contact details and fees are not searched.
 * Only full words match; for example, `Han` does not match `Hans`.
@@ -315,6 +317,7 @@ _Details coming soon ..._
 
 1. **When using multiple screens**, if you move the application to a secondary screen, and later switch to using only the primary screen, the GUI will open off-screen. The remedy is to delete the `preferences.json` file created by the application before running the application again.
 2. **If you minimize the Help Window** and then run the `help` command (or use the `Help` menu, or the keyboard shortcut `F1`) again, the original Help Window will remain minimized, and no new Help Window will appear. The remedy is to manually restore the minimized Help Window.
+3. **Names and emails with less common characters**, such as curly apostrophes (`’`), Unicode dashes or apostrophes in emails, are rejected, and letters such as `ß` are not matched with `SS` in `find` or duplicate checks. The remedy is to type the name with `'` and `-`, use an email without the unsupported characters, and search with the spelling stored in Poco Book.
 
 --------------------------------------------------------------------------------------------------------------------
 

@@ -91,4 +91,12 @@ public class NameTest {
         assertFalse(Name.isValidName("Ravi XS/O Raj"));
         assertFalse(Name.isValidName("Ravi / Raj"));
     }
+
+    @Test
+    public void messageConstraints_describesSupportedCharacters() {
+        assertEquals("Names must be 1-70 characters long, contain at least one letter, and use only letters, "
+                + "numbers, spaces, straight apostrophes ('), ASCII hyphens (-), periods, parentheses, or S/O and D/O "
+                + "as separate words.",
+                Name.MESSAGE_CONSTRAINTS);
+    }
 }

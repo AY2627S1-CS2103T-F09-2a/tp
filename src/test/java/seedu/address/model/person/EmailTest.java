@@ -1,5 +1,6 @@
 package seedu.address.model.person;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.testutil.Assert.assertThrows;
@@ -89,5 +90,12 @@ public class EmailTest {
 
         // different values -> returns false
         assertFalse(email.equals(new Email("other.valid@email.com")));
+    }
+
+    @Test
+    public void messageConstraints_describesSupportedCharacters() {
+        assertEquals("Emails must be one valid address such as student@example.com. The part before @ may use only "
+                + "letters, digits, periods, underscores, plus signs and hyphens.",
+                Email.MESSAGE_CONSTRAINTS);
     }
 }

@@ -90,13 +90,6 @@ public class GuardianNameTest {
     }
 
     @Test
-    public void messageConstraints_namesGuardianField() {
-        assertEquals("Guardian names must be 1-70 characters long, contain at least one letter, and use only letters, "
-                + "numbers, spaces, apostrophes, hyphens, periods, parentheses, or S/O and D/O as separate words.",
-                GuardianName.MESSAGE_CONSTRAINTS);
-    }
-
-    @Test
     public void isValidName_patronymic() {
         // S/O and D/O as whole words, in any case
         assertTrue(GuardianName.isValidName("Ravi S/O Raj"));
@@ -108,5 +101,13 @@ public class GuardianNameTest {
         assertFalse(GuardianName.isValidName("Ravi S/Oh Raj"));
         assertFalse(GuardianName.isValidName("Ravi XS/O Raj"));
         assertFalse(GuardianName.isValidName("Ravi / Raj"));
+    }
+
+    @Test
+    public void messageConstraints_describesSupportedCharacters() {
+        assertEquals("Guardian names must be 1-70 characters long, contain at least one letter, and use only letters, "
+                + "numbers, spaces, straight apostrophes ('), ASCII hyphens (-), periods, parentheses, or S/O and D/O "
+                + "as separate words.",
+                GuardianName.MESSAGE_CONSTRAINTS);
     }
 }
