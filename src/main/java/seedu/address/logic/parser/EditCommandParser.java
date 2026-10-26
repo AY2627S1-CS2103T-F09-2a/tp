@@ -29,6 +29,9 @@ import seedu.address.model.tag.Tag;
  */
 public class EditCommandParser implements Parser<EditCommand> {
 
+    public static final String MESSAGE_CLEAR_TAGS_WITH_TAGS = "t/ on its own clears all tags, so it cannot be "
+            + "combined with other tags. Use t/ alone to clear the tags, or give only the tags to keep.";
+
     private static final Logger logger = LogsCenter.getLogger(EditCommandParser.class);
 
     /**
@@ -111,8 +114,13 @@ public class EditCommandParser implements Parser<EditCommand> {
         if (tags.isEmpty()) {
             return Optional.empty();
         }
-        Collection<String> tagSet = tags.size() == 1 && tags.contains("") ? Collections.emptySet() : tags;
-        return Optional.of(ParserUtil.parseTags(tagSet));
+        if (!tags.contains("")) {
+            return Optional.of(ParserUtil.parseTags(tags));
+        }
+        if (tags.size() > 1) {
+            throw new ParseException(MESSAGE_CLEAR_TAGS_WITH_TAGS);
+        }
+        return Optional.of(Collections.emptySet());
     }
 
 }
