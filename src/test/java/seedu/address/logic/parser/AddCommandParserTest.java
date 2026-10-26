@@ -165,6 +165,15 @@ public class AddCommandParserTest {
         assertParseFailure(parser, NAME_DESC_BOB + GUARDIAN_NAME_DESC_BOB,
                 String.format(MESSAGE_MISSING_PARAMETER, PREFIX_GUARDIAN_PHONE) + "\n" + AddCommand.MESSAGE_USAGE);
 
+        // several prefixes missing, all named at once
+        assertParseFailure(parser, NAME_DESC_BOB,
+                String.format(MESSAGE_MISSING_PARAMETER, PREFIX_GUARDIAN_NAME + ", " + PREFIX_GUARDIAN_PHONE)
+                        + "\n" + AddCommand.MESSAGE_USAGE);
+        assertParseFailure(parser, PHONE_DESC_BOB,
+                String.format(MESSAGE_MISSING_PARAMETER,
+                        PREFIX_NAME + ", " + PREFIX_GUARDIAN_NAME + ", " + PREFIX_GUARDIAN_PHONE)
+                        + "\n" + AddCommand.MESSAGE_USAGE);
+
         // all prefixes missing
         assertParseFailure(parser, " " + VALID_NAME_BOB, MESSAGE_INVALID_FORMAT);
     }

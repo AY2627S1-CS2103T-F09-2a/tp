@@ -92,6 +92,7 @@ Adds a student to the address book with their required guardian contact and opti
 Format: `add n/NAME g/GUARDIAN_NAME gp/GUARDIAN_PHONE [p/PHONE] [e/EMAIL] [a/ADDRESS] [f/AMOUNT]`
 
 * `n/NAME`, `g/GUARDIAN_NAME`, and `gp/GUARDIAN_PHONE` are required; `p/PHONE`, `e/EMAIL`, `a/ADDRESS`, and `f/AMOUNT` are optional.
+* If any required parameters are missing, the error names all of them, such as `Missing required parameter(s): g/, gp/.`
 * Each prefix may appear at most once in an `add` command.
 * `ADDRESS` may contain text such as `c/o`, `Blk A/B`, or `N/A`. Other parameters must not contain unrecognised prefixes such as `t/`.
 * `PHONE` and `GUARDIAN_PHONE` must be 8-digit Singapore numbers starting with `6`, `8`, or `9` (spaces and hyphens between digits are allowed and removed when stored).

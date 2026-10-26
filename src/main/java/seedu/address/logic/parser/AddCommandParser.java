@@ -15,6 +15,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import seedu.address.logic.commands.AddCommand;
 import seedu.address.logic.parser.exceptions.ParseException;
@@ -32,7 +33,7 @@ import seedu.address.model.person.Phone;
  */
 public class AddCommandParser implements Parser<AddCommand> {
 
-    public static final String MESSAGE_MISSING_PARAMETER = "Missing required parameter: %1$s.";
+    public static final String MESSAGE_MISSING_PARAMETER = "Missing required parameter(s): %1$s.";
     public static final String MESSAGE_REPEATED_PARAMETER = "The %1$s parameter must not be repeated.";
 
     /** Matches a token that looks like a prefix: letters followed by '/' at the start of a word. */
@@ -98,14 +99,16 @@ public class AddCommandParser implements Parser<AddCommand> {
     }
 
     /**
-     * Throws a {@code ParseException} naming the first required prefix that is absent.
+     * Throws a {@code ParseException} naming every required prefix that is absent, so that the user can supply
+     * them all at once.
      */
     private static void verifyRequiredPrefixesPresent(ArgumentMultimap argMultimap) throws ParseException {
-        Optional<Prefix> missing = REQUIRED_PREFIXES.stream()
+        String missingPrefixes = REQUIRED_PREFIXES.stream()
                 .filter(prefix -> argMultimap.getValue(prefix).isEmpty())
-                .findFirst();
-        if (missing.isPresent()) {
-            throw new ParseException(String.format(MESSAGE_MISSING_PARAMETER, missing.get()) + "\n"
+                .map(Prefix::toString)
+                .collect(Collectors.joining(", "));
+        if (!missingPrefixes.isEmpty()) {
+            throw new ParseException(String.format(MESSAGE_MISSING_PARAMETER, missingPrefixes) + "\n"
                     + AddCommand.MESSAGE_USAGE);
         }
     }
