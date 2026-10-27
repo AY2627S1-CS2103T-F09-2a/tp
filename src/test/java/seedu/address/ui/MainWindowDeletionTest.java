@@ -10,6 +10,7 @@ import static seedu.address.testutil.TypicalPersons.getTypicalAddressBook;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
@@ -20,11 +21,20 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.junit.jupiter.api.io.TempDir;
 
+import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
+import javafx.event.Event;
+import javafx.event.EventTarget;
+import javafx.scene.Scene;
+import javafx.scene.control.DialogPane;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.stage.Stage;
+import javafx.stage.Window;
+import javafx.util.Duration;
 import seedu.address.logic.Logic;
 import seedu.address.logic.LogicManager;
 import seedu.address.logic.Messages;
@@ -75,6 +85,28 @@ public class MainWindowDeletionTest {
         JsonAddressBookStorage addressBookStorage = new JsonAddressBookStorage(addressBookFile);
         JsonUserPrefsStorage userPrefsStorage = new JsonUserPrefsStorage(temporaryFolder.resolve("userPrefs.json"));
         logic = new LogicManager(model, new StorageManager(addressBookStorage, userPrefsStorage));
+    }
+
+    @Test
+    public void executeCommand_deleteConfirmedInTheDialog_asksThenDeletesAndShowsFeedback() throws Exception {
+        Stage stage = openWindowWithDialog();
+        answerDialogWith(KeyCode.Y);
+
+        String feedback = runCommand(stage, "delete 1");
+
+        assertEquals(String.format(DeleteCommand.MESSAGE_DELETE_PERSON_SUCCESS, Messages.format(ALICE)), feedback);
+        assertFalse(logic.getFilteredPersonList().contains(ALICE));
+    }
+
+    @Test
+    public void executeCommand_deleteKeptInTheDialog_keepsStudentAndShowsCancellation() throws Exception {
+        Stage stage = openWindowWithDialog();
+        answerDialogWith(KeyCode.N);
+
+        String feedback = runCommand(stage, "delete 1");
+
+        assertEquals(DeleteConfirmationHandler.MESSAGE_DELETE_CANCELLED, feedback);
+        assertTrue(logic.getFilteredPersonList().contains(ALICE));
     }
 
     @Test
@@ -136,6 +168,56 @@ public class MainWindowDeletionTest {
             window.fillInnerParts();
             return stage;
         });
+    }
+
+    /**
+     * Creates a main window that asks through the real dialog, as the application does.
+     */
+    private Stage openWindowWithDialog() throws Exception {
+        return runOnFxThread(() -> {
+            Stage stage = new Stage();
+            MainWindow window = new MainWindow(stage, logic, addressBookFile);
+            window.fillInnerParts();
+            return stage;
+        });
+    }
+
+    /**
+     * Presses {@code key} in the deletion dialog as soon as it is showing. Must be called on the
+     * test thread before the command that opens the dialog is sent, because the dialog blocks the
+     * JavaFX thread until it is answered.
+     */
+    private void answerDialogWith(KeyCode key) {
+        Platform.runLater(new Runnable() {
+            @Override
+            public void run() {
+                Optional<Window> dialog = showingDialog();
+                if (dialog.isEmpty()) {
+                    // The dialog is attached shortly after the nested event loop starts
+                    PauseTransition retry = new PauseTransition(Duration.millis(20));
+                    retry.setOnFinished(event -> run());
+                    retry.play();
+                    return;
+                }
+                Scene scene = dialog.get().getScene();
+                EventTarget target = scene.getFocusOwner() != null ? scene.getFocusOwner() : scene;
+                Event.fireEvent(target, new KeyEvent(KeyEvent.KEY_PRESSED, "", "", key,
+                        false, false, false, false));
+                Event.fireEvent(target, new KeyEvent(KeyEvent.KEY_RELEASED, "", "", key,
+                        false, false, false, false));
+            }
+        });
+    }
+
+    /**
+     * Returns the showing window that holds a dialog pane, which is the deletion dialog.
+     */
+    private static Optional<Window> showingDialog() {
+        return Window.getWindows().stream()
+                .filter(Window::isShowing)
+                .filter(window -> window.getScene() != null)
+                .filter(window -> window.getScene().getRoot() instanceof DialogPane)
+                .findFirst();
     }
 
     /**
