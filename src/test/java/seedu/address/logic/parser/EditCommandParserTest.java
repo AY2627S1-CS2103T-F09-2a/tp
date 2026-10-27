@@ -99,10 +99,8 @@ public class EditCommandParserTest {
 
     @Test
     public void parse_uneditableFieldPrefix_failure() {
-        String expectedMessage = "Outstanding fees cannot be changed with edit. "
-                + "Use setoutstanding INDEX AMOUNT or paid INDEX instead.";
-        assertParseFailure(parser, "1" + PHONE_DESC_AMY + " f/10", expectedMessage);
-        assertParseFailure(parser, "1 f/10", expectedMessage);
+        assertParseFailure(parser, "1" + PHONE_DESC_AMY + " f/10", EditCommandParser.MESSAGE_FEE_NOT_EDITABLE);
+        assertParseFailure(parser, "1 f/10", EditCommandParser.MESSAGE_FEE_NOT_EDITABLE);
     }
 
     @Test

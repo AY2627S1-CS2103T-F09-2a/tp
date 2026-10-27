@@ -2,6 +2,7 @@ package seedu.address.model.person;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.testutil.Assert.assertThrows;
 
@@ -87,6 +88,13 @@ public class GuardianNameTest {
             assertEquals(second, first);
             assertEquals(first.hashCode(), second.hashCode());
         }
+    }
+
+    @Test
+    public void messageConstraints_namesGuardianField() {
+        // The message must say which field failed, as add and edit also validate student names.
+        assertTrue(GuardianName.MESSAGE_CONSTRAINTS.startsWith("Guardian names "));
+        assertNotEquals(Name.MESSAGE_CONSTRAINTS, GuardianName.MESSAGE_CONSTRAINTS);
     }
 
     @Test
