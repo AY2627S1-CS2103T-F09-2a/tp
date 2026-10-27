@@ -15,6 +15,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -63,6 +64,7 @@ public class MainWindowDeletionTest {
     public Path temporaryFolder;
 
     private final List<Person> confirmationRequests = new ArrayList<>();
+    private final List<Stage> openedStages = new ArrayList<>();
     private Model model;
     private Logic logic;
     private Path addressBookFile;
@@ -85,6 +87,18 @@ public class MainWindowDeletionTest {
         JsonAddressBookStorage addressBookStorage = new JsonAddressBookStorage(addressBookFile);
         JsonUserPrefsStorage userPrefsStorage = new JsonUserPrefsStorage(temporaryFolder.resolve("userPrefs.json"));
         logic = new LogicManager(model, new StorageManager(addressBookStorage, userPrefsStorage));
+    }
+
+    /**
+     * Closes the windows a test opened, so that they do not accumulate in the shared JavaFX runtime.
+     */
+    @AfterEach
+    public void closeWindows() throws Exception {
+        runOnFxThread(() -> {
+            openedStages.forEach(Stage::close);
+            openedStages.clear();
+            return null;
+        });
     }
 
     @Test
@@ -160,6 +174,7 @@ public class MainWindowDeletionTest {
     private Stage openWindow(boolean answer) throws Exception {
         return runOnFxThread(() -> {
             Stage stage = new Stage();
+            openedStages.add(stage);
             DeleteConfirmationHandler handler = new DeleteConfirmationHandler(logic, student -> {
                 confirmationRequests.add(student);
                 return answer;
@@ -176,6 +191,7 @@ public class MainWindowDeletionTest {
     private Stage openWindowWithDialog() throws Exception {
         return runOnFxThread(() -> {
             Stage stage = new Stage();
+            openedStages.add(stage);
             MainWindow window = new MainWindow(stage, logic, addressBookFile);
             window.fillInnerParts();
             return stage;

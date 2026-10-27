@@ -16,7 +16,9 @@ import re
 import sys
 
 DEFAULT_RESULTS = os.path.join("build", "test-results", "test")
-GATED_ANNOTATION = 'EnabledIfEnvironmentVariable(named = "POCO_UI_TESTS"'
+GATED_ANNOTATION = re.compile(
+    r'EnabledIfEnvironmentVariable\s*\(\s*named\s*=\s*"POCO_UI_TESTS"\s*(?:,\s*matches\s*=\s*"true"\s*)?\)')
+WHITESPACE = re.compile(r"\s+")
 PACKAGE_PATTERN = re.compile(r"^\s*package\s+([\w.]+)\s*;", re.MULTILINE)
 # Only the opening <testsuite ...> tag is read: its attributes hold every count needed,
 # so the report is never parsed as a whole document.
@@ -36,11 +38,16 @@ def read_text(path):
 
 
 def gated_classes(source_root):
-    """Return {fully qualified class name: source path} for POCO_UI_TESTS-gated tests."""
+    """Return {fully qualified class name: source path} for POCO_UI_TESTS-gated tests.
+
+    The annotation is matched with its whitespace collapsed, so that a wrap across lines or
+    a missing space around ``=`` still counts as a gate rather than silently dropping the
+    class from the check.
+    """
     classes = {}
     for path in glob.glob(os.path.join(source_root, "**", "*.java"), recursive=True):
         text = read_text(path)
-        if GATED_ANNOTATION not in text:
+        if not GATED_ANNOTATION.search(WHITESPACE.sub(" ", text)):
             continue
         package = PACKAGE_PATTERN.search(text)
         name = os.path.splitext(os.path.basename(path))[0]
