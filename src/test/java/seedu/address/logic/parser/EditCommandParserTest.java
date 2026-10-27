@@ -139,6 +139,9 @@ public class EditCommandParserTest {
         assertParseFailure(parser, "1" + TAG_EMPTY + TAG_DESC_FRIEND + TAG_DESC_HUSBAND,
                 EditCommandParser.MESSAGE_CLEAR_TAGS_WITH_TAGS);
 
+        // t/ repeated with no tags is not reported as being combined with other tags
+        assertParseFailure(parser, "1" + TAG_EMPTY + TAG_EMPTY, EditCommandParser.MESSAGE_REPEATED_CLEAR_TAGS);
+
         // multiple invalid values, but only the first invalid value is captured
         assertParseFailure(parser, "1" + INVALID_NAME_DESC + INVALID_EMAIL_DESC + VALID_ADDRESS_AMY + VALID_PHONE_AMY,
                 Name.MESSAGE_CONSTRAINTS);

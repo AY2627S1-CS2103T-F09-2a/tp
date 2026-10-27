@@ -31,6 +31,7 @@ public class EditCommandParser implements Parser<EditCommand> {
 
     public static final String MESSAGE_CLEAR_TAGS_WITH_TAGS = "t/ on its own clears all tags, so it cannot be "
             + "combined with other tags. Use t/ alone to clear the tags, or give only the tags to keep.";
+    public static final String MESSAGE_REPEATED_CLEAR_TAGS = "t/ on its own clears all tags, so give it only once.";
 
     private static final Logger logger = LogsCenter.getLogger(EditCommandParser.class);
 
@@ -117,10 +118,11 @@ public class EditCommandParser implements Parser<EditCommand> {
         if (!tags.contains("")) {
             return Optional.of(ParserUtil.parseTags(tags));
         }
-        if (tags.size() > 1) {
-            throw new ParseException(MESSAGE_CLEAR_TAGS_WITH_TAGS);
+        if (tags.size() == 1) {
+            return Optional.of(Collections.emptySet());
         }
-        return Optional.of(Collections.emptySet());
+        boolean onlyClears = tags.stream().allMatch(String::isEmpty);
+        throw new ParseException(onlyClears ? MESSAGE_REPEATED_CLEAR_TAGS : MESSAGE_CLEAR_TAGS_WITH_TAGS);
     }
 
 }
