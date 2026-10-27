@@ -94,8 +94,8 @@ public class EmailTest {
 
     @Test
     public void messageConstraints_describesSupportedCharacters() {
-        assertEquals("Emails must be one valid address such as student@example.com. The part before @ may use only "
-                + "letters, digits, periods, underscores, plus signs and hyphens.",
+        assertEquals("Emails must be one valid address such as student@example.com, without spaces. "
+                + "The part before @ may use only letters, digits, periods, underscores, plus signs and hyphens.",
                 Email.MESSAGE_CONSTRAINTS);
     }
 }
