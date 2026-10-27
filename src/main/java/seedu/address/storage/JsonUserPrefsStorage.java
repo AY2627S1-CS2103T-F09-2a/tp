@@ -36,11 +36,15 @@ public class JsonUserPrefsStorage {
 
     /**
      * Similar to {@link #readUserPrefs()}
+     * A file whose nested values are {@code null} is repaired to the defaults before it is
+     * returned, so that callers such as {@code MainApp#initPrefs} and {@code ModelManager}
+     * never receive a {@code UserPrefs} with a missing nested object.
+     *
      * @param prefsFilePath location of the data. Cannot be null.
      * @throws DataLoadingException if the file format is not as expected.
      */
     public Optional<UserPrefs> readUserPrefs(Path prefsFilePath) throws DataLoadingException {
-        return JsonUtil.readJsonFile(prefsFilePath, UserPrefs.class);
+        return JsonUtil.readJsonFile(prefsFilePath, UserPrefs.class).map(stored -> new UserPrefs(stored));
     }
 
     /**
