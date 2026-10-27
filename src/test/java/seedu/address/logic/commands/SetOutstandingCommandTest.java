@@ -109,6 +109,81 @@ public class SetOutstandingCommandTest {
     }
 
     @Test
+    public void equals_distinguishesReplaceFromAdd() {
+        SetOutstandingCommand replace = new SetOutstandingCommand(Index.fromOneBased(1),
+                new OutstandingFee("50"));
+        SetOutstandingCommand add = SetOutstandingCommand.addToOutstandingFee(Index.fromOneBased(1),
+                new OutstandingFee("50"));
+
+        assertTrue(add.equals(SetOutstandingCommand.addToOutstandingFee(Index.fromOneBased(1),
+                new OutstandingFee("50"))));
+        assertFalse(add.equals(replace));
+        assertFalse(replace.equals(add));
+    }
+
+    @Test
+    public void execute_addToExistingFee_increasesTotalAndPreservesOtherFields() throws Exception {
+        Model model = new ModelManager();
+        Person student = new PersonBuilder().withOutstandingFee("120").build();
+        model.addPerson(student);
+
+        CommandResult result = SetOutstandingCommand
+                .addToOutstandingFee(Index.fromOneBased(1), new OutstandingFee("50"))
+                .execute(model);
+
+        Person updated = model.getFilteredPersonList().get(0);
+        assertEquals(new OutstandingFee("170.00"), updated.getOutstandingFee().orElseThrow());
+        assertEquals("Added S$50.00 to the outstanding fee for Amy Bee: S$120.00 -> S$170.00",
+                result.getFeedbackToUser());
+        assertEquals(student.getGuardianName(), updated.getGuardianName());
+        assertEquals(student.getGuardianPhone(), updated.getGuardianPhone());
+        assertEquals(student.getTags(), updated.getTags());
+        assertEquals(student.getName(), updated.getName());
+    }
+
+    @Test
+    public void execute_addToStudentWithoutFee_setsTheAddedAmount() throws Exception {
+        Model model = new ModelManager();
+        model.addPerson(new PersonBuilder().build());
+
+        CommandResult result = SetOutstandingCommand
+                .addToOutstandingFee(Index.fromOneBased(1), new OutstandingFee("50"))
+                .execute(model);
+
+        assertEquals(new OutstandingFee("50.00"),
+                model.getFilteredPersonList().get(0).getOutstandingFee().orElseThrow());
+        assertEquals("Added S$50.00 to the outstanding fee for Amy Bee: S$0.00 -> S$50.00",
+                result.getFeedbackToUser());
+    }
+
+    @Test
+    public void execute_addBeyondMaximum_rejectsWithoutChangingData() {
+        Model model = new ModelManager();
+        Person student = new PersonBuilder().withOutstandingFee("99999.00").build();
+        model.addPerson(student);
+
+        CommandException exception = org.junit.jupiter.api.Assertions.assertThrows(CommandException.class, ()
+                -> SetOutstandingCommand.addToOutstandingFee(Index.fromOneBased(1), new OutstandingFee("1"))
+                        .execute(model));
+
+        assertEquals(String.format(SetOutstandingCommand.MESSAGE_TOTAL_TOO_LARGE, "1.00", "100000.00"),
+                exception.getMessage());
+        assertEquals(List.of(student), model.getAddressBook().getPersonList());
+    }
+
+    @Test
+    public void execute_addToExactlyMaximum_succeeds() throws Exception {
+        Model model = new ModelManager();
+        model.addPerson(new PersonBuilder().withOutstandingFee("99998.99").build());
+
+        SetOutstandingCommand.addToOutstandingFee(Index.fromOneBased(1), new OutstandingFee("1"))
+                .execute(model);
+
+        assertEquals(new OutstandingFee("99999.99"),
+                model.getFilteredPersonList().get(0).getOutstandingFee().orElseThrow());
+    }
+
+    @Test
     public void execute_feesListClear_removesStudentAndReindexes() throws Exception {
         Model model = new ModelManager();
         model.addPerson(new PersonBuilder().withName("Paid Student").build());
