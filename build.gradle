@@ -31,6 +31,9 @@ checkstyle {
 
 test {
     useJUnitPlatform()
+    // The JavaFX suite is gated by this variable, so changing it must rerun the tests
+    // rather than reuse reports and coverage from the other setting.
+    inputs.property('pocoUiTests', System.getenv('POCO_UI_TESTS') ?: 'unset')
     finalizedBy jacocoTestReport
 }
 
