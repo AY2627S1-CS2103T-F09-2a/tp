@@ -1,12 +1,17 @@
 package seedu.address.logic;
 
+import static java.util.Objects.requireNonNull;
+
+import java.util.Collection;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import seedu.address.logic.parser.Prefix;
 import seedu.address.model.person.Person;
+import seedu.address.model.tag.Tag;
 
 /**
  * Container for user visible messages.
@@ -25,6 +30,15 @@ public class Messages {
                 "Multiple values specified for the following single-valued field(s): ";
 
     /**
+     * Alphabetical order ignoring case, then character code (uppercase first) for names that differ only in case.
+     * Names are compared character by character, so length matters only when one name starts with the other,
+     * ignoring case: the shorter name comes first ({@code bio} before {@code biology}). Digits are compared as
+     * characters too, so {@code Sec10} comes before {@code Sec3}.
+     */
+    private static final Comparator<String> TAG_NAME_ORDER =
+            String.CASE_INSENSITIVE_ORDER.thenComparing(Comparator.naturalOrder());
+
+    /**
      * Returns an error message indicating the duplicate prefixes.
      */
     public static String getErrorMessageForDuplicatePrefixes(Prefix... duplicatePrefixes) {
@@ -37,9 +51,10 @@ public class Messages {
     }
 
     /**
-     * Formats the complete record of {@code person} for display to the user, one field per line.
-     * Missing contact fields are shown as {@value #NOT_PROVIDED} and an absent fee as {@value #NO_FEE}.
-     * Tags are listed in alphabetical order on a final line, which is omitted if there are none.
+     * Returns the details of {@code person} as text, one field per line, for example after {@code add} or
+     * {@code edit}. A missing phone, email or address is shown as {@value #NOT_PROVIDED}, and a missing fee as
+     * {@value #NO_FEE}. If {@code person} has tags, they are listed on the last line in the order of
+     * {@link #sortTagNames(Collection)}.
      */
     public static String format(Person person) {
         return "Name: " + person.getName()
@@ -53,16 +68,27 @@ public class Messages {
     }
 
     /**
-     * Returns a line listing the tags of {@code person} in alphabetical order, or an empty string if there are none.
+     * Returns a line listing the tags of {@code person} in the order of {@link #sortTagNames(Collection)},
+     * or an empty string if there are none.
      */
     private static String formatTags(Person person) {
         if (person.getTags().isEmpty()) {
             return "";
         }
-        return person.getTags().stream()
+        return "\nTags: " + String.join(", ", sortTagNames(person.getTags()));
+    }
+
+    /**
+     * Returns the names of {@code tags} in alphabetical order, ignoring case, so that {@code aMath} comes before
+     * {@code biology} and {@code Chemistry}. Names that differ only in case are then ordered by character code
+     * (uppercase first), so {@code Math} always comes before {@code math}.
+     */
+    public static List<String> sortTagNames(Collection<Tag> tags) {
+        requireNonNull(tags);
+        return tags.stream()
                 .map(tag -> tag.tagName)
-                .sorted(Comparator.naturalOrder())
-                .collect(Collectors.joining(", ", "\nTags: ", ""));
+                .sorted(TAG_NAME_ORDER)
+                .toList();
     }
 
 }

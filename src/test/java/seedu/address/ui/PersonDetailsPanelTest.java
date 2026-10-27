@@ -16,7 +16,7 @@ import javafx.scene.layout.VBox;
 import seedu.address.testutil.PersonBuilder;
 
 /**
- * Verifies that the details pane displays optional contact fields as user-facing text.
+ * Verifies how the details pane displays a student's fields, such as optional contact fields, the fee and tags.
  */
 @EnabledIfEnvironmentVariable(named = "POCO_UI_TESTS", matches = "true")
 public class PersonDetailsPanelTest {
@@ -46,6 +46,19 @@ public class PersonDetailsPanelTest {
             assertEquals("Email: Not provided", ((Label) content.lookup("#email")).getText());
             assertEquals("Address: Not provided", ((Label) content.lookup("#address")).getText());
             assertEquals("Outstanding fee: None", ((Label) content.lookup("#outstandingFee")).getText());
+            return null;
+        });
+        Platform.runLater(assertion);
+        assertion.get(10, TimeUnit.SECONDS);
+    }
+
+    @Test
+    public void showPerson_mixedCaseTags_listsTagsAlphabeticallyIgnoringCase() throws Exception {
+        FutureTask<Void> assertion = new FutureTask<>(() -> {
+            PersonDetailsPanel panel = new PersonDetailsPanel();
+            VBox content = (VBox) ((ScrollPane) panel.getRoot()).getContent();
+            panel.showPerson(new PersonBuilder().withTags("biology", "Chemistry", "aMath").build());
+            assertEquals("Tags: aMath, biology, Chemistry", ((Label) content.lookup("#tags")).getText());
             return null;
         });
         Platform.runLater(assertion);
