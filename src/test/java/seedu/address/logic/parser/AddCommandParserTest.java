@@ -213,8 +213,8 @@ public class AddCommandParserTest {
         assertParseFailure(parser, NAME_DESC_BOB + GUARDIAN_NAME_DESC_BOB + INVALID_GUARDIAN_PHONE_DESC,
                 GuardianPhone.MESSAGE_CONSTRAINTS);
 
-        // guardian phone with country code
-        assertParseFailure(parser, NAME_DESC_BOB + GUARDIAN_NAME_DESC_BOB + " gp/+65 9123 4567",
+        // guardian phone with a country code other than +65
+        assertParseFailure(parser, NAME_DESC_BOB + GUARDIAN_NAME_DESC_BOB + " gp/+60 9123 4567",
                 GuardianPhone.MESSAGE_CONSTRAINTS);
 
         // invalid phone

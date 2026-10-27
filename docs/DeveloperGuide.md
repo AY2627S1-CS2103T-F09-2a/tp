@@ -299,7 +299,7 @@ The `findguardian KEYWORD [MORE_KEYWORDS]...` command lists students whose guard
 
 #### Implementation
 
-`AddressBookParser` passes the arguments to `FindGuardianCommandParser`. The parser trims the arguments, normalizes them to Unicode NFC and splits them on whitespace. Each keyword must match `GuardianName.VALIDATION_REGEX`, so it may contain only letters, combining marks, digits, apostrophes, hyphens, periods and parentheses. Unlike a stored guardian name, a keyword does not need a letter, so phone keywords such as `9234-5678` are accepted. Empty input, or a keyword with any other character (such as the `/` in `g/Mei`), causes a `ParseException`, so the current filter is left unchanged. The keywords are wrapped in a `GuardianContainsKeywordsPredicate`, which is passed to a new `FindGuardianCommand`.
+`AddressBookParser` passes the arguments to `FindGuardianCommandParser`. The parser trims the arguments, normalizes them to Unicode NFC and splits them on whitespace. Each keyword must match `GuardianName.VALIDATION_REGEX` or be a valid `GuardianPhone`, so it may contain only letters, combining marks, digits, apostrophes, hyphens, periods and parentheses, or be a phone starting with `+65`. Unlike a stored guardian name, a keyword does not need a letter, so phone keywords such as `9234-5678` are accepted. Empty input, or a keyword with any other character (such as the `/` in `g/Mei`), causes a `ParseException`, so the current filter is left unchanged. The keywords are wrapped in a `GuardianContainsKeywordsPredicate`, which is passed to a new `FindGuardianCommand`.
 
 The sequence diagram below shows a successful `findguardian mei 9234-5678` call.
 
@@ -310,7 +310,7 @@ Diagram source: [FindGuardianSequenceDiagram.puml](diagrams/FindGuardianSequence
 `FindGuardianCommand#execute` calls `Model#updateFilteredPersonList` with the predicate. `GuardianContainsKeywordsPredicate#test` returns true when any keyword
 
 * equals a whole word of the guardian name, ignoring case (`StringUtil#containsWordIgnoreCase`), or
-* is a valid `GuardianPhone` that equals the stored guardian phone after its spaces and hyphens are removed, so `9234-5678` matches a guardian stored as `92345678`.
+* is a valid `GuardianPhone` that equals the stored guardian phone after its spaces, hyphens and `+65` country code are removed, so `9234-5678` and `+6592345678` match a guardian stored as `92345678`.
 
 The command then reports the size of the filtered list with the shared `N student(s) listed!` message. `FindGuardianCommand#shouldSaveAddressBook()` returns `false`, so `LogicManager` does not write to storage.
 

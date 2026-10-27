@@ -94,7 +94,7 @@ Format: `add n/NAME g/GUARDIAN_NAME gp/GUARDIAN_PHONE [p/PHONE] [e/EMAIL] [a/ADD
 * `n/NAME`, `g/GUARDIAN_NAME`, and `gp/GUARDIAN_PHONE` are required; `p/PHONE`, `e/EMAIL`, `a/ADDRESS`, and `f/AMOUNT` are optional.
 * Each prefix may appear at most once in an `add` command.
 * `ADDRESS` may contain text such as `c/o`, `Blk A/B`, or `N/A`. Other parameters must not contain unrecognised prefixes such as `t/`.
-* `PHONE` and `GUARDIAN_PHONE` must be 8-digit Singapore numbers starting with `6`, `8`, or `9` (spaces and hyphens between digits are allowed and removed when stored).
+* `PHONE` and `GUARDIAN_PHONE` must be 8-digit Singapore numbers starting with `6`, `8`, or `9`. They may start with the country code `+65`, e.g. `+65 9123 4567`. Spaces, hyphens and the country code are removed when stored.
 * `AMOUNT`, if provided, must be a positive amount between `0.01` and `99999.99` with up to 2 decimal places (and is stored to 2 decimal places).
 * Two students are considered duplicates if they share the same normalized student name (case-insensitive, with consecutive spaces collapsed) and the same normalized guardian phone number.
 
@@ -131,7 +131,7 @@ The result states `N student(s) with outstanding fees.` An empty result is succe
 Format: `findguardian KEYWORD [MORE_KEYWORDS]…​`
 
 * Matches whole guardian-name words without regard to case, or an exact guardian phone number.
-* Phone keywords accept hyphens between digits, such as `9234-5678`; a phone containing spaces must be typed without spaces so it remains one keyword.
+* Phone keywords accept hyphens between digits and the country code `+65`, such as `9234-5678` or `+6592345678`; a phone containing spaces must be typed without spaces so it remains one keyword.
 * Multiple keywords use OR matching. Partial name words and partial phone numbers do not match.
 * Searches all stored students, replaces the current filter and preserves stored order. Shared guardians can return multiple students.
 * Matching students are re-indexed from 1. Zero matches is a successful empty result.
