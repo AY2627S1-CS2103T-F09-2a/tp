@@ -1,36 +1,78 @@
 @startuml
 !include style.puml
-actor Tutor
-participant ":LogicManager" as Logic
-participant ":AddressBookParser" as Parser
-participant ":PaidCommand" as Paid
-participant ":Model" as Model
-participant ":Storage" as Storage
-Tutor -> Logic : execute("paid 1")
+skinparam ArrowFontStyle plain
+
+' Participant titles sit on the pale LOGIC_COLOR_T1 / MODEL_COLOR_T1 / STORAGE_COLOR_T1
+' header boxes. style.puml sets FontColor #FFFFFFF, which renders as white there, so this
+' diagram overrides it locally to keep the titles readable at the size the DG embeds them.
+' The same fix on the previous diagram is #179.
+skinparam Participant {
+    FontColor #000000
+}
+
+box Logic LOGIC_COLOR_T1
+participant ":LogicManager" as Logic LOGIC_COLOR
+participant ":AddressBookParser" as Parser LOGIC_COLOR
+participant "c:PaidCommand" as Paid LOGIC_COLOR
+end box
+
+box Model MODEL_COLOR_T1
+participant "m:Model" as Model MODEL_COLOR
+end box
+
+box Storage STORAGE_COLOR_T1
+participant ":Storage" as Storage STORAGE_COLOR
+end box
+
+[-> Logic : execute("paid 1")
 activate Logic
 Logic -> Parser : parseCommand("paid 1")
-Parser --> Logic : command
-Logic -> Paid : execute(model)
+activate Parser
+create Paid
+Parser -> Paid : new PaidCommand(Index 1)
+Parser --> Logic : c
+deactivate Parser
+
+Logic -> Paid : execute(m)
 activate Paid
 Paid -> Model : getFilteredPersonList()
+activate Model
 Model --> Paid : displayed students
+deactivate Model
 note over Paid
-Validate index and require a fee.
-Failure returns before any mutation.
+Reject an index outside the displayed list.
+Fail if the student has no outstanding fee,
+before any record is changed.
 end note
-Paid -> Model : setPerson(original, updatedWithoutFee)
-note over Model
-Keep active filter; a paid student
-no longer matches the fees filter.
+
+Paid -> Model : setPerson(student, studentWithoutFee)
+activate Model
+note over Paid, Model
+Copy every other field unchanged:
+name, optional contact details,
+guardian name and phone, tags.
 end note
-Paid --> Logic : payment feedback
- deactivate Paid
-Logic -> Storage : saveAddressBook(model.getAddressBook())
+Model --> Paid
+deactivate Model
+
+Paid --> Logic : r
+deactivate Paid
+
+Logic -> Paid : shouldSaveAddressBook()
+activate Paid
+Paid --> Logic : true
+deactivate Paid
+
+Logic -> Storage : saveAddressBook(m.getAddressBook())
+activate Storage
 Storage --> Logic : saved
+deactivate Storage
 note over Logic, Storage
+Save only when shouldSaveAddressBook() is true.
 A save failure is reported;
 in-memory changes may remain.
 end note
-Logic --> Tutor : payment feedback
- deactivate Logic
+
+[<-- Logic : r
+deactivate Logic
 @enduml
