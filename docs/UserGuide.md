@@ -229,6 +229,7 @@ Format: `view INDEX`
 * `INDEX` refers to the current displayed list, including results from `find`.
 * The record shows the student's name, phone, email, address, guardian name, guardian phone, outstanding fee, and tags. Missing student contact details show `Not provided` (for example, `Phone: Not provided`). An outstanding fee shows as `Outstanding fee: S$AMOUNT` to two decimal places; if there is none, it shows `Outstanding fee: None`.
 * The selected list card is highlighted. The result message names the student being viewed.
+* A long tag is cut off with `...` on the student card so that it fits. The record shows the full tag.
 * Viewing does not change the displayed list or saved data. An invalid index leaves the previous selection unchanged.
 * If a later search still includes the selected student, the selection stays on that student. If the search excludes them, the selection and details pane clear.
 * If you update the viewed student with `edit` or `setoutstanding`, the details pane shows the updated record while the student remains in the displayed list. Clearing their fee from a `fees` result clears the selection.
