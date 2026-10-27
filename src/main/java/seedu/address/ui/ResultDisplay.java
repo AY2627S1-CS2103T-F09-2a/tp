@@ -35,8 +35,16 @@ public class ResultDisplay extends UiPart<Region> {
     public void setFeedbackToUser(String feedbackToUser) {
         requireNonNull(feedbackToUser);
         resultDisplay.setText(feedbackToUser);
+        resultDisplay.setPrefRowCount(rowCountFor(feedbackToUser));
+    }
+
+    /**
+     * Returns the number of rows needed to show {@code feedbackToUser}, between {@code MIN_ROWS} and
+     * {@code MAX_ROWS}.
+     */
+    static int rowCountFor(String feedbackToUser) {
         int lineCount = feedbackToUser.split("\n", -1).length;
-        resultDisplay.setPrefRowCount(Math.max(MIN_ROWS, Math.min(MAX_ROWS, lineCount)));
+        return Math.max(MIN_ROWS, Math.min(MAX_ROWS, lineCount));
     }
 
 }
