@@ -9,7 +9,21 @@ title: Developer Guide
 
 ## **Acknowledgements**
 
-* _{List the sources of reused or adapted ideas, code, documentation, and third-party libraries here, with links to the originals.}_
+Poco Book is a brownfield project built on the **AddressBook-Level3 (AB3)** codebase that the CS2103T course supplies as the starting point for team projects (<https://github.com/se-edu/addressbook-level3>). The overall architecture, the Gradle build, the JavaFX scaffolding, the storage format and the structure of this Developer Guide follow AB3, which is the expected design reuse for a brownfield project. `build.gradle` lists the exact dependencies.
+
+Third-party libraries:
+
+* [JavaFX](https://openjfx.io/) 17.0.7 (`javafx-base`, `javafx-controls`, `javafx-fxml`, `javafx-graphics`) — the GUI toolkit.
+* [Jackson](https://github.com/FasterXML/jackson) 2.7 (`jackson-databind`, `jackson-datatype-jsr310`) — reading and writing the `addressbook.json` and `preferences.json` files.
+* [JUnit 5](https://junit.org/junit5/) — the test framework used by `src/test`.
+* [Gradle](https://gradle.org/), [Checkstyle](https://checkstyle.org/) and [JaCoCo](https://www.jacoco.org/jacoco/) — build, style checking and coverage reporting.
+
+Documentation and diagrams:
+
+* Diagrams are written in [PlantUML](https://plantuml.com/) and use the colour definitions and layout conventions from the SE-EDU [_PlantUML tutorial_](https://se-education.org/guides/tutorials/plantUml.html).
+* The documentation site uses [Jekyll](https://jekyllrb.com/) with the `_layouts`, `_includes` and `_sass` files carried over from AB3.
+
+**AI assistance.** Members used generative AI coding assistants during the project, for example to draft code and tests, to review documentation and to speed up repetitive editing. Each member reviewed the changes that they merged and remains responsible for the resulting behaviour.
 
 --------------------------------------------------------------------------------------------------------------------
 
@@ -268,7 +282,7 @@ The corresponding sources are `docs/diagrams/PaidSequenceDiagram.puml`, `FeeSumm
 
 * **Query vs mutation.** Only `paid` mutates and saves; `feesummary` opts out of saving so that a read-only command cannot report a save failure the user cannot act on.
 * **Exact money arithmetic.** Amounts use `BigDecimal` rather than `double`, so totals of many two-decimal fees cannot drift by a cent, and the summary can legitimately exceed the S$99999.99 per-student cap.
-* **Displayed index vs stored index.** Both commands act on the *displayed* list, matching `delete`, `edit`, `view` and `setoutstanding`. This keeps the mental model consistent, at the cost of the user needing to re-run `fees` after a payment because indexes shift.
+* **Displayed list vs complete book.** `paid` takes a one-based index into the *displayed* list, matching `delete`, `edit`, `view` and `setoutstanding`, so the student the tutor sees at that position is the student who is charged. `feesummary` deliberately does not: it totals every stored student, including students hidden by the current `find` or `fees` filter, because a filtered total is easy to misread as the amount still owed overall. The two commands therefore differ in scope on purpose, and both word their feedback to say which scope they used: `paid` names the student whose fee it cleared (`Marked outstanding fee as paid for Alex Yeoh: S$120.00`), while `feesummary` starts with `Across all stored students` and ends with `Displayed list unchanged`. The cost of the index-based `paid` is that the tutor may need to re-run `fees` after a payment, because indexes shift when a paid student stops matching the filter.
 * **Alternatives considered.** (a) Making `feesummary` respect the current filter was rejected because a filtered total is easy to misread as the amount still owed overall. (b) Making `paid` accept a partial amount was rejected for v1.4: it needs a payment-history model, which is a larger change than the iteration allows, so `setoutstanding INDEX 0` and `paid INDEX` both clear a whole fee. (c) Reusing `setoutstanding` with amount `0` instead of adding `paid` was considered, but a dedicated command gives clearer feedback (`S$AMOUNT` cleared) and cannot be confused with re-setting a fee.
 
 ### Editing guardian contact details
@@ -403,7 +417,23 @@ The following activity diagram summarizes what happens when a user executes a ne
   * Pros: Will use less memory (e.g. for `delete`, just save the person being deleted).
   * Cons: We must ensure that the implementation of each individual command is correct.
 
-_{more aspects and alternatives to be added}_
+**Aspect: Where history is committed:**
+
+* **Alternative 1 (current choice):** `LogicManager` commits after a successful command execution.
+  * Pros: One place decides when a state is worth recording, so a new command cannot forget to commit, and a command that throws never records a state.
+  * Cons: The history records every saving command, including a `setoutstanding` that restored the previous amount.
+* **Alternative 2:** Each `Command` calls `Model#commitAddressBook()` inside `execute`.
+  * Pros: The command decides whether its change is worth an undo step, so a no-op `setoutstanding` could be skipped.
+  * Cons: The rule is spread over every command, and a command that forgets the call silently loses its undo step.
+
+**Aspect: What is kept out of the history:**
+
+* **Alternative 1 (current choice):** Only saving commands are recorded, so `list`, `find`, `fees`, `findguardian` and `feesummary` leave the history untouched and `undo` always reverses a change to the stored records.
+  * Pros: `undo` is never spent on a display-only command, and the number of undo steps matches the number of changes the tutor made.
+  * Cons: `undo` does not restore the previous filter, so the displayed list after an `undo` can differ from the list before the undone command.
+* **Alternative 2:** Record every command, including display-only ones.
+  * Pros: `undo` would restore the exact previous view.
+  * Cons: A tutor who filtered a few times would need several `undo` commands before reaching the change they regret, which is worse for the common case.
 
 ### Command-specific help
 
@@ -423,7 +453,18 @@ file to catch accidental execution, filter replacement or storage writes.
 
 ### \[Proposed\] Data archiving
 
-_{Explain here how the data archiving feature will be implemented}_
+Archiving is **not implemented**; this section records the intended design so that a future iteration does not have to rediscover its constraints.
+
+**Goal:** keep the record of a student who has stopped lessons without leaving that student in the working list, and without losing the outstanding fee or the guardian contacts.
+
+**Proposed design:**
+
+* Add an `archived` boolean to `Person`, defaulting to `false`. `JsonAdaptedPerson` writes it as an optional field and treats a missing field as `false`, so an existing `addressbook.json` loads unchanged and no data-file migration is needed.
+* Add `archive INDEX` and `unarchive INDEX`, modelled on `paid`: both validate the displayed index, build a new immutable `Person` with the flag flipped, and call `Model#setPerson`. The flag lives in `Person` rather than in a separate list so that `find`, `fees` and `feesummary` keep working on one in-memory collection.
+* The predicate behind `list` excludes archived students. `find` and `findguardian` search every stored student, and archived matches carry a visible `Archived` label so the tutor can tell them apart. `feesummary` reports the archived total on a second line instead of adding it silently to the active total.
+* `archive` is not destructive, so it needs no confirmation dialog; `delete` remains the only command that removes a record.
+
+**Why it was not built in v1.5:** the change reaches the storage format, the model API, the default `list` filter and the fee totals at once. That is a larger change than a v1.5 bug fix, and it would put the pre-release data-format compatibility checks and the fee-total tests at risk while the team is in feature freeze. Recording the design here keeps the v1.5 claim honest: archiving is a proposal, not a delivered feature.
 
 
 --------------------------------------------------------------------------------------------------------------------
@@ -789,7 +830,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 These are quality targets for the intended Poco Book MVP, not claims that every target has already been achieved.
 
 1. **Portability:** The same executable JAR should launch and support the core student-management workflow on Windows, macOS, and Linux with Java 25 installed, without recompilation for each operating system.
-2. **Performance:** With up to 1,000 student records, at least 95% of valid `add`, `delete`, `find`, `list`, `view`, `fees`, and `setoutstanding` commands should update the result area and displayed list within 1 second on a reference laptop with at least 8 GB RAM and SSD storage. Measure 20 executions per command after startup; exclude deliberate debugger pauses.
+2. **Performance:** With up to 1,000 student records, at least 95% of valid commands — `add`, `edit`, `delete`, `clear`, `find`, `findguardian`, `list`, `view`, `fees`, `setoutstanding`, `paid`, `feesummary` and `help COMMAND` — should update the result area and displayed list within 1 second on a reference laptop with at least 8 GB RAM and SSD storage. Measure 20 executions per command after startup; exclude deliberate debugger pauses. This list names every command implemented in v1.5 apart from `exit`.
 3. **Usability:** After completing the User Guide's quick-start instructions, a first-time user should be able to add a student, find that student, list outstanding fees, and set or clear an outstanding fee using only the keyboard. Invalid input should produce an explanatory message without terminating the application.
 4. **Offline operation:** All core student-management commands should work without an Internet connection. The MVP should not require a remote account, remote database, or online payment service.
 5. **Reliability:** Following a successful data save and normal shutdown, restarting the application should restore the same student details, guardian contacts, and outstanding-fee values. Invalid commands should not modify student records. If a save fails, the application should report the failure rather than claim that the change is durably saved.
@@ -802,7 +843,7 @@ These are quality targets for the intended Poco Book MVP, not claims that every 
 * **Tutor**: The intended user: an independent small-group tutor who personally manages student records and fee follow-up using typed commands.
 * **Guardian**: A parent or other responsible adult whose contact details are associated with a student record. A guardian is not a separately indexed student record.
 * **Outstanding fee**: The positive amount in Singapore dollars currently recorded as owed for a student. It is not a payment history, invoice, or proof of a financial transaction.
-* **Cleared outstanding fee**: The recorded state after the tutor sets a student's outstanding fee to zero using `setoutstanding INDEX 0`. This updates the record; it does not transfer money or verify a bank payment. Partial payment tracking is outside the MVP.
+* **Cleared outstanding fee**: The recorded state after the tutor records a full payment with `paid INDEX`, or equivalently sets the amount to zero with `setoutstanding INDEX 0`. Both reach the same stored state; `paid INDEX` is the documented way to record a payment, and `setoutstanding INDEX AMOUNT` is used to correct an amount or to clear a fee that was recorded in error. Clearing a fee updates the record; it does not transfer money or verify a bank payment. Partial payment tracking is outside the MVP.
 * **Displayed list**: The ordered student records currently visible in the GUI, including results of `find` or `fees`. Hidden records remain stored even when they are not shown.
 * **Displayed index**: A one-based position in the current displayed list. Indices can change after filtering, deletion, or a fee update; they are not permanent student identifiers.
 * **MVP (Minimum Viable Product)**: The smallest coherent set of features without which the intended tutor cannot perform the essential student-management and outstanding-fee workflow.
