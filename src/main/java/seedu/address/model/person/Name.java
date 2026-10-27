@@ -38,7 +38,7 @@ public class Name {
 
     /**
      * Returns true if the name is valid after normalization, with 1-70 Unicode code points
-     * and at least one letter. Non-ASCII whitespace and control characters are rejected.
+     * and at least one letter outside S/O and D/O. Non-ASCII whitespace and control characters are rejected.
      */
     public static boolean isValidName(String test) {
         requireNonNull(test);
@@ -46,13 +46,13 @@ public class Name {
         int length = normalized.codePointCount(0, normalized.length());
         return length >= MIN_NAME_LENGTH && length <= MAX_NAME_LENGTH
                 && normalized.replaceAll(PATRONYMIC_REGEX, "SO").matches(VALIDATION_REGEX)
-                && normalized.codePoints().anyMatch(Character::isLetter);
+                && normalized.replaceAll(PATRONYMIC_REGEX, "").codePoints().anyMatch(Character::isLetter);
     }
 
     /**
      * Returns the NFC name with surrounding ASCII spaces removed and internal ASCII spaces collapsed.
      */
-    private static String normalize(String name) {
+    static String normalize(String name) {
         return Normalizer.normalize(name, Normalizer.Form.NFC)
                 .replaceAll("^ +| +$", "")
                 .replaceAll(" +", " ");

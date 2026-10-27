@@ -101,6 +101,9 @@ public class GuardianNameTest {
         assertFalse(GuardianName.isValidName("Ravi S/Oh Raj"));
         assertFalse(GuardianName.isValidName("Ravi XS/O Raj"));
         assertFalse(GuardianName.isValidName("Ravi / Raj"));
+
+        // a marker alone is not a name
+        assertFalse(GuardianName.isValidName("S/O"));
     }
 
     @Test
