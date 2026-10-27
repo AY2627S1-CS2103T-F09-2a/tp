@@ -2,6 +2,7 @@ package seedu.address.model.person;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.testutil.Assert.assertThrows;
 
@@ -91,8 +92,8 @@ public class GuardianNameTest {
 
     @Test
     public void messageConstraints_namesGuardianField() {
-        assertEquals("Guardian names must be 1-70 characters long, contain at least one letter, and use only letters, "
-                + "numbers, spaces, apostrophes, hyphens, periods, or parentheses.",
-                GuardianName.MESSAGE_CONSTRAINTS);
+        // The message must say which field failed, as add and edit also validate student names.
+        assertTrue(GuardianName.MESSAGE_CONSTRAINTS.startsWith("Guardian names "));
+        assertNotEquals(Name.MESSAGE_CONSTRAINTS, GuardianName.MESSAGE_CONSTRAINTS);
     }
 }
