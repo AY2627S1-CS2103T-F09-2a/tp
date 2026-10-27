@@ -288,6 +288,8 @@ Format: `exit`
 
 Poco Book saves student data automatically. You do not need to save manually.
 
+If saving fails, for example because the disk is full, Poco Book shows an error, and the data file still holds the data from the last successful save. If Poco Book closes unexpectedly while saving, a file ending in `.tmp`, such as `addressbook.json.5784445305140543549.tmp`, may be left in the `data` folder or beside the JAR file. Poco Book does not use it, so you can delete it.
+
 ### Editing the data file
 
 Poco Book data is saved automatically as a JSON file `[JAR file location]/data/addressbook.json`. Advanced users are welcome to update data directly by editing that data file.
