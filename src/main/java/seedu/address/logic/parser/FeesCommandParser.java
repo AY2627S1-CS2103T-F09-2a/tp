@@ -84,12 +84,12 @@ public class FeesCommandParser implements Parser<FeesCommand> {
             throw new ParseException(MESSAGE_MISSING_MINIMUM);
         }
         if (!amount.matches(OutstandingFee.VALIDATION_REGEX)) {
-            logger.fine("Rejected fees command: invalid minimum amount.");
+            logger.fine("Rejected fees command: invalid minimum amount format.");
             throw new ParseException(String.format(MESSAGE_INVALID_MINIMUM, amount));
         }
         BigDecimal minimumAmount = new BigDecimal(amount);
         if (minimumAmount.compareTo(MAXIMUM_AMOUNT) > 0) {
-            logger.fine("Rejected fees command: invalid minimum amount.");
+            logger.fine("Rejected fees command: minimum amount exceeds the supported maximum.");
             throw new ParseException(String.format(MESSAGE_INVALID_MINIMUM, amount));
         }
         return minimumAmount;
