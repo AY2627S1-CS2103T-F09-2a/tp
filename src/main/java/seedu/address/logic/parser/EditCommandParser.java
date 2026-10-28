@@ -57,14 +57,30 @@ public class EditCommandParser implements Parser<EditCommand> {
         if (argMultimap.getValue(PREFIX_NAME).isPresent()) {
             editPersonDescriptor.setName(ParserUtil.parseName(argMultimap.getValue(PREFIX_NAME).get()));
         }
-        if (argMultimap.getValue(PREFIX_PHONE).isPresent()) {
-            editPersonDescriptor.setPhone(ParserUtil.parsePhone(argMultimap.getValue(PREFIX_PHONE).get()));
+        // An optional contact prefix with no value, such as p/, removes that field.
+        Optional<String> phone = argMultimap.getValue(PREFIX_PHONE);
+        if (phone.isPresent()) {
+            if (phone.get().isBlank()) {
+                editPersonDescriptor.clearPhone();
+            } else {
+                editPersonDescriptor.setPhone(ParserUtil.parsePhone(phone.get()));
+            }
         }
-        if (argMultimap.getValue(PREFIX_EMAIL).isPresent()) {
-            editPersonDescriptor.setEmail(ParserUtil.parseEmail(argMultimap.getValue(PREFIX_EMAIL).get()));
+        Optional<String> email = argMultimap.getValue(PREFIX_EMAIL);
+        if (email.isPresent()) {
+            if (email.get().isBlank()) {
+                editPersonDescriptor.clearEmail();
+            } else {
+                editPersonDescriptor.setEmail(ParserUtil.parseEmail(email.get()));
+            }
         }
-        if (argMultimap.getValue(PREFIX_ADDRESS).isPresent()) {
-            editPersonDescriptor.setAddress(ParserUtil.parseAddress(argMultimap.getValue(PREFIX_ADDRESS).get()));
+        Optional<String> address = argMultimap.getValue(PREFIX_ADDRESS);
+        if (address.isPresent()) {
+            if (address.get().isBlank()) {
+                editPersonDescriptor.clearAddress();
+            } else {
+                editPersonDescriptor.setAddress(ParserUtil.parseAddress(address.get()));
+            }
         }
         if (argMultimap.getValue(PREFIX_GUARDIAN_NAME).isPresent()) {
             editPersonDescriptor.setGuardianName(
