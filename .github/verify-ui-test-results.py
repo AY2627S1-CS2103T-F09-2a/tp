@@ -16,8 +16,9 @@ import re
 import sys
 
 DEFAULT_RESULTS = os.path.join("build", "test-results", "test")
+# Matches the annotation whatever the order of its arguments, e.g. with matches = "true" first
 GATED_ANNOTATION = re.compile(
-    r'EnabledIfEnvironmentVariable\s*\(\s*named\s*=\s*"POCO_UI_TESTS"\s*(?:,\s*matches\s*=\s*"true"\s*)?\)')
+    r'EnabledIfEnvironmentVariable\s*\([^)]*\bnamed\s*=\s*"POCO_UI_TESTS"[^)]*\)')
 WHITESPACE = re.compile(r"\s+")
 PACKAGE_PATTERN = re.compile(r"^\s*package\s+([\w.]+)\s*;", re.MULTILINE)
 # Only the opening <testsuite ...> tag is read: its attributes hold every count needed,
