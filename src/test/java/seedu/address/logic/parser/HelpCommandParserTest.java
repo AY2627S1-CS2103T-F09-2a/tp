@@ -24,6 +24,8 @@ public class HelpCommandParserTest {
     @Test
     public void parse_commandWord_returnsTargetedHelp() throws Exception {
         assertEquals(new HelpCommand("paid"), parser.parse(" \tpaid \t"));
+        // Unicode spaces such as U+2003 (em space) around the target are removed too
+        assertEquals(new HelpCommand("paid"), parser.parse(" paid "));
         assertEquals(new HelpCommand("help"), parser.parse("help"));
     }
 
