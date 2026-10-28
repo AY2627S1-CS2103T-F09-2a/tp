@@ -202,11 +202,17 @@ public class AddCommandParserTest {
     }
 
     @Test
+    public void parse_unknownPrefixAfterTag_failure() {
+        assertParseFailure(parser, ALL_DESC_BOB + " t/Math x/foo",
+                String.format(MESSAGE_INVALID_COMMAND_FORMAT, AddCommand.MESSAGE_USAGE));
+    }
+
+    @Test
     public void parse_invalidTag_failure() {
         assertParseFailure(parser, ALL_DESC_BOB + INVALID_TAG_DESC, Tag.MESSAGE_CONSTRAINTS);
 
         // empty tag
-        assertParseFailure(parser, ALL_DESC_BOB + " t/", Tag.MESSAGE_CONSTRAINTS);
+        assertParseFailure(parser, ALL_DESC_BOB + " t/", AddCommandParser.MESSAGE_EMPTY_TAG);
     }
 
     @Test

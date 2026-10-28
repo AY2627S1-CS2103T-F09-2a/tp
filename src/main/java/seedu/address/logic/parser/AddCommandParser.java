@@ -35,6 +35,7 @@ import seedu.address.model.tag.Tag;
  */
 public class AddCommandParser implements Parser<AddCommand> {
 
+    public static final String MESSAGE_EMPTY_TAG = "A tag cannot be empty. Omit t/ to add a student without tags.";
     public static final String MESSAGE_MISSING_PARAMETER = "Missing required parameter: %1$s.";
     public static final String MESSAGE_REPEATED_PARAMETER = "The %1$s parameter must not be repeated.";
 
@@ -82,6 +83,9 @@ public class AddCommandParser implements Parser<AddCommand> {
         Address address = parseOptional(argMultimap.getValue(PREFIX_ADDRESS), ParserUtil::parseAddress);
         OutstandingFee outstandingFee =
                 parseOptional(argMultimap.getValue(PREFIX_OUTSTANDING_FEE), ParserUtil::parseOutstandingFee);
+        if (argMultimap.getAllValues(PREFIX_TAG).stream().anyMatch(String::isEmpty)) {
+            throw new ParseException(MESSAGE_EMPTY_TAG);
+        }
         Set<Tag> tags = ParserUtil.parseTags(argMultimap.getAllValues(PREFIX_TAG));
 
         Person person = new Person(name, phone, email, address, guardianName, guardianPhone, outstandingFee, tags);
@@ -95,7 +99,7 @@ public class AddCommandParser implements Parser<AddCommand> {
      * {@code Blk A/B}.
      */
     private static boolean hasUnknownPrefix(ArgumentMultimap argMultimap) {
-        return PARAMETER_NAMES.keySet().stream()
+        return Stream.concat(PARAMETER_NAMES.keySet().stream(), Stream.of(PREFIX_TAG))
                 .filter(prefix -> !prefix.equals(PREFIX_ADDRESS))
                 .flatMap(prefix -> argMultimap.getAllValues(prefix).stream())
                 .anyMatch(value -> PREFIX_LIKE_TOKEN.matcher(value).find());
