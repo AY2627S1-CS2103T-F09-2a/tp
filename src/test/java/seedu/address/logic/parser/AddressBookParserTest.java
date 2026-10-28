@@ -13,6 +13,7 @@ import java.util.Locale;
 import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.Isolated;
 
 import seedu.address.logic.commands.AddCommand;
 import seedu.address.logic.commands.ClearCommand;
@@ -32,6 +33,11 @@ import seedu.address.testutil.EditPersonDescriptorBuilder;
 import seedu.address.testutil.PersonBuilder;
 import seedu.address.testutil.PersonUtil;
 
+/**
+ * Tests {@code AddressBookParser}. The class runs in isolation because one test changes the JVM-wide default locale,
+ * which must not affect tests in other classes if JUnit parallel execution is ever enabled.
+ */
+@Isolated
 public class AddressBookParserTest {
 
     private final AddressBookParser parser = new AddressBookParser();
