@@ -525,7 +525,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 * 2a. Poco Book is unable to save the data.
 
-    * 2a1. Poco Book shows an error message that the data could not be saved. The change is kept only until Poco Book is closed.
+    * 2a1. Poco Book shows an error message that the data could not be saved. The change stays in the app while it is open. The next successful save, after any later change, also writes it to the data file; if Poco Book is closed before then, the change is lost.
 
       Use case ends.
 
@@ -638,7 +638,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 * 5a. Poco Book is unable to save the data.
 
-    * 5a1. Poco Book shows an error message that the data could not be saved. The change is kept only until Poco Book is closed.
+    * 5a1. Poco Book shows an error message that the data could not be saved. The change stays in the app while it is open. The next successful save, after any later change, also writes it to the data file; if Poco Book is closed before then, the change is lost.
 
       Use case ends.
 
@@ -709,7 +709,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 * 3b. Poco Book is unable to save the data.
 
-    * 3b1. Poco Book shows an error message that the data could not be saved. The change is kept only until Poco Book is closed.
+    * 3b1. Poco Book shows an error message that the data could not be saved. The change stays in the app while it is open. The next successful save, after any later change, also writes it to the data file; if Poco Book is closed before then, the change is lost.
 
       Use case ends.
 
@@ -780,7 +780,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 * 3a. Poco Book is unable to save the data.
 
-    * 3a1. Poco Book shows an error message that the data could not be saved. The change is kept only until Poco Book is closed.
+    * 3a1. Poco Book shows an error message that the data could not be saved. The change stays in the app while it is open. The next successful save, after any later change, also writes it to the data file; if Poco Book is closed before then, the change is lost.
 
       Use case ends.
 
