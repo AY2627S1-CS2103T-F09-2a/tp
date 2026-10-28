@@ -11,7 +11,7 @@ public class Email {
 
     public static final String MESSAGE_CONSTRAINTS =
             "Emails must be one valid address such as student@example.com, without spaces. The part before @ "
-            + "may use only letters, digits, periods, underscores, plus signs and hyphens.";
+            + "may use only ASCII letters (A-Z, a-z), digits, periods, underscores, plus signs and hyphens.";
 
     private static final int MAX_LENGTH = 254;
     private static final String LOCAL_PART_REGEX = "(?=.{1,64}@)[A-Za-z0-9_+\\-]+(\\.[A-Za-z0-9_+\\-]+)*";
