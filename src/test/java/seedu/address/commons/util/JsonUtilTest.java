@@ -72,6 +72,13 @@ public class JsonUtilTest {
     }
 
     @Test
+    public void fromJsonString_unknownField_ignoredOnRead() throws IOException {
+        String jsonWithUnknown = "{ \"name\" : \"Some Name\", \"unknownField\" : \"extra data\" }";
+        SerializableTestClass result = JsonUtil.fromJsonString(jsonWithUnknown, SerializableTestClass.class);
+        assertEquals("Some Name", result.getName());
+    }
+
+    @Test
     public void fromJsonString_duplicateField_throwsIoException() {
         String duplicateTopLevelField = "{ \"name\" : \"First\", \"name\" : \"Second\" }";
         String duplicateNestedField = "{ \"mapOfIntegerToString\" : { \"1\" : \"One\", \"1\" : \"Uno\" } }";
