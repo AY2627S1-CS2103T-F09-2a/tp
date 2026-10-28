@@ -101,7 +101,7 @@ Format: `add n/NAME g/GUARDIAN_NAME gp/GUARDIAN_PHONE [p/PHONE] [e/EMAIL] [a/ADD
 Examples:
 * `add n/Alex Tan g/Mei Tan gp/92345678`
 * `add n/Riya Kumar g/Anil Kumar gp/97654321 p/98765432 e/riya@example.com a/12 Clementi Ave 3 f/75.50`
-* `add n/Wei Ling g/Tan Mei gp/91234567 t/Math t/Sec3` Adds a student with the tags `Math` and `Sec3`.
+* `add n/Wei Ling g/Tan Mei gp/91234567 t/Math t/Sec3`: Adds a student with the tags `Math` and `Sec3`.
 
 ### Listing all students: `list`
 
