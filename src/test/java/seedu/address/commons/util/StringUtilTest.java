@@ -128,6 +128,33 @@ public class StringUtilTest {
         assertTrue(StringUtil.containsWordIgnoreCase("AAA bBb ccc  bbb", "bbB"));
     }
 
+    @Test
+    public void containsWordIgnoreCaseAndEdgePunctuation_validInputs_correctResult() {
+        // Sentence word has punctuation at its end or around it
+        assertTrue(StringUtil.containsWordIgnoreCaseAndEdgePunctuation("Wei Ming Tan.", "Tan"));
+        assertTrue(StringUtil.containsWordIgnoreCaseAndEdgePunctuation("Ali (Junior)", "junior"));
+
+        // Query word has punctuation that the sentence word does not
+        assertTrue(StringUtil.containsWordIgnoreCaseAndEdgePunctuation("Wei Ming Tan", "Tan."));
+
+        // Exact matches, including punctuation, still match
+        assertTrue(StringUtil.containsWordIgnoreCaseAndEdgePunctuation("Wei Ming Tan.", "tan."));
+
+        // Punctuation inside a word is kept, so only full words match
+        assertFalse(StringUtil.containsWordIgnoreCaseAndEdgePunctuation("Mary-Ann Lim", "Mary"));
+        assertFalse(StringUtil.containsWordIgnoreCaseAndEdgePunctuation("Ali (Junior)", "Jun"));
+
+        // Query word made only of punctuation matches only the same text
+        assertFalse(StringUtil.containsWordIgnoreCaseAndEdgePunctuation("Wei Ming Tan.", "."));
+        assertTrue(StringUtil.containsWordIgnoreCaseAndEdgePunctuation("A . B", "."));
+    }
+
+    @Test
+    public void containsWordIgnoreCaseAndEdgePunctuation_emptyWord_throwsIllegalArgumentException() {
+        assertThrows(IllegalArgumentException.class, "Word parameter cannot be empty", ()
+            -> StringUtil.containsWordIgnoreCaseAndEdgePunctuation("typical sentence", "  "));
+    }
+
     //---------------- Tests for getDetails --------------------------------------
 
     /*
