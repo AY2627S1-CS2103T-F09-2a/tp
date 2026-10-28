@@ -3,7 +3,8 @@
 skinparam ArrowFontStyle plain
 
 ' Participant titles sit on the pale LOGIC_COLOR_T1 / MODEL_COLOR_T1 / STORAGE_COLOR_T1
-' header boxes. style.puml sets FontColor #FFFFFFF, which renders as white there, so this
+' header boxes. style.puml sets FontColor #FFFFFFF (written there with seven Fs), which renders
+' as white on those boxes, so this
 ' diagram overrides it locally to keep the titles readable at the size the DG embeds them.
 ' The same fix on the previous diagram is #179.
 skinparam Participant {
@@ -13,6 +14,7 @@ skinparam Participant {
 box Logic LOGIC_COLOR_T1
 participant ":LogicManager" as Logic LOGIC_COLOR
 participant ":AddressBookParser" as Parser LOGIC_COLOR
+participant ":PaidCommandParser" as PaidParser LOGIC_COLOR
 participant "c:PaidCommand" as Paid LOGIC_COLOR
 end box
 
@@ -28,8 +30,18 @@ end box
 activate Logic
 Logic -> Parser : parseCommand("paid 1")
 activate Parser
+create PaidParser
+Parser -> PaidParser : new PaidCommandParser()
+Parser -> PaidParser : parse(" 1")
+activate PaidParser
+note over PaidParser
+Parse a positive index without
+leading zeros, signs or extra tokens.
+end note
 create Paid
-Parser -> Paid : new PaidCommand(Index 1)
+PaidParser -> Paid : new PaidCommand(Index 1)
+PaidParser --> Parser : c
+deactivate PaidParser
 Parser --> Logic : c
 deactivate Parser
 
@@ -41,16 +53,19 @@ Model --> Paid : displayed students
 deactivate Model
 note over Paid
 Reject an index outside the displayed list.
-Fail if the student has no outstanding fee,
+student = displayed students.get(0)
+Fail if student has no outstanding fee,
 before any record is changed.
+studentWithoutFee = copy of student with
+every other field unchanged and no fee.
 end note
 
 Paid -> Model : setPerson(student, studentWithoutFee)
 activate Model
-note over Paid, Model
-Copy every other field unchanged:
-name, optional contact details,
-guardian name and phone, tags.
+note over Model
+Keep the active filter: after a fees
+search, the paid student leaves the
+displayed list and later indexes shift up.
 end note
 Model --> Paid
 deactivate Model
