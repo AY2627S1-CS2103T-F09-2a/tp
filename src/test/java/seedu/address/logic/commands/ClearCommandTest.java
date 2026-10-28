@@ -1,7 +1,6 @@
 package seedu.address.logic.commands;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static seedu.address.logic.commands.CommandTestUtil.assertCommandSuccess;
 import static seedu.address.testutil.TypicalPersons.getTypicalAddressBook;
 
@@ -33,7 +32,6 @@ public class ClearCommandTest {
 
     @Test
     public void messageSuccess_usesProductName() {
-        assertTrue(ClearCommand.MESSAGE_SUCCESS.contains("Poco Book"));
-        assertFalse(ClearCommand.MESSAGE_SUCCESS.contains("Address Book"));
+        assertEquals("All students have been cleared from Poco Book.", ClearCommand.MESSAGE_SUCCESS);
     }
 }

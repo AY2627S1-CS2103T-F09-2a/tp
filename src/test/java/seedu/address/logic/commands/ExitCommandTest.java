@@ -1,7 +1,7 @@
 package seedu.address.logic.commands;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.logic.commands.CommandTestUtil.assertCommandSuccess;
 import static seedu.address.logic.commands.ExitCommand.MESSAGE_EXIT_ACKNOWLEDGEMENT;
 
@@ -27,7 +27,6 @@ public class ExitCommandTest {
 
     @Test
     public void messageExitAcknowledgement_usesProductName() {
-        assertTrue(MESSAGE_EXIT_ACKNOWLEDGEMENT.contains("Poco Book"));
-        assertFalse(MESSAGE_EXIT_ACKNOWLEDGEMENT.contains("Address Book"));
+        assertEquals("Exiting Poco Book as requested ...", MESSAGE_EXIT_ACKNOWLEDGEMENT);
     }
 }
