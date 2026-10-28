@@ -9,6 +9,7 @@ import static seedu.address.testutil.TypicalPersons.IDA;
 import static seedu.address.testutil.TypicalPersons.getTypicalAddressBook;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
@@ -65,6 +66,20 @@ public class JsonAddressBookStorageTest {
     @Test
     public void readAddressBook_invalidOutstandingFeeAddressBook_throwDataLoadingException() {
         assertThrows(DataLoadingException.class, () -> readAddressBook("invalidOutstandingFeeAddressBook.json"));
+    }
+
+    @Test
+    public void readAndSaveAddressBook_unknownFields_ignoredOnReadAndDroppedOnSave() throws Exception {
+        ReadOnlyAddressBook readBack = readAddressBook("unknownFieldsAddressBook.json").get();
+        AddressBook expected = new AddressBook();
+        expected.addPerson(ALICE);
+        assertEquals(expected, new AddressBook(readBack));
+
+        Path filePath = testFolder.resolve("TempAddressBook.json");
+        new JsonAddressBookStorage(filePath).saveAddressBook(readBack);
+        String savedJson = Files.readString(filePath);
+        assertFalse(savedJson.contains("schemaVersion"));
+        assertFalse(savedJson.contains("lessonNotes"));
     }
 
     @Test

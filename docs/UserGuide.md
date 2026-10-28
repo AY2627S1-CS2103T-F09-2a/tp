@@ -294,7 +294,8 @@ Poco Book data is saved automatically as a JSON file `[JAR file location]/data/a
 
 <div markdown="span" class="alert alert-warning">:exclamation: **Caution:**
 If an edit makes the data file invalid, Poco Book starts with an empty address book next time. The invalid file stays on disk until a command that changes data, such as `add`, overwrites it. Commands that only display data, such as `list`, `find`, `fees`, `view`, `help`, and `exit`, do not save. Back up the file before editing it.<br>
-Furthermore, certain edits can cause Poco Book to behave in unexpected ways (e.g., if a value entered is outside of the acceptable range). Therefore, edit the data file only if you are confident that you can update it correctly.
+Furthermore, certain edits can cause Poco Book to behave in unexpected ways (e.g., if a value entered is outside of the acceptable range). Therefore, edit the data file only if you are confident that you can update it correctly.<br>
+Fields that Poco Book does not recognise, such as a field you add for lesson notes, are ignored when the file is loaded and removed the next time Poco Book saves.
 </div>
 
 ### Archiving data files `[coming in v2.0]`
