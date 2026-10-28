@@ -31,6 +31,8 @@ public class Messages {
 
     /**
      * Alphabetical order ignoring case, then character code (uppercase first) for names that differ only in case.
+     * The second rule matters only if the names to sort include some that differ only in case. It makes their order
+     * the same every time, rather than dependent on the order in which they are given.
      * Names are compared character by character, so length matters only when one name starts with the other,
      * ignoring case: the shorter name comes first ({@code bio} before {@code biology}). Digits are compared as
      * characters too, so {@code Sec10} comes before {@code Sec3}.
