@@ -10,11 +10,8 @@ import static seedu.address.commons.util.AppUtil.checkArgument;
  */
 public final class GuardianPhone {
 
-    public static final String MESSAGE_CONSTRAINTS =
-            "Phone numbers must be 8 digits starting with 6, 8, or 9, optionally after +65. "
-            + "Spaces and hyphens are allowed.";
-    public static final String VALIDATION_REGEX = "(?:\\+65[ -]*)?[689](?:[ -]*[0-9]){7}";
-    private static final String COUNTRY_CODE = "+65";
+    public static final String MESSAGE_CONSTRAINTS = Phone.MESSAGE_CONSTRAINTS;
+    public static final String VALIDATION_REGEX = Phone.VALIDATION_REGEX;
 
     private final String value;
 
@@ -26,7 +23,7 @@ public final class GuardianPhone {
     public GuardianPhone(String phone) {
         requireNonNull(phone);
         checkArgument(isValidPhone(phone), MESSAGE_CONSTRAINTS);
-        value = normalize(phone);
+        value = Phone.normalize(phone);
     }
 
     /**
@@ -34,17 +31,7 @@ public final class GuardianPhone {
      * with surrounding ASCII spaces and spaces or hyphens between digits allowed.
      */
     public static boolean isValidPhone(String test) {
-        requireNonNull(test);
-        String trimmed = test.replaceAll("^ +| +$", "");
-        return trimmed.matches(VALIDATION_REGEX);
-    }
-
-    /**
-     * Returns the phone number without ASCII spaces, hyphens and the {@code +65} country code.
-     */
-    private static String normalize(String phone) {
-        String digits = phone.replace(" ", "").replace("-", "");
-        return digits.startsWith(COUNTRY_CODE) ? digits.substring(COUNTRY_CODE.length()) : digits;
+        return Phone.isValidPhone(test);
     }
 
     public String getValue() {

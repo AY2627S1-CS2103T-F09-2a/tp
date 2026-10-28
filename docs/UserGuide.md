@@ -131,7 +131,7 @@ The result states `N student(s) with outstanding fees.` An empty result is succe
 Format: `findguardian KEYWORD [MORE_KEYWORDS]…​`
 
 * Matches whole guardian-name words without regard to case, or an exact guardian phone number.
-* Phone keywords accept hyphens between digits and the country code `+65`, such as `9234-5678` or `+6592345678`; a phone containing spaces must be typed without spaces so it remains one keyword.
+* Phone keywords accept hyphens between digits and the country code `+65`, such as `9234-5678` or `+6592345678`; a phone containing spaces must be typed without spaces so it remains one keyword. For example, type `findguardian +6597654321` for the phone `+65 9765 4321`.
 * Multiple keywords use OR matching. Partial name words and partial phone numbers do not match.
 * Searches all stored students, replaces the current filter and preserves stored order. Shared guardians can return multiple students.
 * Matching students are re-indexed from 1. Zero matches is a successful empty result.

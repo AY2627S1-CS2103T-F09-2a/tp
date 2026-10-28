@@ -25,8 +25,7 @@ public class Phone {
     public Phone(String phone) {
         requireNonNull(phone);
         checkArgument(isValidPhone(phone), MESSAGE_CONSTRAINTS);
-        String digits = phone.replace(" ", "").replace("-", "");
-        value = digits.startsWith(COUNTRY_CODE) ? digits.substring(COUNTRY_CODE.length()) : digits;
+        value = normalize(phone);
     }
 
     /**
@@ -36,6 +35,14 @@ public class Phone {
     public static boolean isValidPhone(String test) {
         requireNonNull(test);
         return test.replaceAll("^ +| +$", "").matches(VALIDATION_REGEX);
+    }
+
+    /**
+     * Returns a validated phone without spaces, hyphens or the Singapore country code.
+     */
+    static String normalize(String phone) {
+        String digits = phone.replace(" ", "").replace("-", "");
+        return digits.startsWith(COUNTRY_CODE) ? digits.substring(COUNTRY_CODE.length()) : digits;
     }
 
     @Override
