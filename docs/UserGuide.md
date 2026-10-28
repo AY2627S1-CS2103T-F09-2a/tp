@@ -19,6 +19,10 @@ Poco Book is a **desktop application for independent tutors to manage students, 
 
 1. Copy the file to the folder you want to use as the _home folder_ for Poco Book.
 
+   **Use only one running Poco Book instance per home folder.** Two instances do not synchronize changes to
+   `data/addressbook.json`; even if they save at different times, one can overwrite records saved by the other.
+   Running multiple instances against the same folder is unsupported and may result in lost changes.
+
 1. Open a terminal, `cd` to the folder containing the JAR file, and run `java -jar addressbook.jar`.<br>
    A GUI similar to the one below should appear in a few seconds. Note how the app contains some sample data.<br>
    ![Ui](images/Ui.png)
@@ -307,6 +311,11 @@ _Details coming soon ..._
 
 **Q**: How do I transfer my data to another computer?<br>
 **A**: Install the app on the other computer and overwrite the data file it creates with the data file from your previous Poco Book home folder.
+
+**Q**: Can I edit the same home folder in two open windows?<br>
+**A**: No. Using two running instances with one home folder is unsupported. Each keeps its own copy of the records
+in memory, and saving from an instance with older data can overwrite newer saved changes. Close all instances and
+reopen just one before editing that folder again; use a backup if changes have already been lost.
 
 --------------------------------------------------------------------------------------------------------------------
 

@@ -167,6 +167,12 @@ The `Storage` component,
 * is implemented by `StorageManager`, which delegates the actual JSON file access to `JsonAddressBookStorage` and `JsonUserPrefsStorage` (one class per data file).
 * depends on some classes in the `Model` component (because the `Storage` component's job is to save/retrieve objects that belong to the `Model`)
 
+**Supported usage constraint:** Only one running Poco Book instance may use a given home folder at a time.
+Each instance loads its own in-memory copy of `data/addressbook.json`, and `LogicManager` saves that copy
+after a data-changing command. The app does not synchronize instances or detect stale copies: a later save
+from an older instance can silently replace records saved by another instance. Concurrent use of the same
+home folder is outside the supported workflow; users are warned in the User Guide's quick start and FAQ.
+
 ### Common classes
 
 Classes used by multiple components are in the `seedu.address.commons` package.
