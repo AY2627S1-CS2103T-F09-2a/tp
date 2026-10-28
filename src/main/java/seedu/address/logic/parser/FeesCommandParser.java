@@ -15,6 +15,8 @@ import seedu.address.model.person.OutstandingFee;
  */
 public class FeesCommandParser implements Parser<FeesCommand> {
 
+    public static final BigDecimal MAXIMUM_AMOUNT = new BigDecimal("99999.99");
+
     public static final String MESSAGE_UNEXPECTED_ARGUMENT =
             "Unexpected input: %1$s. fees takes only an optional min/AMOUNT.\n" + FeesCommand.MESSAGE_USAGE;
     public static final String MESSAGE_REPEATED_MINIMUM =
@@ -22,11 +24,10 @@ public class FeesCommandParser implements Parser<FeesCommand> {
     public static final String MESSAGE_MISSING_MINIMUM =
             "Missing minimum amount after min/.\n" + FeesCommand.MESSAGE_USAGE;
     public static final String MESSAGE_INVALID_MINIMUM = "Invalid minimum amount: %1$s. The minimum must be from 0 "
-            + "to 99999.99, with at most two decimal places and no sign or exponent.";
+            + "to " + MAXIMUM_AMOUNT.toPlainString() + ", with at most two decimal places and no sign or exponent.";
 
     private static final Logger logger = LogsCenter.getLogger(FeesCommandParser.class);
     private static final Prefix PREFIX_MINIMUM = new Prefix("min/");
-    private static final BigDecimal MAXIMUM_AMOUNT = new BigDecimal("99999.99");
 
     /**
      * Parses the given {@code String} of arguments in the context of the FeesCommand.
@@ -82,11 +83,15 @@ public class FeesCommandParser implements Parser<FeesCommand> {
             logger.fine("Rejected fees command: missing minimum amount.");
             throw new ParseException(MESSAGE_MISSING_MINIMUM);
         }
-        if (!amount.matches(OutstandingFee.VALIDATION_REGEX)
-                || new BigDecimal(amount).compareTo(MAXIMUM_AMOUNT) > 0) {
+        if (!amount.matches(OutstandingFee.VALIDATION_REGEX)) {
             logger.fine("Rejected fees command: invalid minimum amount.");
             throw new ParseException(String.format(MESSAGE_INVALID_MINIMUM, amount));
         }
-        return new BigDecimal(amount);
+        BigDecimal minimumAmount = new BigDecimal(amount);
+        if (minimumAmount.compareTo(MAXIMUM_AMOUNT) > 0) {
+            logger.fine("Rejected fees command: invalid minimum amount.");
+            throw new ParseException(String.format(MESSAGE_INVALID_MINIMUM, amount));
+        }
+        return minimumAmount;
     }
 }
