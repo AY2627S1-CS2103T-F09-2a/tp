@@ -6,11 +6,15 @@ import static seedu.address.commons.util.AppUtil.checkArgument;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Arrays;
+import java.util.regex.Pattern;
 
 /**
  * Helper functions for handling strings.
  */
 public class StringUtil {
+
+    /** Matches the characters other than letters and digits at the start or end of a word. */
+    private static final Pattern EDGE_PUNCTUATION = Pattern.compile("^[^\\p{L}\\p{N}]+|[^\\p{L}\\p{N}]+$");
 
     /**
      * Returns true if the {@code sentence} contains the {@code word}.
@@ -36,6 +40,36 @@ public class StringUtil {
 
         return Arrays.stream(wordsInPreppedSentence)
                 .anyMatch(preppedWord::equalsIgnoreCase);
+    }
+
+    /**
+     * Returns true if the {@code sentence} contains the {@code word}, as {@link #containsWordIgnoreCase} does,
+     * or if they match after removing punctuation at the start and end of each word.
+     *   <br>examples:<pre>
+     *       containsWordIgnoreCaseAndEdgePunctuation("Wei Ming Tan.", "Tan") == true
+     *       containsWordIgnoreCaseAndEdgePunctuation("Ali (Junior)", "junior") == true
+     *       containsWordIgnoreCaseAndEdgePunctuation("Mary-Ann Lim", "Mary") == false //not a full word match
+     *       </pre>
+     *
+     * @param sentence Cannot be null.
+     * @param word Cannot be null, cannot be empty, must be a single word.
+     */
+    public static boolean containsWordIgnoreCaseAndEdgePunctuation(String sentence, String word) {
+        if (containsWordIgnoreCase(sentence, word)) {
+            return true;
+        }
+
+        String strippedWord = stripEdgePunctuation(word.trim());
+        if (strippedWord.isEmpty()) {
+            return false;
+        }
+        return Arrays.stream(sentence.split("\\s+"))
+                .map(StringUtil::stripEdgePunctuation)
+                .anyMatch(strippedWord::equalsIgnoreCase);
+    }
+
+    private static String stripEdgePunctuation(String word) {
+        return EDGE_PUNCTUATION.matcher(word).replaceAll("");
     }
 
     /**
