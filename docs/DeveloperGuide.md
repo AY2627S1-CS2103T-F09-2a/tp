@@ -349,7 +349,7 @@ Every save creates a temporary file, which normally replaces the data file and s
 
 * **Alternative 1 (current choice):** Write a temporary file in the same folder, then replace the data file with it.
   * Pros: The data file is never partly written. Replacing a file in one step works on Windows, macOS and Linux when both files are in the same folder.
-  * Cons: Poco Book must be allowed to create files in the data folder, not just to change the data file. It also needs the extra check in step 1, because on macOS and Linux the replacement would otherwise overwrite a read-only data file.
+  * Cons: Poco Book must be allowed to create files in the data folder, not just to change the data file. It also needs the extra check in step 1, because on macOS and Linux the replacement would otherwise overwrite a read-only data file. On Windows, the replacement can also fail if another program, such as an antivirus scanner or a file sync tool, has the data file or the temporary file open at that moment. Poco Book does not retry. The command reports a save error: a permission error if Windows denies access to the file, or a general save error if Windows reports that the file is in use. Either way, the previous save stays intact, and a later successful save also writes the change that could not be saved.
 * **Alternative 2:** Write over the data file directly, as AB3 did.
   * Pros: Simpler.
   * Cons: A save that stops partway leaves a partly written file, which cannot be loaded.
