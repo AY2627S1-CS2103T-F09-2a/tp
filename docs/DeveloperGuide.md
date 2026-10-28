@@ -281,6 +281,10 @@ The `edit` command supports updating a student's guardian name (`g/`) and guardi
 
 During execution, `EditCommand#execute(Model)` looks up `personToEdit` from `Model#getFilteredPersonList()` and constructs `editedPerson` via `EditCommand#createEditedPerson(personToEdit, editPersonDescriptor)`. Unedited fields fall back to the existing values on `personToEdit`, including `personToEdit.getOutstandingFee()`. Because student identity in `Person#isSamePerson(Person)` is defined by the combination of student `Name` (case-insensitive, whitespace-normalized) and `GuardianPhone`, editing `gp/` (or `n/`) can change a student's identity. Whenever `!personToEdit.isSamePerson(editedPerson)` holds, `EditCommand` checks `Model#hasPerson(editedPerson)` before calling `Model#setPerson(personToEdit, editedPerson)`, throwing a `CommandException` if the updated `(Name, GuardianPhone)` pair would collide with another existing student.
 
+The descriptor distinguishes omitted optional contacts from explicit clearing: an omitted `p/`, `e/` or `a/` leaves that contact unchanged, while an empty value clears it. Guardian fields remain required. A supplied `t/` replaces the tag set; a lone empty `t/` clears all tags. The command rejects an unchanged record before replacing it, while case-only changes remain valid updates.
+
+Changing a guardian phone updates only the selected student. The success feedback names any other students who still have the old phone; the tutor must edit those records separately. The details pane is refreshed explicitly after selection retention, including the command-failure path, because a replacement record may compare equal despite a case-only display change.
+
 The sequence diagram below shows the interactions within the `Logic` and `Model` components for `edit 1 g/May Tan gp/98765432`.
 
 ![Sequence diagram for editing guardian contact details](images/GuardianEditSequenceDiagram.png)
@@ -1079,3 +1083,30 @@ filtered-index payment, invalid-input and persistence regression tests.
    Expected: The payment and guardian details persist. `findguardian GUARDIAN_PHONE` returns both students.
 1. Try `findguardian`, `findguardian g/NAME`, and `help findguardian extra`.<br>
    Expected: Invalid-input feedback; records and the current filter remain unchanged.
+
+### Editing guardian and optional contact details
+
+1. In a disposable folder, run `clear`, then
+   `add n/Style Check One g/May Tan gp/92345678 p/91234567 e/check@example.com a/12 Main Road`, `find One` and `view 1`.<br>
+   Expected: Style Check One is the only listed student and is shown in the details pane.
+
+1. Enter `edit 1 p/`, then `edit 1 p/91234567 e/ a/`.<br>
+   Expected: The first edit clears only the student phone. The second restores the phone and clears email and address.
+   Guardian details and the fee are unchanged.
+
+1. Enter `edit 1 p/123`, `edit 1 g/` and `edit 1 gp/`.<br>
+   Expected: Each edit is rejected and no field changes.
+
+1. Enter `edit 1 t/Math`, `edit 1 t/math`, `edit 1 t/`, then `edit 1 t/ t/Math`.<br>
+   Expected: The card and details pane both show `math` after the second edit. `t/` clears all tags.
+   Combining `t/` with a tag is rejected.
+
+1. Enter `edit 1 g/may tan` twice.<br>
+   Expected: The card and details pane both show the new capitalisation. The repeated edit reports that nothing changed.
+
+1. Enter `add n/Style Check Two g/may tan gp/92345678`, then `find One` and `edit 1 gp/93456789`.<br>
+   Expected: The feedback names Style Check Two as still using the old guardian phone. `find Two` then `view 1` shows
+   Style Check Two still has `92345678`.
+
+1. Enter `list`, then edit Style Check One to `n/Style Check Two gp/92345678` using its displayed index.<br>
+   Expected: The edit is rejected as a duplicate and both records are unchanged.
