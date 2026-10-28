@@ -47,7 +47,7 @@ public class CommandHelpDisplayTest {
 
     /**
      * Checks that the longest help text wraps in the minimum window, keeps every line reachable,
-     * and does not run `add`.
+     * and does not run {@code add}.
      */
     @Test
     public void helpAdd_minimumWindow_wrapsAndStaysReadableWithoutExecutingAdd() throws Exception {

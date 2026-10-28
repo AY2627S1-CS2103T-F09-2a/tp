@@ -47,6 +47,9 @@ def gated_classes(source_root):
     classes = {}
     for path in glob.glob(os.path.join(source_root, "**", "*.java"), recursive=True):
         text = read_text(path)
+        if not text and os.path.getsize(path) > 0:
+            # An unreadable source could be a gated class, so skipping it would weaken the check
+            sys.exit(f"ERROR: cannot read test source {path}; refusing to verify without it")
         if not GATED_ANNOTATION.search(WHITESPACE.sub(" ", text)):
             continue
         package = PACKAGE_PATTERN.search(text)
