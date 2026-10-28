@@ -37,7 +37,9 @@ public class CommandBox extends UiPart<Region> {
     @FXML
     private void handleCommandEntered() {
         String commandText = commandTextField.getText();
-        if (commandText.equals("")) {
+        if (commandText.isBlank()) {
+            // Stray spaces are not a command, so clear them instead of reporting an error
+            commandTextField.setText("");
             return;
         }
 
