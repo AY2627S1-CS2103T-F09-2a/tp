@@ -38,6 +38,14 @@ public class SetOutstandingCommandParserTest {
     }
 
     @Test
+    public void parse_moneyFormattedAmount_explainsPlainNumberSyntax() {
+        for (String amount : new String[]{"S$50", "$50", "1,200", "f/50"}) {
+            ParseException exception = assertThrows(ParseException.class, () -> parser.parse("1 " + amount));
+            assertEquals(OutstandingFee.MESSAGE_PLAIN_AMOUNT, exception.getMessage());
+        }
+    }
+
+    @Test
     public void parse_invalidIndexOrArgumentCount_reportsCommandFormat() {
         for (String input : new String[]{"0 1", "abc 1", "1", "1 2 3"}) {
             ParseException exception = assertThrows(ParseException.class, () -> parser.parse(input));

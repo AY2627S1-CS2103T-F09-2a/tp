@@ -96,6 +96,7 @@ Format: `add n/NAME g/GUARDIAN_NAME gp/GUARDIAN_PHONE [p/PHONE] [e/EMAIL] [a/ADD
 * `ADDRESS` may contain text such as `c/o`, `Blk A/B`, or `N/A`. Other parameters must not contain unrecognised prefixes such as `t/`.
 * `PHONE` and `GUARDIAN_PHONE` must be 8-digit Singapore numbers starting with `6`, `8`, or `9` (spaces and hyphens between digits are allowed and removed when stored).
 * `AMOUNT`, if provided, must be a positive amount between `0.01` and `99999.99` with up to 2 decimal places (and is stored to 2 decimal places).
+  Enter the amount as a plain number, without `S$`, `$` or commas; `f/` is only the field prefix before the number.
 * Two students are considered duplicates if they share the same normalized student name (case-insensitive, with consecutive spaces collapsed) and the same normalized guardian phone number.
 
 Examples:
@@ -159,6 +160,7 @@ Format: `setoutstanding INDEX AMOUNT`
 
 * `INDEX` identifies a student in the current displayed list, starting from 1. Signs and leading zeros are rejected.
 * `AMOUNT` replaces the full outstanding fee. Use a value from `0.01` to `99999.99`, with at most two decimal places.
+  Type a plain number without `S$`, `$`, commas or `f/`, e.g. `50` rather than `S$50`.
 * Use `0` to clear the fee. A student whose fee is cleared disappears from a `fees` result.
 * Feedback shows `Set outstanding fee for NAME: S$AMOUNT`, with exactly two decimal places, including
   `S$0.00` when clearing a fee. Clearing an already-cleared fee succeeds with the same `S$0.00` feedback.

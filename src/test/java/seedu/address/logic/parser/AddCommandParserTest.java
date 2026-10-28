@@ -113,9 +113,16 @@ public class AddCommandParserTest {
         assertParseSuccess(parser, REQUIRED_DESC_BOB + PHONE_DESC_BOB + EMAIL_DESC_BOB + ADDRESS_DESC_BOB
                 + " f/99999.99", new AddCommand(maximumFee));
 
-        String[] invalidFees = {"0", "0.00", "100000", "99999.991", "-5", "+5", "$5", "1,000", "1 000", "1e3", "5."};
+        String[] invalidFees = {"0", "0.00", "100000", "99999.991", "-5", "+5", "1 000", "1e3", "5."};
         for (String fee : invalidFees) {
             assertParseFailure(parser, REQUIRED_DESC_BOB + " f/" + fee, OutstandingFee.MESSAGE_CONSTRAINTS);
+        }
+    }
+
+    @Test
+    public void parse_moneyFormattedFee_explainsPlainNumberSyntax() {
+        for (String fee : new String[]{"S$75.50", "$50", "1,200"}) {
+            assertParseFailure(parser, REQUIRED_DESC_BOB + " f/" + fee, OutstandingFee.MESSAGE_PLAIN_AMOUNT);
         }
     }
 

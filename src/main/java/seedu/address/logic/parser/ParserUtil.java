@@ -154,10 +154,22 @@ public class ParserUtil {
     public static OutstandingFee parseOutstandingFee(String outstandingFee) throws ParseException {
         requireNonNull(outstandingFee);
         String trimmedOutstandingFee = outstandingFee.trim();
+        if (hasMoneyFormatting(trimmedOutstandingFee)) {
+            throw new ParseException(OutstandingFee.MESSAGE_PLAIN_AMOUNT);
+        }
         if (!OutstandingFee.isValidOutstandingFee(trimmedOutstandingFee)) {
             throw new ParseException(OutstandingFee.MESSAGE_CONSTRAINTS);
         }
         return new OutstandingFee(trimmedOutstandingFee);
+    }
+
+    /**
+     * Returns whether an amount uses currency notation or an extra field prefix rather than a plain number.
+     */
+    public static boolean hasMoneyFormatting(String amount) {
+        requireNonNull(amount);
+        return amount.startsWith("S$") || amount.startsWith("$") || amount.contains(",")
+                || amount.startsWith("f/");
     }
 
     /**
