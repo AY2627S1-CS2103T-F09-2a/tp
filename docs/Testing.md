@@ -19,6 +19,21 @@ You can run tests in two ways.
 * **Method 2: Using Gradle**
   * Open a console and run the command `gradlew clean test` (Mac/Linux: `./gradlew clean test`)
 
+### Running the JavaFX UI tests
+
+Tests that open real JavaFX windows (in `src/test/java/seedu/address/ui`, such as `DeleteConfirmationDialogTest` and
+`PersonListPanelTest`) are marked `@EnabledIfEnvironmentVariable(named = "POCO_UI_TESTS", matches = "true")`.
+**Both methods above skip these tests unless the environment variable `POCO_UI_TESTS` is `true`**, and a skipped test
+still lets the run pass. They also need a graphical session, such as a normal desktop login or `xvfb-run` on Linux.
+
+* Mac/Linux: `POCO_UI_TESTS=true ./gradlew clean test`
+* Windows (PowerShell): `$env:POCO_UI_TESTS="true"; .\gradlew clean test`
+* Windows (Command Prompt): `set "POCO_UI_TESTS=true" && gradlew clean test` (the quotes stop a space before `&&` from becoming part of the value)
+* IntelliJ: in the run configuration, add `POCO_UI_TESTS=true` under *Environment variables*.
+
+To confirm that they ran, open `build/reports/tests/test/index.html` and check that the UI test classes show no
+skipped tests. The [Developer Guide](DeveloperGuide.html#delete-confirmation) describes what the deletion UI tests cover.
+
 <div markdown="span" class="alert alert-secondary">:link: **Link**: Read [this Gradle Tutorial from the se-edu/guides](https://se-education.org/guides/tutorials/gradle.html) to learn more about using Gradle.
 </div>
 
