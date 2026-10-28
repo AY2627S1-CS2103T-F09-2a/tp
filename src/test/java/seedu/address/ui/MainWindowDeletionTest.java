@@ -60,11 +60,16 @@ import seedu.address.storage.StorageManager;
 @EnabledIfEnvironmentVariable(named = "POCO_UI_TESTS", matches = "true")
 public class MainWindowDeletionTest {
 
+    /** Tries to find the deletion dialog for about five seconds, 20 milliseconds apart. */
+    private static final int MAX_DIALOG_ATTEMPTS = 250;
+
     @TempDir
     public Path temporaryFolder;
 
     private final List<Person> confirmationRequests = new ArrayList<>();
     private final List<Stage> openedStages = new ArrayList<>();
+    /** Whether a dialog answer from this test may still be pressed. Read and written on the JavaFX thread. */
+    private boolean isAnswerPending;
     private Model model;
     private Logic logic;
     private Path addressBookFile;
@@ -95,6 +100,7 @@ public class MainWindowDeletionTest {
     @AfterEach
     public void closeWindows() throws Exception {
         runOnFxThread(() -> {
+            isAnswerPending = false;
             openedStages.forEach(Stage::close);
             openedStages.clear();
             return null;
@@ -205,16 +211,36 @@ public class MainWindowDeletionTest {
      */
     private void answerDialogWith(KeyCode key) {
         Platform.runLater(new Runnable() {
+            private int attempts;
+
             @Override
             public void run() {
+                isAnswerPending = true;
+                answerOrRetry();
+            }
+
+            /**
+             * Answers the dialog if it is showing, or tries again shortly. Stops once the test has ended or
+             * after {@code MAX_DIALOG_ATTEMPTS} tries, so a dialog that never appears cannot be answered by a
+             * later test.
+             */
+            private void answerOrRetry() {
+                if (!isAnswerPending) {
+                    return;
+                }
                 Optional<Window> dialog = showingDialog();
                 if (dialog.isEmpty()) {
+                    if (++attempts >= MAX_DIALOG_ATTEMPTS) {
+                        isAnswerPending = false;
+                        return;
+                    }
                     // The dialog is attached shortly after the nested event loop starts
                     PauseTransition retry = new PauseTransition(Duration.millis(20));
-                    retry.setOnFinished(event -> run());
+                    retry.setOnFinished(event -> answerOrRetry());
                     retry.play();
                     return;
                 }
+                isAnswerPending = false;
                 Scene scene = dialog.get().getScene();
                 EventTarget target = scene.getFocusOwner() != null ? scene.getFocusOwner() : scene;
                 Event.fireEvent(target, new KeyEvent(KeyEvent.KEY_PRESSED, "", "", key,
