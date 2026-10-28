@@ -110,4 +110,12 @@ public class GuardianNameTest {
                 + "as separate words.",
                 GuardianName.MESSAGE_CONSTRAINTS);
     }
+
+    @Test
+    public void isValidName_patronymicMarkersOnly_returnsFalse() {
+        assertFalse(GuardianName.isValidName("S/O"));
+        assertFalse(GuardianName.isValidName("D/O D/O"));
+        assertTrue(GuardianName.isValidName("Ravi S/O Kumar"));
+    }
+
 }

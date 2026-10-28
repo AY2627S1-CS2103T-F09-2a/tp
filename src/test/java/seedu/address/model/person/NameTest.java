@@ -99,4 +99,12 @@ public class NameTest {
                 + "as separate words.",
                 Name.MESSAGE_CONSTRAINTS);
     }
+
+    @Test
+    public void isValidName_patronymicMarkersOnly_returnsFalse() {
+        assertFalse(Name.isValidName("S/O"));
+        assertFalse(Name.isValidName("D/O D/O"));
+        assertTrue(Name.isValidName("Ravi S/O Kumar"));
+    }
+
 }
