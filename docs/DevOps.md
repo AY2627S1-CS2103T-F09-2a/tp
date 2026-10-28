@@ -29,7 +29,7 @@ The following commands perform common Gradle tasks.
   **`checkstyleTest`**: Runs the code style check for the test code base.
 
 * **`test`**
-  * `./gradlew test`: Runs all tests.
+  * `./gradlew test`: Runs all tests, except the JavaFX UI tests, which run only when the environment variable `POCO_UI_TESTS` is `true` (see [Running the JavaFX UI tests](Testing.md#running-the-javafx-ui-tests)).
   * `./gradlew clean test`: Cleans the project before running all tests
 
 --------------------------------------------------------------------------------------------------------------------

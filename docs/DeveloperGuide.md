@@ -431,7 +431,7 @@ _{Explain here how the data archiving feature will be implemented}_
 ## **Documentation, logging, testing, dev-ops**
 
 * [Documentation guide](Documentation.md)
-* [Testing guide](Testing.md)
+* [Testing guide](Testing.md), including [running the JavaFX UI tests](Testing.md#running-the-javafx-ui-tests)
 * [Logging guide](Logging.md)
 * [DevOps guide](DevOps.md)
 
