@@ -20,7 +20,6 @@ import static seedu.address.testutil.TypicalPersons.ALICE;
 import static seedu.address.testutil.TypicalPersons.AMY;
 import static seedu.address.testutil.TypicalPersons.BENSON;
 import static seedu.address.testutil.TypicalPersons.getTypicalAddressBook;
-import static seedu.address.testutil.TypicalPersons.getTypicalPersons;
 
 import java.nio.file.Path;
 import java.util.List;
@@ -93,7 +92,9 @@ public class EditCommandTest {
 
         // Every typical student shares Alice's guardian phone, so the feedback names them.
         String expectedMessage = String.format(EditCommand.MESSAGE_EDIT_PERSON_SUCCESS, Messages.format(editedPerson))
-                + sharedGuardianPhoneNote(originalPerson);
+                + "\nNote: 6 other student(s) still have the old guardian phone 91234567: Benson Meier, "
+                + "Carl Kurz, Daniel Meier, Elle Meyer, Fiona Kunz, George Best. "
+                + "Edit them too if the guardian changed number.";
 
         Model expectedModel = new ModelManager(new AddressBook(model.getAddressBook()), new UserPrefs());
         expectedModel.setPerson(originalPerson, editedPerson);
@@ -180,7 +181,9 @@ public class EditCommandTest {
 
         // Every typical student shares Alice's guardian phone, so the feedback names them.
         String expectedMessage = String.format(EditCommand.MESSAGE_EDIT_PERSON_SUCCESS, Messages.format(editedPerson))
-                + sharedGuardianPhoneNote(originalPerson);
+                + "\nNote: 6 other student(s) still have the old guardian phone 91234567: Benson Meier, "
+                + "Carl Kurz, Daniel Meier, Elle Meyer, Fiona Kunz, George Best. "
+                + "Edit them too if the guardian changed number.";
 
         Model expectedModel = new ModelManager(new AddressBook(model.getAddressBook()), new UserPrefs());
         expectedModel.setPerson(originalPerson, editedPerson);
@@ -510,17 +513,5 @@ public class EditCommandTest {
             addressBook.addPerson(person);
         }
         return addressBook;
-    }
-
-    /**
-     * Returns the note naming the other typical students who share {@code person}'s guardian phone.
-     */
-    private static String sharedGuardianPhoneNote(Person person) {
-        List<String> names = getTypicalPersons().stream()
-                .filter(other -> !other.equals(person) && other.getGuardianPhone().equals(person.getGuardianPhone()))
-                .map(other -> other.getName().toString())
-                .toList();
-        return String.format(EditCommand.MESSAGE_SHARED_GUARDIAN_PHONE, names.size(), person.getGuardianPhone(),
-                String.join(", ", names));
     }
 }

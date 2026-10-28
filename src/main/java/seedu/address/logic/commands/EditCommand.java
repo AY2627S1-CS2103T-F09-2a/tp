@@ -71,8 +71,10 @@ public class EditCommand extends Command {
     private final EditPersonDescriptor editPersonDescriptor;
 
     /**
-     * @param index of the student in the filtered student list to edit
-     * @param editPersonDescriptor details to edit the student with
+     * Creates an edit command for the student at the given index.
+     *
+     * @param index Index of the student in the filtered student list to edit.
+     * @param editPersonDescriptor Details to edit the student with.
      */
     public EditCommand(Index index, EditPersonDescriptor editPersonDescriptor) {
         requireNonNull(index);
@@ -122,7 +124,7 @@ public class EditCommand extends Command {
         }
 
         List<String> names = model.getAddressBook().getPersonList().stream()
-                .filter(person -> person != editedPerson && person.getGuardianPhone().equals(oldPhone))
+                .filter(person -> person.getGuardianPhone().equals(oldPhone))
                 .map(person -> person.getName().toString())
                 .toList();
         if (names.isEmpty()) {
