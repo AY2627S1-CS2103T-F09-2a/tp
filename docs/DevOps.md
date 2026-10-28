@@ -30,7 +30,7 @@ The following commands perform common Gradle tasks.
 
 * **`test`**
   * `./gradlew test`: Runs all tests, except the JavaFX UI tests, which run only when the environment variable `POCO_UI_TESTS` is `true` (see [Running the JavaFX UI tests](Testing.md#running-the-javafx-ui-tests)).
-  * `./gradlew clean test`: Cleans the project before running all tests
+  * `./gradlew clean test`: Cleans the project, then runs the same tests as `./gradlew test`, so the JavaFX UI tests still run only when `POCO_UI_TESTS` is `true`.
 
 --------------------------------------------------------------------------------------------------------------------
 

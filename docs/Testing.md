@@ -26,7 +26,7 @@ You can run tests in two ways.
 
 Both methods above skip the tests that need the JavaFX toolkit, such as `DeleteConfirmationDialogTest` and `PersonListPanelTest`, unless the environment variable `POCO_UI_TESTS` is exactly `true`. A skipped test does not fail, so a run without the variable can pass even though none of these tests ran. In the Gradle test report (`build/reports/tests/test/index.html`), they are counted as skipped.
 
-These tests are the test classes annotated with `@EnabledIfEnvironmentVariable(named = "POCO_UI_TESTS", matches = "true")`. To list them, search `src/test` for `POCO_UI_TESTS`. Annotate any new test that needs the JavaFX toolkit in the same way.
+These tests are the test classes annotated with `@EnabledIfEnvironmentVariable(named = "POCO_UI_TESTS", matches = "true")`. To list them, search `src/test` for `@EnabledIfEnvironmentVariable`. Annotate any new test that needs the JavaFX toolkit in the same way.
 
 To run them:
 
@@ -40,7 +40,7 @@ To run them:
 
 To run one test class, add `--tests`, for example `POCO_UI_TESTS=true ./gradlew clean test --tests seedu.address.ui.PersonListPanelTest`.
 
-Keep `clean` in the Gradle commands. It makes Gradle run every test again, even if the tests passed in an earlier run without the variable. In PowerShell and Command Prompt, the variable stays set until you close that window.
+Keep `clean` in the Gradle commands. Without it, Gradle may report the tests as up to date and keep the results of an earlier run instead of running the tests again. In PowerShell and Command Prompt, the variable stays set until you close that window.
 
 --------------------------------------------------------------------------------------------------------------------
 
