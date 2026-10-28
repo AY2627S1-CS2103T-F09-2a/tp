@@ -1083,9 +1083,9 @@ filtered-index payment, invalid-input and persistence regression tests.
 
 ### Guardian search and persisted fee updates
 
-1. In a fresh disposable application folder, enter `add n/Asha Rai g/Mei Tan gp/92345678 f/150`, then
-   `add n/Bina Rai g/Mei Tan gp/92345678 f/25`.<br>
-   Expected: Both students are stored with the same guardian; Asha owes S$150.00 and Bina owes S$25.00.
+1. In a fresh **disposable** application folder, enter `clear` to remove the sample students, then enter
+   `add n/Asha Rai g/Mei Tan gp/92345678 f/150` and `add n/Bina Rai g/Mei Tan gp/92345678 f/25`.<br>
+   Expected: Only these two students are stored with the same guardian; Asha owes S$150.00 and Bina owes S$25.00.
 1. Enter `find Nobody`, then `findguardian Mei`.<br>
    Expected: The first search hides both students. The guardian search shows Asha at index 1 and Bina at index 2.
    `help findguardian` explains the search without changing the displayed list.
