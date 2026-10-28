@@ -58,7 +58,7 @@ public class EditCommand extends Command {
             + PREFIX_GUARDIAN_PHONE + "98765432";
 
     public static final String MESSAGE_EDIT_PERSON_SUCCESS = "Edited student:\n%1$s";
-    public static final String MESSAGE_SHARED_GUARDIAN_PHONE = "\nNote: %1$d other student(s) still have "
+    public static final String MESSAGE_SHARED_GUARDIAN_PHONE = "\nNote: %1$d other %4$s still %5$s "
             + "the old guardian phone %2$s: %3$s. Edit them too if the guardian changed number.";
     public static final String MESSAGE_NOT_EDITED = "At least one field to edit must be provided.";
     public static final String MESSAGE_DUPLICATE_PERSON = AddCommand.MESSAGE_DUPLICATE_PERSON;
@@ -130,7 +130,8 @@ public class EditCommand extends Command {
         if (names.isEmpty()) {
             return "";
         }
-        return String.format(MESSAGE_SHARED_GUARDIAN_PHONE, names.size(), oldPhone, String.join(", ", names));
+        return String.format(MESSAGE_SHARED_GUARDIAN_PHONE, names.size(), oldPhone, String.join(", ", names),
+                names.size() == 1 ? "student" : "students", names.size() == 1 ? "has" : "have");
     }
 
     /**

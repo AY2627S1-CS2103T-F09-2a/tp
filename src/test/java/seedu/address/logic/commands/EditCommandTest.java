@@ -90,9 +90,9 @@ public class EditCommandTest {
                 .build();
         EditCommand editCommand = new EditCommand(INDEX_FIRST_PERSON, descriptor);
 
-        // Every typical student shares Alice's guardian phone, so the feedback names them.
+        // The six other students in the initial model share Alice's guardian phone.
         String expectedMessage = String.format(EditCommand.MESSAGE_EDIT_PERSON_SUCCESS, Messages.format(editedPerson))
-                + "\nNote: 6 other student(s) still have the old guardian phone 91234567: Benson Meier, "
+                + "\nNote: 6 other students still have the old guardian phone 91234567: Benson Meier, "
                 + "Carl Kurz, Daniel Meier, Elle Meyer, Fiona Kunz, George Best. "
                 + "Edit them too if the guardian changed number.";
 
@@ -132,7 +132,7 @@ public class EditCommandTest {
         EditCommand editCommand = new EditCommand(INDEX_FIRST_PERSON, descriptor);
 
         String expectedMessage = String.format(EditCommand.MESSAGE_EDIT_PERSON_SUCCESS, Messages.format(editedPerson))
-                + "\nNote: 1 other student(s) still have the old guardian phone 91234567: Benson Meier. "
+                + "\nNote: 1 other student still has the old guardian phone 91234567: Benson Meier. "
                 + "Edit them too if the guardian changed number.";
 
         Model expectedModel = new ModelManager(addressBookOf(editedPerson, BENSON, AMY), new UserPrefs());
@@ -179,9 +179,9 @@ public class EditCommandTest {
                 .build();
         EditCommand editCommand = new EditCommand(INDEX_FIRST_PERSON, descriptor);
 
-        // Every typical student shares Alice's guardian phone, so the feedback names them.
+        // The six other students in the initial model share Alice's guardian phone.
         String expectedMessage = String.format(EditCommand.MESSAGE_EDIT_PERSON_SUCCESS, Messages.format(editedPerson))
-                + "\nNote: 6 other student(s) still have the old guardian phone 91234567: Benson Meier, "
+                + "\nNote: 6 other students still have the old guardian phone 91234567: Benson Meier, "
                 + "Carl Kurz, Daniel Meier, Elle Meyer, Fiona Kunz, George Best. "
                 + "Edit them too if the guardian changed number.";
 
