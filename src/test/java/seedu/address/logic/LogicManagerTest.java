@@ -10,8 +10,11 @@ import static seedu.address.logic.Messages.MESSAGE_UNKNOWN_COMMAND;
 import static seedu.address.logic.commands.CommandTestUtil.ADDRESS_DESC_AMY;
 import static seedu.address.logic.commands.CommandTestUtil.EMAIL_DESC_AMY;
 import static seedu.address.logic.commands.CommandTestUtil.GUARDIAN_NAME_DESC_AMY;
+import static seedu.address.logic.commands.CommandTestUtil.GUARDIAN_NAME_DESC_BOB;
 import static seedu.address.logic.commands.CommandTestUtil.GUARDIAN_PHONE_DESC_AMY;
+import static seedu.address.logic.commands.CommandTestUtil.GUARDIAN_PHONE_DESC_BOB;
 import static seedu.address.logic.commands.CommandTestUtil.NAME_DESC_AMY;
+import static seedu.address.logic.commands.CommandTestUtil.NAME_DESC_BOB;
 import static seedu.address.logic.commands.CommandTestUtil.PHONE_DESC_AMY;
 import static seedu.address.testutil.Assert.assertThrows;
 import static seedu.address.testutil.TypicalPersons.AMY;
@@ -234,6 +237,38 @@ public class LogicManagerTest {
     public void execute_storageThrowsAdException_throwsCommandException() {
         assertCommandFailureForExceptionFromStorage(DUMMY_AD_EXCEPTION, String.format(
                 LogicManager.FILE_OPS_PERMISSION_ERROR_FORMAT, DUMMY_AD_EXCEPTION.getMessage()));
+    }
+
+    @Test
+    public void execute_changeAfterFailedSave_savesBothChanges() throws Exception {
+        Path dataFile = temporaryFolder.resolve("addressBook.json");
+        JsonAddressBookStorage storageFailingFirstSave = new JsonAddressBookStorage(dataFile) {
+            private boolean hasFailed;
+
+            @Override
+            public void saveAddressBook(ReadOnlyAddressBook addressBook) throws IOException {
+                if (!hasFailed) {
+                    hasFailed = true;
+                    throw DUMMY_IO_EXCEPTION;
+                }
+                super.saveAddressBook(addressBook);
+            }
+        };
+        logic = new LogicManager(model, new StorageManager(storageFailingFirstSave,
+                new JsonUserPrefsStorage(temporaryFolder.resolve("userPrefs.json"))));
+        String addAmy = AddCommand.COMMAND_WORD + NAME_DESC_AMY + GUARDIAN_NAME_DESC_AMY + GUARDIAN_PHONE_DESC_AMY;
+        String addBob = AddCommand.COMMAND_WORD + NAME_DESC_BOB + GUARDIAN_NAME_DESC_BOB + GUARDIAN_PHONE_DESC_BOB;
+
+        assertThrows(CommandException.class, String.format(LogicManager.FILE_OPS_ERROR_FORMAT,
+                DUMMY_IO_EXCEPTION.getMessage()), () -> logic.execute(addAmy));
+        // The failed save leaves Amy in memory only, so closing now would lose her
+        assertEquals(1, model.getAddressBook().getPersonList().size());
+        assertFalse(Files.exists(dataFile));
+
+        logic.execute(addBob);
+        ReadOnlyAddressBook saved = new JsonAddressBookStorage(dataFile).readAddressBook().orElseThrow();
+        assertEquals(2, saved.getPersonList().size());
+        assertEquals(model.getAddressBook().getPersonList(), saved.getPersonList());
     }
 
     @Test
