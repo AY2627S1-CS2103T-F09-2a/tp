@@ -25,11 +25,7 @@ public class PersonListPanelSelectionTest {
 
     @BeforeAll
     public static void initializeToolkit() {
-        try {
-            Platform.startup(() -> {});
-        } catch (IllegalStateException e) {
-            // Another UI test may already have initialized JavaFX.
-        }
+        JavaFxTestToolkit.startOrReuse();
     }
 
     @Test

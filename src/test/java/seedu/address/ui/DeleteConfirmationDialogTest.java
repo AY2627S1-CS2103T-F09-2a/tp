@@ -56,13 +56,7 @@ public class DeleteConfirmationDialogTest {
 
     @BeforeAll
     public static void initializeToolkit() throws Exception {
-        try {
-            Platform.startup(() -> {});
-        } catch (IllegalStateException e) {
-            // Another UI test may already have initialized JavaFX.
-        }
-        // Closing a test's dialog would otherwise shut JavaFX down, because no other window is showing
-        Platform.setImplicitExit(false);
+        JavaFxTestToolkit.startOrReuse();
         owner = runOnFxThread(() -> {
             Stage stage = new Stage();
             // A dialog copies its owner's stylesheets, so the owner needs a scene, as the main window has

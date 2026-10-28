@@ -37,12 +37,7 @@ public class CommandHelpDisplayTest {
 
     @BeforeAll
     public static void startToolkit() {
-        try {
-            Platform.startup(() -> {});
-        } catch (IllegalStateException e) {
-            // Another UI test has already started the toolkit.
-        }
-        Platform.setImplicitExit(false);
+        JavaFxTestToolkit.startOrReuse();
     }
 
     @Test
