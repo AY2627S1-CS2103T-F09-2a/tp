@@ -139,7 +139,8 @@ How the parsing works:
 ### Model component
 **API** : [`Model.java`](https://github.com/AY2627S1-CS2103T-F09-2a/tp/tree/master/src/main/java/seedu/address/model/Model.java)
 
-<img src="images/ModelClassDiagram.png" width="450" />
+<a href="images/ModelClassDiagram.png"><img src="images/ModelClassDiagram.png" width="450"
+    alt="Model class diagram with separate all and filtered Person associations" /></a>
 
 
 The `Model` component,
