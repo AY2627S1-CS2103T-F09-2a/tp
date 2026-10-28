@@ -57,7 +57,7 @@ Poco Book is a **desktop application for independent tutors to manage students, 
 
 * Parameters with a prefix, such as `n/NAME`, can be in any order.<br>
   For example, if the command specifies `n/NAME p/PHONE`, `p/PHONE n/NAME` is also acceptable.
-  Parameters without a prefix must stay in the documented order; for example, `setoutstanding 1 75.50` works but `setoutstanding 75.50 1` is rejected.
+  Parameters without a prefix must come before all prefixed parameters (for example, `edit 1 n/Alex`) and stay in the documented order; for example, `setoutstanding 1 75.50` works but `setoutstanding 75.50 1` is rejected.
 
 * For `delete`, `edit`, `view`, and `setoutstanding`, `INDEX` uses ASCII digits without leading zeros, such as `1` or `12`. Leading zeros (`01`), signs (`+1`), decimals, and extra index tokens produce an invalid-command-format message. A positive index larger than `2147483647` produces `The student index provided is invalid.` No record or current list is changed when the index is rejected.
 
