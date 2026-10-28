@@ -73,7 +73,9 @@ public class GuardianPhoneTest {
 
     @Test
     public void constructor_invalidPhone_usesSpecifiedErrorMessage() {
-        assertThrows(IllegalArgumentException.class, GuardianPhone.MESSAGE_CONSTRAINTS, () -> {
+        String expectedMessage = "Phone numbers must be 8 digits starting with 6, 8, or 9, optionally after +65. "
+                + "Spaces and hyphens are allowed.";
+        assertThrows(IllegalArgumentException.class, expectedMessage, () -> {
             new GuardianPhone("12345678");
         });
     }
