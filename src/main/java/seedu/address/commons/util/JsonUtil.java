@@ -46,7 +46,7 @@ public class JsonUtil {
      *
      * @param filePath cannot be null.
      * @param classOfObjectToDeserialize JSON file has to correspond to the structure in the class given here.
-     * @throws DataLoadingException if loading of the JSON file failed.
+     * @throws DataLoadingException if loading of the JSON file failed, or if the file holds only {@code null}.
      */
     public static <T> Optional<T> readJsonFile(
             Path filePath, Class<T> classOfObjectToDeserialize) throws DataLoadingException {
@@ -64,6 +64,11 @@ public class JsonUtil {
         } catch (IOException e) {
             logger.warning("Error reading from jsonFile file " + filePath + ": " + e);
             throw new DataLoadingException(e);
+        }
+        if (jsonFile == null) {
+            // A file holding only "null" exists but has no data, so it is invalid rather than missing
+            logger.warning("JSON file " + filePath + " holds null instead of an object");
+            throw new DataLoadingException(new IOException("JSON file " + filePath + " holds null"));
         }
 
         return Optional.of(jsonFile);

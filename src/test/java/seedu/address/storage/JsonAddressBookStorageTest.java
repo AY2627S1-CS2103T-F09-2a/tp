@@ -53,6 +53,12 @@ public class JsonAddressBookStorageTest {
     }
 
     @Test
+    public void readAddressBook_nullRoot_throwDataLoadingException() {
+        // A file holding only null is invalid data, so startup starts empty instead of loading sample data
+        assertThrows(DataLoadingException.class, () -> readAddressBook("nullRootAddressBook.json"));
+    }
+
+    @Test
     public void readAddressBook_invalidPersonAddressBook_throwDataLoadingException() {
         assertThrows(DataLoadingException.class, () -> readAddressBook("invalidPersonAddressBook.json"));
     }
