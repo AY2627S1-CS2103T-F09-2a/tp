@@ -163,7 +163,7 @@ Format: `setoutstanding INDEX AMOUNT`
 * Feedback shows `Set outstanding fee for NAME: S$AMOUNT`, with exactly two decimal places, including
   `S$0.00` when clearing a fee. Clearing an already-cleared fee succeeds with the same `S$0.00` feedback.
 * Other student details and the current filter are preserved. Invalid input leaves records and the list unchanged.
-* Successful changes use the application's normal saving behaviour. A save error means persistence is not confirmed.
+* Successful changes are saved automatically. If a save error is reported, Poco Book still shows the new fee. The fee is saved the next time Poco Book saves successfully, such as after your next change, and is lost if you close Poco Book before then.
 
 Examples: `setoutstanding 1 150.50`, `setoutstanding 1 0`.
 
@@ -178,7 +178,7 @@ The feedback reads `Marked outstanding fee as paid for NAME: S$AMOUNT`
 * `INDEX` refers to the displayed list, so run `list` or `fees` again if the list has changed since you last looked. Signs, leading zeros, zero, omitted and out-of-range indexes are rejected.
 * A student with no outstanding fee is rejected with `This student has no outstanding fee to mark as paid: NAME`; `setoutstanding INDEX 0` remains available for clearing a fee explicitly.
 * Every other detail of the student, and the active filter, is preserved. A student disappears from a `fees` result once their fee is cleared, and the remaining indexes shift up; in a `find` result the student stays visible if they still match.
-* Rejected input changes neither the data nor the displayed list. A successful payment uses the application's normal saving behaviour, so it survives a restart unless a save error is reported.
+* Rejected input changes neither the data nor the displayed list. A successful payment is saved automatically. If a save error is reported, Poco Book still shows the student as paid. The payment is saved the next time Poco Book saves successfully, such as after your next change, and is lost if you close Poco Book before then.
 
 Examples: `paid 1`, `paid 2`.
 
@@ -212,6 +212,7 @@ Format: `find KEYWORD [MORE_KEYWORDS]`
 * Keyword order does not matter; for example, `Hans Bo` matches `Bo Hans`.
 * The search considers only student names. Guardian details, contact details and fees are not searched.
 * Only full words match; for example, `Han` does not match `Hans`.
+* Punctuation at the start or end of a name word is ignored; for example, `Tan` matches `Wei Ming Tan.` and `Junior` matches `Ali (Junior)`.
 * Each keyword must use only characters that can appear in a name, so `find Alex 2` is accepted but `find @@@` shows an error and keeps the current list.
 * Students matching at least one keyword are returned (an `OR` search); for example, `Hans Bo` returns `Hans Gruber` and `Bo Yang`.
 
