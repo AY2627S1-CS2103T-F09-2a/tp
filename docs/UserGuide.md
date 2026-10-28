@@ -192,6 +192,9 @@ Format: `edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [a/ADDRESS] [g/GUARDIAN_NAME] [
 * At least one of the optional fields must be provided.
 * Existing values will be updated to the input values.
 * When editing tags, all of the student's existing tags are removed; adding tags is not cumulative.
+* A tag contains only ASCII letters (`A`–`Z`, `a`–`z`) and digits (`0`–`9`), with no spaces or punctuation.
+  For example, `t/Math2` is accepted, while `t/数学` and `t/Máth` are rejected. Student and guardian names
+  have separate character rules; their support for multilingual names does not extend to tags.
 * To remove all of a student's tags, enter `t/` without a tag after it.
 * Use `g/` and/or `gp/` to change guardian details. Omitted fields keep their existing values; guardian fields cannot be blank or cleared. Duplicate guardian prefixes are rejected.
 * Outstanding fees cannot be changed with `edit`; `f/` is rejected. Use `setoutstanding` to change a fee.
