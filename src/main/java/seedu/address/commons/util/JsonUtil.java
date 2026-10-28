@@ -93,6 +93,7 @@ public class JsonUtil {
      * Converts a given string representation of JSON data to an instance of a class.
      * The string must hold exactly one JSON value, optionally followed by whitespace,
      * and no object in it may repeat a field name.
+     *
      * @param <T> The generic type to create an instance of
      * @return The instance of T with the specified values in the JSON string
      * @throws IOException if the string cannot be read as an instance of {@code instanceClass},
