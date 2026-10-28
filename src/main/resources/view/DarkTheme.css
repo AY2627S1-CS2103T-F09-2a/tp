@@ -377,5 +377,5 @@
     -fx-border-radius: 2;
     -fx-background-radius: 2;
     -fx-font-size: 11;
-    -fx-max-width: 230;
+    -fx-max-width: 230; /* Repeated as PersonCardTagLayoutTest.MAX_TAG_WIDTH, so change both together. */
 }
