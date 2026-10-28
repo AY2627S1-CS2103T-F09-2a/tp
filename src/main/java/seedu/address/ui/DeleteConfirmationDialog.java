@@ -53,11 +53,11 @@ public class DeleteConfirmationDialog {
     private static final String STYLESHEET = "view/DeleteConfirmationDialog.css";
 
     /**
-     * A fixed width stops long names from widening the dialog; they wrap instead. The dialog then stays well within
-     * a 1280x720 screen at 150% scaling, which leaves about 853x432 pixels above a Windows 11 taskbar.
+     * A fixed width stops long names from widening the dialog; leaving more horizontal room reduces wrapping
+     * while staying within the usable width of a 1280x720 screen at 150% scaling.
      */
-    private static final double DIALOG_WIDTH = 520;
-    private static final double CONTENT_SPACING = 8;
+    private static final double DIALOG_WIDTH = 680;
+    private static final double CONTENT_SPACING = 6;
 
     private final Alert alert;
 
