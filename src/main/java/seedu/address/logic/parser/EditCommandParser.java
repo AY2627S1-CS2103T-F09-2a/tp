@@ -42,8 +42,9 @@ public class EditCommandParser implements Parser<EditCommand> {
      */
     public EditCommand parse(String args) throws ParseException {
         requireNonNull(args);
-        ArgumentMultimap argMultimap = ArgumentTokenizer.tokenize(args, PREFIX_NAME, PREFIX_PHONE, PREFIX_EMAIL,
-                PREFIX_ADDRESS, PREFIX_TAG, PREFIX_GUARDIAN_NAME, PREFIX_GUARDIAN_PHONE, PREFIX_OUTSTANDING_FEE);
+        Prefix[] prefixes = {PREFIX_NAME, PREFIX_PHONE, PREFIX_EMAIL, PREFIX_ADDRESS, PREFIX_TAG,
+            PREFIX_GUARDIAN_NAME, PREFIX_GUARDIAN_PHONE, PREFIX_OUTSTANDING_FEE};
+        ArgumentMultimap argMultimap = ArgumentTokenizer.tokenize(args, prefixes);
 
         Index index = ParserUtil.parseIndex(argMultimap.getPreamble(),
                 String.format(MESSAGE_INVALID_COMMAND_FORMAT, EditCommand.MESSAGE_USAGE));
@@ -52,7 +53,7 @@ public class EditCommandParser implements Parser<EditCommand> {
         if (argMultimap.getValue(PREFIX_OUTSTANDING_FEE).isPresent()) {
             throw new ParseException(MESSAGE_FEE_NOT_EDITABLE);
         }
-        if (hasUnknownPrefix(argMultimap)) {
+        if (hasUnknownPrefix(argMultimap, prefixes)) {
             throw new ParseException(String.format(MESSAGE_INVALID_COMMAND_FORMAT, EditCommand.MESSAGE_USAGE));
         }
 
@@ -95,9 +96,9 @@ public class EditCommandParser implements Parser<EditCommand> {
      * Returns true if a value other than the address contains a prefix-like token that {@code edit} does not
      * accept, such as {@code x/}. Addresses may contain such text, for example {@code c/o} or {@code Blk A/B}.
      */
-    private static boolean hasUnknownPrefix(ArgumentMultimap argMultimap) {
-        return Stream.of(PREFIX_NAME, PREFIX_PHONE, PREFIX_EMAIL, PREFIX_TAG, PREFIX_GUARDIAN_NAME,
-                PREFIX_GUARDIAN_PHONE)
+    private static boolean hasUnknownPrefix(ArgumentMultimap argMultimap, Prefix... prefixes) {
+        return Stream.of(prefixes)
+                .filter(prefix -> !prefix.equals(PREFIX_ADDRESS))
                 .flatMap(prefix -> argMultimap.getAllValues(prefix).stream())
                 .anyMatch(ParserUtil::containsPrefixLikeToken);
     }
