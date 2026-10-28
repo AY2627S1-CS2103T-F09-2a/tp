@@ -34,7 +34,8 @@ final class JavaFxTestToolkit {
      * reuse it.
      *
      * @throws IllegalStateException if the toolkit can be neither started nor reused.
-     *     Its cause is the original error.
+     *     Its cause is the original error. If the calling thread is interrupted before or while waiting for the check,
+     *     its cause is the {@code InterruptedException} instead, and the original error is suppressed.
      */
     static void startOrReuse() {
         startOrReuse(() -> Platform.startup(() -> {}), Platform::runLater, REUSE_TIMEOUT);
@@ -46,7 +47,8 @@ final class JavaFxTestToolkit {
      * {@code runLater} runs within {@code timeout}.
      *
      * @throws IllegalStateException if the toolkit can be neither started nor reused.
-     *     Its cause is the original error.
+     *     Its cause is the original error. If the calling thread is interrupted before or while waiting for the check,
+     *     its cause is the {@code InterruptedException} instead, and the original error is suppressed.
      */
     static void startOrReuse(Runnable startup, Consumer<Runnable> runLater, Duration timeout) {
         try {
