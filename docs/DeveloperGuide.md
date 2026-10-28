@@ -332,7 +332,7 @@ The command then reports the size of the filtered list with the shared `N studen
 
 `JsonUtil`'s `ObjectMapper` enables `JsonParser.Feature.STRICT_DUPLICATE_DETECTION`, so reading fails with an exception that names the repeated field, such as `Duplicate field 'name'`. `JsonUtil#fromJsonString` reads the value through a `JsonParser`, then calls `JsonUtil#requireEndOfInput`, which fails with a `JsonParseException` if any token, valid or not, follows the value. A valid second value, such as `{ }` or `null`, gives `Unexpected content after the first JSON value`; text that is not JSON, such as `GARBAGE`, gives Jackson's `Unrecognized token` error. Both kinds of failure are `IOException`s, so `readJsonFile` logs the cause and wraps it in a `DataLoadingException`, as for any other invalid file:
 
-* For the address book, `MainApp` starts with an empty address book. The data file is not written until a command that changes data succeeds (`LogicManagerTest` checks that `list` and `view` do not save), so the tutor can still repair it.
+* For the address book, `MainApp` starts with an empty address book, without any on-screen message. `LogicManager#execute` saves only after a command succeeds, and only if `Command#shouldSaveAddressBook()` returns `true`. Display-only commands override it to return `false` (`LogicManagerTest` and the command tests cover all eight). Of the commands that keep the default, `delete`, `edit`, `paid` and `setoutstanding` need an index and fail on the empty list, so only `add` and `clear` can overwrite the file. Until then, the tutor can still repair it.
 * For preferences, `MainApp` uses the default preferences and saves them at once, as for any other invalid preferences file.
 
 #### Design considerations
