@@ -163,7 +163,7 @@ The `Model` component,
 <img src="images/StorageClassDiagram.png" width="550" />
 
 The `Storage` component,
-* can save both address book data and user preference data in JSON format, and read them back into corresponding objects.
+* can save both address book data and user preference data in JSON format, and read them back into corresponding objects. Reading rejects a file with content after its first JSON value or a repeated field name (see [Strict reading of data files](#strict-reading-of-data-files)).
 * is implemented by `StorageManager`, which delegates the actual JSON file access to `JsonAddressBookStorage` and `JsonUserPrefsStorage` (one class per data file).
 * depends on some classes in the `Model` component (because the `Storage` component's job is to save/retrieve objects that belong to the `Model`)
 
@@ -320,6 +320,27 @@ The command then reports the size of the filtered list with the shared `N studen
 * **Whole-word name matching.** Words are split on whitespace only, so `Anne-Marie` matches the keyword `anne-marie` but not `anne`. This is consistent with `find`.
 * **Phone keywords are normalized like stored phones.** Tutors may type a number the way it was entered with `add`, including a hyphen. Partial numbers such as `9234` never match, which keeps results predictable.
 * **Predicate copies its keywords.** `GuardianContainsKeywordsPredicate` stores `List.copyOf(keywords)`, so a caller changing its list later cannot silently change an installed filter.
+
+### Strict reading of data files
+
+`data/addressbook.json` and `preferences.json` are both read by `JsonUtil#readJsonFile`. It rejects two kinds of hand-edited file that Jackson would otherwise load only in part:
+
+* content after the first JSON value, such as `GARBAGE` or a second `{ "persons" : [ ] }` after the final `}`. Whitespace, including blank lines, may follow the value.
+* a field name repeated within one JSON object, at any depth, such as two `persons` fields, or two `name` fields for one student. Jackson would keep only the last value.
+
+#### Implementation
+
+`JsonUtil`'s `ObjectMapper` enables `JsonParser.Feature.STRICT_DUPLICATE_DETECTION`, so reading fails with an exception that names the repeated field, such as `Duplicate field 'name'`. `JsonUtil#fromJsonString` reads the value through a `JsonParser`, then calls `JsonUtil#requireEndOfInput`, which fails with a `JsonParseException` if any token, valid or not, follows the value. A valid second value, such as `{ }` or `null`, gives `Unexpected content after the first JSON value`; text that is not JSON, such as `GARBAGE`, gives Jackson's `Unrecognized token` error. Both kinds of failure are `IOException`s, so `readJsonFile` logs the cause and wraps it in a `DataLoadingException`, as for any other invalid file:
+
+* For the address book, `MainApp` starts with an empty address book. The data file is not written until a command that changes data succeeds (`LogicManagerTest` checks that `list` and `view` do not save), so the tutor can still repair it.
+* For preferences, `MainApp` uses the default preferences and saves them at once, as for any other invalid preferences file.
+
+#### Design considerations
+
+* **Reject the file instead of documenting the permissive behaviour.** A partly loaded file looks valid, and the next save silently and permanently drops the ignored content. Rejecting it reuses the existing invalid-file handling. Files written by Poco Book are unaffected, because they always hold one object with unique field names.
+* **Check for trailing content in `JsonUtil` instead of upgrading Jackson.** Jackson 2.7.4 has no `DeserializationFeature.FAIL_ON_TRAILING_TOKENS`, which was added in Jackson 2.9. `requireEndOfInput` makes the same single `nextToken()` check, without changing the dependency that every JSON read and write uses. If Jackson is upgraded, that feature can replace `requireEndOfInput`.
+* **Apply the same rules to preferences.** One reader for both files keeps their behaviour consistent, and an invalid preferences file only resets the window size and position.
+* **Compare field names exactly, as Jackson matches fields to Java fields.** `name` and `Name` are different fields, so `Name` is not a duplicate; it is ignored like any other unknown field.
 
 ### \[Proposed\] Undo/redo feature
 
@@ -1047,6 +1068,17 @@ testers are expected to do more *exploratory* testing.
 
 1. Relaunch and execute a valid `add` command.<br>
    Expected: The new record is saved as valid JSON, replacing the invalid file. Restore the backup if needed.
+
+1. In a disposable application folder with sample data, enter `setoutstanding 1 75.50` so that
+   `data/addressbook.json` is saved, then close the app and back up the file. In a text editor, add a last line
+   `GARBAGE` after the file's final `}`, then relaunch the app.<br>
+   Expected: The app starts with an empty list, as for any other invalid file, instead of loading the students
+   before `GARBAGE`. Close the app. The file still ends with `GARBAGE`. Restore the backup.
+
+1. With the app closed, in the restored file, change the line `"name" : "Alex Yeoh",` to
+   `"name" : "Alex Yeoh", "name" : "Changed Name",` and relaunch the app.<br>
+   Expected: The app starts with an empty list instead of showing a student named Changed Name. Close the app and
+   restore the backup.
 
 1. In a disposable application folder with sample data, enter `setoutstanding 1 75.50` so that `data/addressbook.json`
    is saved. Make that file read-only (for example, `chmod 444 data/addressbook.json` on macOS or Linux, or

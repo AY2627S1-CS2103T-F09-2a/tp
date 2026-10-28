@@ -43,6 +43,16 @@ public class JsonUserPrefsStorageTest {
         assertThrows(DataLoadingException.class, () -> readUserPrefs("NotJsonFormatUserPrefs.json"));
     }
 
+    @Test
+    public void readUserPrefs_contentAfterPrefs_exceptionThrown() {
+        assertThrows(DataLoadingException.class, () -> readUserPrefs("ContentAfterUserPrefs.json"));
+    }
+
+    @Test
+    public void readUserPrefs_duplicateField_exceptionThrown() {
+        assertThrows(DataLoadingException.class, () -> readUserPrefs("DuplicateFieldUserPrefs.json"));
+    }
+
     private Path addToTestDataPathIfNotNull(String userPrefsFileInTestDataFolder) {
         return userPrefsFileInTestDataFolder != null
                 ? TEST_DATA_FOLDER.resolve(userPrefsFileInTestDataFolder)

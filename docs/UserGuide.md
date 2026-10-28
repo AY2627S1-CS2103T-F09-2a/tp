@@ -293,6 +293,7 @@ Poco Book saves student data automatically. You do not need to save manually.
 Poco Book data is saved automatically as a JSON file `[JAR file location]/data/addressbook.json`. Advanced users are welcome to update data directly by editing that data file.
 
 <div markdown="span" class="alert alert-warning">:exclamation: **Caution:**
+The file must hold exactly one JSON object: only spaces or blank lines may follow that object's closing `}`, and a field cannot appear twice in the same object (for example, two `name` fields for one student). Otherwise, the file is invalid, even if its first part is correct.<br>
 If an edit makes the data file invalid, Poco Book starts with an empty address book next time. The invalid file stays on disk until a command that changes data, such as `add`, overwrites it. Commands that only display data, such as `list`, `find`, `fees`, `view`, `help`, and `exit`, do not save. Back up the file before editing it.<br>
 Furthermore, certain edits can cause Poco Book to behave in unexpected ways (e.g., if a value entered is outside of the acceptable range). Therefore, edit the data file only if you are confident that you can update it correctly.
 </div>

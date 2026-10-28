@@ -10,6 +10,8 @@ import java.util.logging.Logger;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -23,11 +25,14 @@ import seedu.address.commons.exceptions.DataLoadingException;
  */
 public class JsonUtil {
 
+    static final String MESSAGE_CONTENT_AFTER_VALUE = "Unexpected content after the first JSON value";
+
     private static final Logger logger = LogsCenter.getLogger(JsonUtil.class);
 
     private static ObjectMapper objectMapper = new ObjectMapper().findAndRegisterModules()
             .configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false)
             .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+            .configure(JsonParser.Feature.STRICT_DUPLICATE_DETECTION, true)
             .setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.NONE)
             .setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY);
 
@@ -85,12 +90,30 @@ public class JsonUtil {
 
 
     /**
-     * Converts a given string representation of JSON data to an instance of a class
+     * Converts a given string representation of JSON data to an instance of a class.
+     * The string must hold exactly one JSON value, optionally followed by whitespace,
+     * and no object in it may repeat a field name.
      * @param <T> The generic type to create an instance of
      * @return The instance of T with the specified values in the JSON string
+     * @throws IOException if the string cannot be read as an instance of {@code instanceClass},
+     *     has content after its first value, or repeats a field name within an object.
      */
     public static <T> T fromJsonString(String json, Class<T> instanceClass) throws IOException {
-        return objectMapper.readValue(json, instanceClass);
+        try (JsonParser parser = objectMapper.getFactory().createParser(json)) {
+            T instance = objectMapper.readValue(parser, instanceClass);
+            requireEndOfInput(parser);
+            return instance;
+        }
+    }
+
+    /**
+     * Throws if {@code parser} has any content left other than whitespace.
+     * Jackson 2.7 has no {@code DeserializationFeature.FAIL_ON_TRAILING_TOKENS}, so this method performs that check.
+     */
+    private static void requireEndOfInput(JsonParser parser) throws IOException {
+        if (parser.nextToken() != null) {
+            throw new JsonParseException(parser, MESSAGE_CONTENT_AFTER_VALUE);
+        }
     }
 
     /**
