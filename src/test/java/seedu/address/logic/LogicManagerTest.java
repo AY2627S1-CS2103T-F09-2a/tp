@@ -33,6 +33,7 @@ import seedu.address.logic.commands.CommandResult;
 import seedu.address.logic.commands.DeleteCommand;
 import seedu.address.logic.commands.EditCommand;
 import seedu.address.logic.commands.FeeSummaryCommand;
+import seedu.address.logic.commands.HelpCommand;
 import seedu.address.logic.commands.ListCommand;
 import seedu.address.logic.commands.ViewCommand;
 import seedu.address.logic.commands.exceptions.CommandException;
@@ -156,9 +157,27 @@ public class LogicManagerTest {
     }
 
     @Test
-    public void execute_invalidCommandFormat_throwsParseException() {
-        String invalidCommand = "uicfhmowqewca";
-        assertParseException(invalidCommand, MESSAGE_UNKNOWN_COMMAND);
+    public void execute_unknownCommand_rejectsWithoutChangingDataOrFilter() {
+        model.addPerson(AMY);
+        model.addPerson(BOB);
+        model.updateFilteredPersonList(person -> person.equals(BOB));
+        Model expectedModel = new ModelManager(model.getAddressBook(), new UserPrefs());
+        expectedModel.updateFilteredPersonList(person -> person.equals(BOB));
+
+        assertCommandFailure("lsit", ParseException.class, String.format(MESSAGE_UNKNOWN_COMMAND, "lsit") + " "
+                + HelpCommand.MESSAGE_HELP_HINT + "\n" + HelpCommand.getAvailableCommandsMessage(), expectedModel);
+        assertFalse(Files.exists(temporaryFolder.resolve("addressBook.json")));
+    }
+
+    @Test
+    public void execute_upperCaseCommandWord_runsCommand() throws Exception {
+        model.addPerson(AMY);
+        model.addPerson(BOB);
+        model.updateFilteredPersonList(person -> person.equals(BOB));
+
+        assertEquals(ListCommand.MESSAGE_SUCCESS, logic.execute("LIST").getFeedbackToUser());
+        assertEquals(List.of(AMY, BOB), model.getFilteredPersonList());
+        assertFalse(Files.exists(temporaryFolder.resolve("addressBook.json")));
     }
 
     @Test
@@ -245,6 +264,9 @@ public class LogicManagerTest {
         // Index 1 is AMY in the full list, but BOB, who owes a fee, in the displayed list
         assertEquals(Optional.of(BOB), logic.getDeletionTarget("delete 1"));
         assertEquals(Optional.of(BOB), logic.getDeletionTarget("  delete   1  "));
+        // execute("DELETE 1") deletes, so the UI must find the target and ask for confirmation first
+        assertEquals(Optional.of(BOB), logic.getDeletionTarget("DELETE 1"));
+        assertEquals(Optional.of(BOB), logic.getDeletionTarget("Delete 1"));
         assertEquals(List.of(AMY, BOB), model.getAddressBook().getPersonList());
         assertFalse(Files.exists(temporaryFolder.resolve("addressBook.json")));
     }
@@ -255,7 +277,7 @@ public class LogicManagerTest {
 
         // Out-of-range index, malformed delete commands, another command, and an unknown command
         for (String input : List.of("delete 2", "delete 2147483648", "delete", "delete 0", "delete 01", "delete x",
-                "delete 1 2", "DELETE 1", "view 1", "remove 1")) {
+                "delete 1 2", "DELETE 2", "view 1", "VIEW 1", "remove 1")) {
             assertEquals(Optional.empty(), logic.getDeletionTarget(input), input);
         }
         assertEquals(List.of(AMY), model.getAddressBook().getPersonList());

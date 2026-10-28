@@ -135,6 +135,7 @@ Here are the other classes in `Logic` (omitted from the class diagram above) tha
 How the parsing works:
 * When called upon to parse a user command, the `AddressBookParser` class creates an `XYZCommandParser` (`XYZ` is a placeholder for the specific command name, e.g., `AddCommandParser`). The parser uses the other classes shown above to parse the user command and create an `XYZCommand` object (e.g., `AddCommand`). The `AddressBookParser` returns that object as a `Command` object.
 * All `XYZCommandParser` classes, such as `AddCommandParser` and `DeleteCommandParser`, implement the `Parser` interface so they can be treated similarly where appropriate, for example during testing.
+* `AddressBookParser` matches the command word in any letter case, so `LIST` and `list` create the same command. Only the command word is converted; the arguments reach the `XYZCommandParser` unchanged. See [Command words and unknown commands](#command-words-and-unknown-commands).
 
 ### Model component
 **API** : [`Model.java`](https://github.com/AY2627S1-CS2103T-F09-2a/tp/tree/master/src/main/java/seedu/address/model/Model.java)
@@ -407,9 +408,13 @@ _{more aspects and alternatives to be added}_
 
 ### Command-specific help
 
-`help` continues to open the help window. `HelpCommandParser` accepts one optional, exact command word;
+`help` continues to open the help window. `HelpCommandParser` accepts one optional command word in any letter case;
 `help COMMAND` returns that command's usage in the result area without invoking its parser or action.
-Unknown targets and extra arguments fail with usage instructions and an alphabetical list of available commands.
+An unknown target, such as `help lsit`, fails with the `Messages.MESSAGE_UNKNOWN_COMMAND` line and the alphabetical
+list of available commands, as described in [Command words and unknown commands](#command-words-and-unknown-commands).
+The `help COMMAND` hint is left out because the tutor is already using `help`. More than one word after `help`, such
+as `help paid 1`, fails with `HelpCommand.MESSAGE_EXTRA_WORDS`, which asks for one command word. Neither error
+repeats the `help` usage, which would make the message several lines longer without telling the tutor more.
 
 `HelpCommand` reuses existing `MESSAGE_USAGE` constants for implemented commands, adding index/payment constraints
 where needed. Commands without usage constants have short local entries. The available-command list is derived
@@ -420,6 +425,77 @@ Targeted help returns a normal `CommandResult` with no help-window, exit or view
 never changes the model or filter and returns `false` from `shouldSaveAddressBook()`. Integration tests exercise
 all supported targets, including `clear`, `exit`, `paid` and `list`, against filtered records and an existing data
 file to catch accidental execution, filter replacement or storage writes.
+
+### Command words and unknown commands
+
+#### Implementation
+
+`AddressBookParser#parseCommand(String)` splits the input into a command word and its arguments. Before choosing a
+parser, it converts the command word with `ParserUtil#normalizeCommandWord(String)`, which returns it in lower case
+using `Locale.ROOT`. Every `COMMAND_WORD` constant is lower case, so `LIST`, `List` and `list` all reach the `list`
+case. `Locale.ROOT` keeps the result independent of the computer's language: in a Turkish locale, the default lower
+case of `LIST` is `lıst`, with a dotless `ı`. `HelpCommandParser` converts its target with the same method, so
+`help PAID` shows the same usage as `help paid`. `Logic#getDeletionTarget(String)` uses the same parser, so
+`DELETE 1` opens the deletion confirmation dialog just as `delete 1` does.
+
+Only the command word is converted. The arguments, including prefixes such as `n/` and `find` keywords, are passed to
+the `XYZCommandParser` unchanged.
+
+If no case matches, the parser throws a `ParseException`. Its first line joins `Messages.MESSAGE_UNKNOWN_COMMAND`,
+which quotes the command word as the tutor typed it, and `HelpCommand.MESSAGE_HELP_HINT`, which suggests
+`help COMMAND`. Its second line, `HelpCommand#getAvailableCommandsMessage()`, lists the available command words.
+For example, `lsit` produces:
+
+```
+Unknown command: "lsit". Type help COMMAND to see a command's format and an example.
+Available commands: add, clear, delete, edit, exit, fees, feesummary, find, findguardian, help, list, paid, setoutstanding, view
+```
+
+The list comes from the same entries as command-specific help. `help` with an unknown target shows the same
+message without the `help COMMAND` hint. `AddressBookParserTest` checks that every listed word, in lower and upper
+case, is passed to a command or its parser instead of producing the unknown-command message. So that test fails if
+the message lists a word that the parser does not accept, or if a new `COMMAND_WORD` with a help entry is not lower
+case.
+
+#### Design considerations
+
+**Aspect: Letter case of command words:**
+
+* **Alternative 1 (current choice):** Match command words in any letter case.
+  * Pros: A tutor who has Caps Lock on, or who capitalises the first word out of habit, does not have to retype the
+    command. No two command words differ only in letter case, so no input becomes ambiguous.
+  * Cons: Developers must write every `COMMAND_WORD` constant in lower case. The parser lower-cases the typed word
+    before comparing it, so a constant such as `feeSummary` would never match any input, however the tutor types it.
+* **Alternative 2:** Keep exact, lower-case matching, and only say in the error message that command words are
+  lower case.
+  * Pros: Parsing does not change.
+  * Cons: The tutor still has to retype the command, although the intended command is clear. Requiring a letter case
+    that carries no meaning is an arbitrary rule the tutor must remember.
+
+**Aspect: Letter case of prefixes:**
+
+* **Alternative 1 (current choice):** Keep prefixes such as `n/` and `gp/` exact.
+  * Pros: Upper-case text that looks like a prefix stays part of a value. For example, `a/Blk 5 N/A` keeps `N/A` in
+    the address.
+  * Cons: With Caps Lock on, `ADD N/AMY ...` is rejected with the `add` format message.
+* **Alternative 2:** Match prefixes in any letter case as well.
+  * Pros: A whole command typed with Caps Lock on would work.
+  * Cons: Any value containing a space followed by text such as `N/`, `P/` or `A/` would be split into another
+    parameter, which changes how existing valid input is parsed.
+
+**Aspect: Content of the unknown-command message:**
+
+* **Alternative 1 (current choice):** Quote the typed word, suggest `help COMMAND`, then list every command word.
+  * Pros: The list is short, so the tutor can spot the intended word. Quoting the word shows which part of the input
+    was read as the command word, for example `list.` when a stray character is attached. The list comes last because
+    it wraps in a narrow window: if the result area is too short, only the end of the list needs scrolling, and the
+    quoted word and the `help COMMAND` hint stay visible unless the typed word is very long.
+  * Cons: The message is longer than the old `Unknown command.`, and the tutor may still need to scroll to see the
+    whole list in a narrow window.
+* **Alternative 2:** Also suggest the closest command word, such as "Did you mean `list`?", using edit distance.
+  * Pros: Points straight to the most likely command.
+  * Cons: Needs a distance threshold and rules for ties, and a wrong suggestion can mislead. The full list already
+    contains the intended word, so this was left as a possible later improvement.
 
 ### \[Proposed\] Data archiving
 
@@ -1029,11 +1105,37 @@ testers are expected to do more *exploratory* testing.
    1. Enter `help clear`, `help exit` and `help list`.<br>
       Expected: Each shows instructions only. The app stays open, no student is deleted and the filter is unchanged.
 
-   1. Enter `help unknown` and `help paid 1`.<br>
-      Expected: Each reports invalid format, explains `help [COMMAND]` and lists the available command words.
+   1. Enter `help lsit`.<br>
+      Expected: `Unknown command: "lsit".`, followed by the available command words. The filter is unchanged.
+
+   1. Enter `help paid 1`.<br>
+      Expected: `Type only one command word after help, such as help paid.` No payment is recorded.
 
    1. Enter `help`.<br>
       Expected: The existing help window opens with the online guide link. Close the help window to continue.
+
+### Command words in any case and unknown commands
+
+1. Prerequisites: Start a fresh disposable application folder with the supplied sample data of six students.
+
+   1. Enter `find Alex`, then `LIST`.<br>
+      Expected: `Listed all students.` All six students are displayed again, as after `list`.
+
+   1. Enter `Help`, close the help window, then enter `help PAID`.<br>
+      Expected: `Help` opens the help window. `help PAID` shows the same payment instructions as `help paid`.
+
+   1. Enter `DELETE 2`, then press N in the dialog.<br>
+      Expected: The deletion confirmation dialog names Bernice Yu, as it would for `delete 2`. After N, she is
+      still displayed and all six students remain.
+
+   1. Enter `lsit`.<br>
+      Expected: The result area starts with `Unknown command: "lsit". Type help COMMAND to see a command's format
+      and an example.`, followed by the available command words. The command text turns red, and the displayed list
+      is unchanged.
+
+   1. Enter `ADD N/Amy Tan G/Mei Tan GP/91234567`.<br>
+      Expected: The `add` command is recognised, but its prefixes are not, so an invalid-command-format message with
+      the `add` usage is shown and no student is added.
 
 ### Saving data
 
@@ -1062,10 +1164,12 @@ testers are expected to do more *exploratory* testing.
 
 ### Maintaining command-specific help
 
-When registering a new command in `AddressBookParser`, also add its `MESSAGE_USAGE` to
+When registering a new command in `AddressBookParser`, give it a lower-case `COMMAND_WORD`, add its `MESSAGE_USAGE` to
 `HelpCommand.COMMAND_USAGE`, update the UG command list and the `CommandHelpLogicTest` targets,
-and remove that command from `HelpCommandParserTest` invalid targets if present. Verify both the raw command
-and `help COMMAND` through `LogicManager`. `findguardian` is registered with command-specific help and covered by dispatcher-level search,
+and remove that command from the unknown-word inputs in `HelpCommandParserTest` if present. The help entry also adds the word
+to the unknown-command message, so update the example message in
+[Command words and unknown commands](#command-words-and-unknown-commands) too. Verify both the raw command and
+`help COMMAND` through `LogicManager`. `findguardian` is registered with command-specific help and covered by dispatcher-level search,
 filtered-index payment, invalid-input and persistence regression tests.
 
 ### Guardian search and persisted fee updates
