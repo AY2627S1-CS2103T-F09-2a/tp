@@ -1038,6 +1038,12 @@ testers are expected to do more *exploratory* testing.
    Expected: Alex Yeoh's card still shows the long tag cut off with `...`, and the details pane still shows it in full.
    Scroll down the details pane if the tags are not visible.
 
+1. Enter `edit 1 t/ThisTagIsFarTooLongToFitOnOneStudentCardAtAnyWindowSizeA t/ThisTagIsFarTooLongToFitOnOneStudentCardAtAnyWindowSizeB`,
+   then `view 1`.<br>
+   Expected: The two tags look the same on Alex Yeoh's card, because they differ only after the point where they are
+   cut off. This is a known limitation of cutting off long tags. The details pane shows both tags in full, the one
+   ending in `A` first. Scroll down the details pane if the tags are not visible.
+
 ### Reading command-specific help
 
 1. Prerequisites: Start a fresh disposable application folder with the supplied sample data, then enter `find Alex`.
