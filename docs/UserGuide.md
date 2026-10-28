@@ -306,7 +306,11 @@ _Details coming soon ..._
 ## FAQ
 
 **Q**: How do I transfer my data to another computer?<br>
-**A**: Install the app on the other computer and overwrite the data file it creates with the data file from your previous Poco Book home folder.
+**A**: Copy `data/addressbook.json` from the folder containing your old Poco Book JAR to the same path beside
+the JAR on the new computer. Close Poco Book on both computers first. Create the `data` folder on the new computer
+if it does not exist; a fresh launch displays sample students in memory but does not create the data file until a
+change is saved. If `data/addressbook.json` already exists at the destination, back it up before replacing it.
+Relaunch Poco Book to load the transferred students, guardians, and outstanding fees.
 
 --------------------------------------------------------------------------------------------------------------------
 
