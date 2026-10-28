@@ -50,8 +50,9 @@ public class StringUtil {
      *       containsWordIgnoreCaseAndEdgePunctuation("Ali (Junior)", "junior") == true
      *       containsWordIgnoreCaseAndEdgePunctuation("Mary-Ann Lim", "Mary") == false //not a full word match
      *       </pre>
-     * @param sentence cannot be null
-     * @param word cannot be null, cannot be empty, must be a single word
+     *
+     * @param sentence Cannot be null.
+     * @param word Cannot be null, cannot be empty, must be a single word.
      */
     public static boolean containsWordIgnoreCaseAndEdgePunctuation(String sentence, String word) {
         if (containsWordIgnoreCase(sentence, word)) {
