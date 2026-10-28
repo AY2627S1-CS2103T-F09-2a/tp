@@ -60,6 +60,8 @@ Poco Book is a **desktop application for independent tutors to manage students, 
 
 * For `delete`, `edit`, `view`, and `setoutstanding`, `INDEX` uses ASCII digits without leading zeros, such as `1` or `12`. Leading zeros (`01`), signs (`+1`), decimals, and extra index tokens produce an invalid-command-format message. A positive index larger than `2147483647` produces `The student index provided is invalid.` No record or current list is changed when the index is rejected.
 
+* Separate the command word and parameters with ordinary spaces. The command box removes tabs from pasted text, so the words on either side of a tab run together. Other space characters, such as the non-breaking spaces that some documents and chat apps use, are not treated as separators. In both cases the command is rejected and no data changes; retype the spaces and press Enter again.
+
 * Extraneous parameters for commands that take no parameters, such as `list`, `exit`, and `clear`, are ignored.<br>
   For example, `list 123` is interpreted as `list`. `help` accepts an optional command word and rejects unknown targets or extra arguments.
 
@@ -94,9 +96,11 @@ Format: `add n/NAME g/GUARDIAN_NAME gp/GUARDIAN_PHONE [p/PHONE] [e/EMAIL] [a/ADD
 * `n/NAME`, `g/GUARDIAN_NAME`, and `gp/GUARDIAN_PHONE` are required; `p/PHONE`, `e/EMAIL`, `a/ADDRESS`, and `f/AMOUNT` are optional.
 * Each prefix may appear at most once in an `add` command.
 * `ADDRESS` may contain text such as `c/o`, `Blk A/B`, or `N/A`. Other parameters must not contain unrecognised prefixes such as `t/`.
+* Everything after `a/` up to the next recognised prefix is stored as the address. Prefixes are case-sensitive, so a mistyped prefix such as `GP/98765432` or `p :98765432` becomes part of the address instead of setting that field. The success message lists the saved values, so check it after adding.
 * `PHONE` and `GUARDIAN_PHONE` must be 8-digit Singapore numbers starting with `6`, `8`, or `9` (spaces and hyphens between digits are allowed and removed when stored).
 * `AMOUNT`, if provided, must be a positive amount between `0.01` and `99999.99` with up to 2 decimal places (and is stored to 2 decimal places).
 * Two students are considered duplicates if they share the same normalized student name (case-insensitive, with consecutive spaces collapsed) and the same normalized guardian phone number.
+* A successful `add` returns to the full student list, so the new student is visible even if a `find`, `findguardian` or `fees` filter was active.
 
 Examples:
 * `add n/Alex Tan g/Mei Tan gp/92345678`
@@ -195,7 +199,8 @@ Format: `edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [a/ADDRESS] [g/GUARDIAN_NAME] [
 * To remove all of a student's tags, enter `t/` without a tag after it.
 * Use `g/` and/or `gp/` to change guardian details. Omitted fields keep their existing values; guardian fields cannot be blank or cleared. Duplicate guardian prefixes are rejected.
 * Outstanding fees cannot be changed with `edit`; `f/` is rejected. Use `setoutstanding` to change a fee.
-* A successful edit returns to the full student list.
+* As in `add`, a mistyped prefix after `a/`, such as `GP/`, is stored as part of the address. The success message lists the saved values.
+* A successful edit returns to the full student list, so run your `find`, `findguardian` or `fees` filter again before using indexes from it. `setoutstanding` and `paid` keep the current filter instead.
 
 Examples:
 * `edit 1 g/Mei Tan gp/92345678` Updates the guardian contact while preserving other fields.
