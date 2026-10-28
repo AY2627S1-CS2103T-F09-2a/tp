@@ -167,6 +167,11 @@ The `Storage` component,
 * is implemented by `StorageManager`, which delegates the actual JSON file access to `JsonAddressBookStorage` and `JsonUserPrefsStorage` (one class per data file).
 * depends on some classes in the `Model` component (because the `Storage` component's job is to save/retrieve objects that belong to the `Model`)
 
+`MainWindow` validates saved GUI dimensions when applying `GuiSettings` to the stage. Nonfinite or nonpositive
+dimensions fall back to defaults. A saved position is kept if its title area overlaps the visual bounds of any
+connected screen; otherwise the stage is centered on an available screen. The settings file is not rewritten
+until the normal preferences save, so a disconnected monitor does not prevent startup.
+
 ### Common classes
 
 Classes used by multiple components are in the `seedu.address.commons` package.

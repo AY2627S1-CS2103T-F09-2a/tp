@@ -1,5 +1,6 @@
 package seedu.address.ui;
 
+import java.awt.Point;
 import java.nio.file.Path;
 import java.util.Optional;
 import java.util.logging.Logger;
@@ -11,6 +12,7 @@ import javafx.scene.control.TextInputControl;
 import javafx.scene.input.KeyCombination;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.StackPane;
+import javafx.stage.Screen;
 import javafx.stage.Stage;
 import seedu.address.commons.core.GuiSettings;
 import seedu.address.commons.core.LogsCenter;
@@ -27,6 +29,8 @@ import seedu.address.model.person.Person;
 public class MainWindow extends UiPart<Stage> {
 
     private static final String FXML = "MainWindow.fxml";
+    private static final double VISIBLE_TITLE_WIDTH = 200;
+    private static final double VISIBLE_TITLE_HEIGHT = 40;
 
     private final Logger logger = LogsCenter.getLogger(getClass());
 
@@ -145,11 +149,25 @@ public class MainWindow extends UiPart<Stage> {
      * Sets the default size based on {@code guiSettings}.
      */
     private void setWindowDefaultSize(GuiSettings guiSettings) {
-        primaryStage.setHeight(guiSettings.getWindowHeight());
-        primaryStage.setWidth(guiSettings.getWindowWidth());
-        if (guiSettings.getWindowCoordinates() != null) {
-            primaryStage.setX(guiSettings.getWindowCoordinates().getX());
-            primaryStage.setY(guiSettings.getWindowCoordinates().getY());
+        double width = guiSettings.getWindowWidth();
+        double height = guiSettings.getWindowHeight();
+        GuiSettings defaults = new GuiSettings();
+        primaryStage.setWidth(Double.isFinite(width) && width > 0 ? width : defaults.getWindowWidth());
+        primaryStage.setHeight(Double.isFinite(height) && height > 0 ? height : defaults.getWindowHeight());
+
+        Point coordinates = guiSettings.getWindowCoordinates();
+        if (coordinates == null) {
+            return;
+        }
+        double titleWidth = Math.min(primaryStage.getWidth(), VISIBLE_TITLE_WIDTH);
+        boolean isTitleVisible = Screen.getScreens().stream()
+                .anyMatch(screen -> screen.getVisualBounds().intersects(
+                        coordinates.x, coordinates.y, titleWidth, VISIBLE_TITLE_HEIGHT));
+        if (isTitleVisible) {
+            primaryStage.setX(coordinates.x);
+            primaryStage.setY(coordinates.y);
+        } else {
+            primaryStage.centerOnScreen();
         }
     }
 
