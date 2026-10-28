@@ -54,8 +54,9 @@ import seedu.address.storage.StorageManager;
  * {@code DeleteConfirmationHandler} before it runs, other commands and invalid indexes do not,
  * and the feedback and the displayed list follow the answer.
  *
- * <p>The window is driven through its own command box, with a confirmer that records each request
- * instead of showing a dialog, so no dialog has to be answered or dismissed.
+ * <p>The window is driven through its own command box. Most tests use a confirmer that records each
+ * request instead of showing a dialog. Two tests use the public constructor and answer the real dialog
+ * with Y or N.
  */
 @EnabledIfEnvironmentVariable(named = "POCO_UI_TESTS", matches = "true")
 public class MainWindowDeletionTest {
