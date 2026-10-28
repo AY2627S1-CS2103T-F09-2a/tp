@@ -217,7 +217,7 @@ The activity diagram below shows what happens when the tutor enters `delete INDE
 1. If the tutor cancels, the handler returns a `CommandResult` with a cancellation message without calling `Logic#execute(String)`, so nothing is deleted or saved. `MainWindow` then restores the selection as it does after any other successful command.
 1. If the tutor confirms, the handler calls `Logic#getDeletionTarget(String)` again to check that the index still identifies the same student. It then calls `Logic#execute(String)`, which deletes the student and saves the data as before. While the dialog is open, the tutor cannot enter commands, so the displayed list cannot change. The second check is a safeguard in case a future change allows the list to change during confirmation: if a different student now has that index, the handler throws a `CommandException` and deletes nothing.
 
-The sequence diagram below shows these steps for `delete 2`, including the second check and the error that the handler reports if that check fails.
+The sequence diagram below shows these steps for `delete 2`, including the second check and the `CommandException` with `DeleteConfirmationHandler.MESSAGE_TARGET_CHANGED` that the handler throws if that check fails.
 
 <img src="images/DeleteConfirmationSequenceDiagram.png" width="800" />
 
