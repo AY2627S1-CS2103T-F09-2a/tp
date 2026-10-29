@@ -1,6 +1,7 @@
 package seedu.address.ui;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
@@ -10,9 +11,13 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
 import javafx.application.Platform;
+import javafx.geometry.Bounds;
+import javafx.scene.Node;
+import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.VBox;
+import javafx.stage.Stage;
 import seedu.address.testutil.PersonBuilder;
 
 /**
@@ -42,6 +47,45 @@ public class PersonDetailsPanelTest {
             assertEquals("Email: Not provided", ((Label) content.lookup("#email")).getText());
             assertEquals("Address: Not provided", ((Label) content.lookup("#address")).getText());
             assertEquals("Outstanding fee: None", ((Label) content.lookup("#outstandingFee")).getText());
+            return null;
+        });
+        Platform.runLater(assertion);
+        assertion.get(10, TimeUnit.SECONDS);
+    }
+
+    @Test
+    public void showPerson_maximumContactFields_scrollToBottomRevealsFinalFields() throws Exception {
+        FutureTask<Void> assertion = new FutureTask<>(() -> {
+            PersonDetailsPanel panel = new PersonDetailsPanel();
+            ScrollPane scrollPane = (ScrollPane) panel.getRoot();
+            Stage stage = new Stage();
+            // Roughly the size of the details pane when the main window is at its 750 x 450 minimum.
+            stage.setScene(new Scene(scrollPane, 340, 260));
+            try {
+                panel.showPerson(new PersonBuilder().withName("W".repeat(70))
+                        .withGuardianName("W".repeat(70))
+                        .withAddress("W".repeat(150))
+                        .withEmail("a".repeat(62) + "@" + "b".repeat(62) + "."
+                                + "c".repeat(62) + "." + "d".repeat(61) + ".com")
+                        .withOutstandingFee("99999.99").withTags("Math").build());
+                stage.show();
+                scrollPane.applyCss();
+                scrollPane.layout();
+                assertTrue(scrollPane.getContent().getBoundsInLocal().getHeight()
+                        > scrollPane.getViewportBounds().getHeight(), "Fixture must require scrolling");
+
+                scrollPane.setVvalue(scrollPane.getVmax());
+                scrollPane.layout();
+                Label lastField = (Label) scrollPane.getContent().lookup("#tags");
+                Node viewportNode = scrollPane.lookup(".viewport");
+                Bounds viewport = viewportNode.localToScene(viewportNode.getBoundsInLocal());
+                Bounds lastFieldOnScreen = lastField.localToScene(lastField.getBoundsInLocal());
+                assertEquals("Tags: Math", lastField.getText());
+                assertTrue(lastFieldOnScreen.getMaxY() <= viewport.getMaxY(),
+                        "The final details field must be visible after scrolling to the bottom");
+            } finally {
+                stage.close();
+            }
             return null;
         });
         Platform.runLater(assertion);
