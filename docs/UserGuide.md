@@ -119,7 +119,7 @@ When you are done, you can delete the walkthrough folder. To keep using Poco Boo
 
 * For `delete`, `edit`, `view`, and `setoutstanding`, `INDEX` uses ASCII digits without leading zeros, such as `1` or `12`. Leading zeros (`01`), signs (`+1`), decimals, and extra index tokens produce an invalid-command-format message. A positive index larger than `2147483647` produces `The student index provided is invalid.` No record or current list is changed when the index is rejected.
 
-* Separate the command word and parameters with ordinary spaces. The command box removes tabs from pasted text, so the words on either side of a tab run together. Other space characters, such as the non-breaking spaces that some documents and chat apps use, are not treated as separators. In both cases the command is rejected and no data changes; retype the spaces and press Enter again.
+* Separate the command word and parameters with ordinary spaces. The command box removes tabs and line breaks from pasted text, so the words on either side of them run together. This usually makes the command invalid, but inside a value it joins the words instead; for example, pasting `n/Alex` and `Tan` separated by a tab saves the name `AlexTan`. Other space characters, such as the non-breaking spaces that some documents and chat apps use, are not treated as separators either. If a pasted command is rejected, retype the spaces and press Enter again; if it succeeds, check the saved values in the success message.
 
 * Only `list`, `exit`, and `clear` ignore any text typed after the command word.<br>
   For example, `list 123` is interpreted as `list`, and `clear 123` still deletes all students.
@@ -159,7 +159,7 @@ Format: `add n/NAME g/GUARDIAN_NAME gp/GUARDIAN_PHONE [p/PHONE] [e/EMAIL] [a/ADD
 * If any required parameters are missing, the error names all of them, such as `Missing required parameter(s): g/, gp/.`
 * Each prefix may appear at most once in an `add` command.
 * `ADDRESS` may contain text such as `c/o`, `Blk A/B`, or `N/A`. Other parameters must not contain unrecognised prefixes such as `t/`.
-* Everything after `a/` up to the next recognised prefix is stored as the address. Prefixes are case-sensitive, so a mistyped prefix such as `GP/98765432` or `p :98765432` becomes part of the address instead of setting that field. The success message lists the saved values, so check it after adding.
+* Everything after `a/` up to the next recognised prefix is stored as the address. Prefixes are case-sensitive, so a mistyped optional prefix such as `P/91234567` becomes part of the address instead of setting that field. For example, `add n/Alex Tan g/Mei Tan gp/92345678 a/Blk 1 P/91234567` saves the address `Blk 1 P/91234567`. A prefix typed without its slash, such as `p 91234567`, is also stored as part of the address. The success message lists the saved values, so check it after adding.
 * `NAME` and `GUARDIAN_NAME` must be 1 to 70 characters long and contain at least one letter. They may use letters (including non-English letters such as `é` or `李`), digits, spaces, apostrophes, hyphens, periods and parentheses. Extra spaces are removed before the length is counted.
 * `ADDRESS`, if provided, must be 1 to 150 characters long and fit on one line.
 * `EMAIL`, if provided, must be at most 254 characters long, with at most 64 characters before `@`, and must end in a domain such as `example.com` (the last part must be at least 2 letters).
@@ -286,7 +286,7 @@ Format: `edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [a/ADDRESS] [g/GUARDIAN_NAME] [
 * `edit` changes only the student at `INDEX`. If you change the guardian phone and other students (such as siblings) still have the old number, the result names them so you can edit them too.
 * Outstanding fees cannot be changed with `edit`; `f/` is rejected. Use `setoutstanding` to change a fee.
 * As in `add`, a mistyped prefix after `a/`, such as `GP/`, is stored as part of the address. The success message lists the saved values.
-* A successful edit returns to the full student list, so run your `find`, `findguardian` or `fees` filter again before using indexes from it. `setoutstanding` and `paid` keep the current filter instead.
+* A successful edit returns to the full student list, so run your `find`, `findguardian` or `fees` filter again before using indexes from it. `delete`, `setoutstanding` and `paid` keep the current filter instead.
 
 Examples:
 * `edit 1 g/Mei Tan gp/92345678` Updates the guardian contact while preserving other fields.

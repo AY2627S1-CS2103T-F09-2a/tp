@@ -180,16 +180,16 @@ The `Model` component,
 * stores a `UserPrefs` object that represents the user’s preferences (currently, just the GUI settings). This is exposed to the outside as a `ReadOnlyUserPrefs` object.
 * does not depend on any of the other three components (as the `Model` represents data entities of the domain, they should make sense on their own without depending on other components)
 
-**Design consideration: which commands keep the current filter**
+**Aspect: Which commands keep the current filter**
 
-`add` (through `ModelManager#addPerson`) and `edit` reset the filtered list to all students, while `setoutstanding` and `paid` keep the current predicate.
+`add` (through `ModelManager#addPerson`) and `edit` reset the filtered list to all students, while `delete`, `setoutstanding` and `paid` keep the current predicate.
 
-* **Alternative 1 (current choice):** `add` and `edit` show the full list; fee commands keep the filter.
-  * Pros: after `add` or `edit`, the changed student is always visible, even when the change means they no longer match a `find` or `findguardian` filter. Fee commands are usually run in a row while working down a `fees` result, so keeping that filter saves re-running it.
-  * Cons: a tutor who edits several students from a filtered list must run the filter again after each `edit`, and the indexes change.
+* **Alternative 1 (current choice):** `add` and `edit` show the full list; `delete` and the fee commands keep the filter.
+  * Pros: After `add` or `edit`, the changed student is always visible, even when the change means they no longer match a `find` or `findguardian` filter. Fee commands are usually run in a row while working down a `fees` result, so keeping that filter saves re-running it.
+  * Cons: A tutor who edits several students from a filtered list must run the filter again after each `edit`, and the indexes change.
 * **Alternative 2:** every command keeps the current filter.
-  * Pros: one rule for all commands, and indexes stay stable while working down a filtered list.
-  * Cons: an edited student who no longer matches disappears right after a successful command, which looks like the edit failed.
+  * Pros: One rule for all commands, and indexes stay stable while working down a filtered list.
+  * Cons: An edited student who no longer matches disappears right after a successful command, which looks like the edit failed.
 
 The User Guide states the behaviour for each of these commands, so a tutor knows when indexes have changed.
 
