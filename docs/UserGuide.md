@@ -233,7 +233,7 @@ Format: `find KEYWORD [MORE_KEYWORDS]`
 
 Examples:
 * `find John` returns `john` and `John Doe`
-* `find alex david` returns `Alex Yeoh`, `David Li`<br>
+* With the sample data, `find alex david` returns `Alex Yeoh` and `David Li`:<br>
   ![result for 'find alex david'](images/findAlexDavidResult.png)
 
 ### Viewing a student's complete record: `view`
