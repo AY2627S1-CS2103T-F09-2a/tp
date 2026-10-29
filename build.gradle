@@ -11,6 +11,10 @@ application {
     applicationDefaultJvmArgs = ['-ea']
 }
 
+run {
+    enableAssertions = true
+}
+
 java {
     sourceCompatibility = JavaVersion.VERSION_25
     targetCompatibility = JavaVersion.VERSION_25
@@ -27,6 +31,9 @@ checkstyle {
 
 test {
     useJUnitPlatform()
+    // The JavaFX suite is gated by this variable, so changing it must rerun the tests
+    // rather than reuse reports and coverage from the other setting.
+    inputs.property('pocoUiTests', System.getenv('POCO_UI_TESTS') ?: 'unset')
     finalizedBy jacocoTestReport
 }
 

@@ -11,7 +11,7 @@ public class ExitCommand extends Command {
     public static final String MESSAGE_USAGE = COMMAND_WORD
             + ": Closes Poco Book.\nExample: " + COMMAND_WORD;
 
-    public static final String MESSAGE_EXIT_ACKNOWLEDGEMENT = "Exiting Address Book as requested ...";
+    public static final String MESSAGE_EXIT_ACKNOWLEDGEMENT = "Exiting Poco Book as requested ...";
 
     @Override
     public CommandResult execute(Model model) {

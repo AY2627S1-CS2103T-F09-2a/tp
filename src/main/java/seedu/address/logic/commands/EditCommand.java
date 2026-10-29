@@ -43,7 +43,7 @@ public class EditCommand extends Command {
 
     public static final String MESSAGE_USAGE = COMMAND_WORD + ": Edits the details of the student identified "
             + "by the index number used in the displayed student list. "
-            + "Existing values will be overwritten by the input values.\n"
+            + "Existing values will be overwritten by the input values; an empty p/, e/ or a/ removes that field.\n"
             + "Parameters: INDEX (" + Messages.MESSAGE_INDEX_CONSTRAINTS + ") "
             + "[" + PREFIX_NAME + "NAME] "
             + "[" + PREFIX_PHONE + "PHONE] "
@@ -58,8 +58,12 @@ public class EditCommand extends Command {
             + PREFIX_GUARDIAN_PHONE + "98765432";
 
     public static final String MESSAGE_EDIT_PERSON_SUCCESS = "Edited student:\n%1$s";
+    public static final String MESSAGE_SHARED_GUARDIAN_PHONE = "\nNote: %1$d other %4$s still %5$s "
+            + "the old guardian phone %2$s: %3$s. Edit them too if the guardian changed number.";
     public static final String MESSAGE_NOT_EDITED = "At least one field to edit must be provided.";
     public static final String MESSAGE_DUPLICATE_PERSON = AddCommand.MESSAGE_DUPLICATE_PERSON;
+    public static final String MESSAGE_NO_CHANGE =
+            "No changes made: the student already has these details.";
 
     private static final Logger logger = LogsCenter.getLogger(EditCommand.class);
 
@@ -67,8 +71,10 @@ public class EditCommand extends Command {
     private final EditPersonDescriptor editPersonDescriptor;
 
     /**
-     * @param index of the student in the filtered student list to edit
-     * @param editPersonDescriptor details to edit the student with
+     * Creates an edit command for the student at the given index.
+     *
+     * @param index Index of the student in the filtered student list to edit.
+     * @param editPersonDescriptor Details to edit the student with.
      */
     public EditCommand(Index index, EditPersonDescriptor editPersonDescriptor) {
         requireNonNull(index);
@@ -91,6 +97,10 @@ public class EditCommand extends Command {
         logger.fine("Editing student at index " + index.getOneBased() + ": " + personToEdit.getName());
         Person editedPerson = createEditedPerson(personToEdit, editPersonDescriptor);
 
+        if (editedPerson.equals(personToEdit)) {
+            logger.fine("Rejected edit that would leave the student unchanged.");
+            throw new CommandException(MESSAGE_NO_CHANGE);
+        }
         if (!personToEdit.isSamePerson(editedPerson) && model.hasPerson(editedPerson)) {
             throw new CommandException(MESSAGE_DUPLICATE_PERSON);
         }
@@ -98,7 +108,30 @@ public class EditCommand extends Command {
         model.setPerson(personToEdit, editedPerson);
         model.updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS);
         logger.info("Updated student details for: " + editedPerson.getName());
-        return new CommandResult(String.format(MESSAGE_EDIT_PERSON_SUCCESS, Messages.format(editedPerson)));
+        String feedback = String.format(MESSAGE_EDIT_PERSON_SUCCESS, Messages.format(editedPerson));
+        return new CommandResult(feedback + describeStudentsLeftOnOldPhone(model, personToEdit, editedPerson));
+    }
+
+    /**
+     * Returns a note naming the other students who still have {@code personToEdit}'s guardian phone,
+     * or an empty string if the guardian phone was not changed or no other student shares it.
+     * Siblings share a guardian, so a tutor who changes one student's guardian phone may need to change theirs too.
+     */
+    private static String describeStudentsLeftOnOldPhone(Model model, Person personToEdit, Person editedPerson) {
+        GuardianPhone oldPhone = personToEdit.getGuardianPhone();
+        if (oldPhone.equals(editedPerson.getGuardianPhone())) {
+            return "";
+        }
+
+        List<String> names = model.getAddressBook().getPersonList().stream()
+                .filter(person -> person.getGuardianPhone().equals(oldPhone))
+                .map(person -> person.getName().toString())
+                .toList();
+        if (names.isEmpty()) {
+            return "";
+        }
+        return String.format(MESSAGE_SHARED_GUARDIAN_PHONE, names.size(), oldPhone, String.join(", ", names),
+                names.size() == 1 ? "student" : "students", names.size() == 1 ? "has" : "have");
     }
 
     /**
@@ -111,9 +144,12 @@ public class EditCommand extends Command {
         assert personToEdit != null;
 
         Name updatedName = editPersonDescriptor.getName().orElse(personToEdit.getName());
-        Phone updatedPhone = editPersonDescriptor.getPhone().or(personToEdit::getPhone).orElse(null);
-        Email updatedEmail = editPersonDescriptor.getEmail().or(personToEdit::getEmail).orElse(null);
-        Address updatedAddress = editPersonDescriptor.getAddress().or(personToEdit::getAddress).orElse(null);
+        Phone updatedPhone = editPersonDescriptor.isPhoneCleared()
+                ? null : editPersonDescriptor.getPhone().or(personToEdit::getPhone).orElse(null);
+        Email updatedEmail = editPersonDescriptor.isEmailCleared()
+                ? null : editPersonDescriptor.getEmail().or(personToEdit::getEmail).orElse(null);
+        Address updatedAddress = editPersonDescriptor.isAddressCleared()
+                ? null : editPersonDescriptor.getAddress().or(personToEdit::getAddress).orElse(null);
         GuardianName updatedGuardianName = editPersonDescriptor.getGuardianName()
                 .orElse(personToEdit.getGuardianName());
         GuardianPhone updatedGuardianPhone = editPersonDescriptor.getGuardianPhone()
@@ -159,6 +195,9 @@ public class EditCommand extends Command {
         private GuardianName guardianName;
         private GuardianPhone guardianPhone;
         private Set<Tag> tags;
+        private boolean isPhoneCleared;
+        private boolean isEmailCleared;
+        private boolean isAddressCleared;
 
         public EditPersonDescriptor() {}
 
@@ -174,13 +213,17 @@ public class EditCommand extends Command {
             setGuardianName(toCopy.guardianName);
             setGuardianPhone(toCopy.guardianPhone);
             setTags(toCopy.tags);
+            isPhoneCleared = toCopy.isPhoneCleared;
+            isEmailCleared = toCopy.isEmailCleared;
+            isAddressCleared = toCopy.isAddressCleared;
         }
 
         /**
          * Returns true if at least one field is edited.
          */
         public boolean isAnyFieldEdited() {
-            return CollectionUtil.isAnyNonNull(name, phone, email, address, guardianName, guardianPhone, tags);
+            return CollectionUtil.isAnyNonNull(name, phone, email, address, guardianName, guardianPhone, tags)
+                    || isPhoneCleared || isEmailCleared || isAddressCleared;
         }
 
         public void setName(Name name) {
@@ -193,6 +236,19 @@ public class EditCommand extends Command {
 
         public void setPhone(Phone phone) {
             this.phone = phone;
+            isPhoneCleared = false;
+        }
+
+        /**
+         * Marks the student's phone to be removed by this edit.
+         */
+        public void clearPhone() {
+            phone = null;
+            isPhoneCleared = true;
+        }
+
+        public boolean isPhoneCleared() {
+            return isPhoneCleared;
         }
 
         public Optional<Phone> getPhone() {
@@ -201,6 +257,19 @@ public class EditCommand extends Command {
 
         public void setEmail(Email email) {
             this.email = email;
+            isEmailCleared = false;
+        }
+
+        /**
+         * Marks the student's email to be removed by this edit.
+         */
+        public void clearEmail() {
+            email = null;
+            isEmailCleared = true;
+        }
+
+        public boolean isEmailCleared() {
+            return isEmailCleared;
         }
 
         public Optional<Email> getEmail() {
@@ -209,6 +278,19 @@ public class EditCommand extends Command {
 
         public void setAddress(Address address) {
             this.address = address;
+            isAddressCleared = false;
+        }
+
+        /**
+         * Marks the student's address to be removed by this edit.
+         */
+        public void clearAddress() {
+            address = null;
+            isAddressCleared = true;
+        }
+
+        public boolean isAddressCleared() {
+            return isAddressCleared;
         }
 
         public Optional<Address> getAddress() {
@@ -265,7 +347,10 @@ public class EditCommand extends Command {
                     && Objects.equals(address, otherEditPersonDescriptor.address)
                     && Objects.equals(guardianName, otherEditPersonDescriptor.guardianName)
                     && Objects.equals(guardianPhone, otherEditPersonDescriptor.guardianPhone)
-                    && Objects.equals(tags, otherEditPersonDescriptor.tags);
+                    && Objects.equals(tags, otherEditPersonDescriptor.tags)
+                    && isPhoneCleared == otherEditPersonDescriptor.isPhoneCleared
+                    && isEmailCleared == otherEditPersonDescriptor.isEmailCleared
+                    && isAddressCleared == otherEditPersonDescriptor.isAddressCleared;
         }
 
         @Override
@@ -278,6 +363,9 @@ public class EditCommand extends Command {
                     .add("guardianName", guardianName)
                     .add("guardianPhone", guardianPhone)
                     .add("tags", tags)
+                    .add("isPhoneCleared", isPhoneCleared)
+                    .add("isEmailCleared", isEmailCleared)
+                    .add("isAddressCleared", isAddressCleared)
                     .toString();
         }
     }
