@@ -154,6 +154,7 @@ Adds a student to Poco Book with their required guardian contact and optional pe
 Format: `add n/NAME g/GUARDIAN_NAME gp/GUARDIAN_PHONE [p/PHONE] [e/EMAIL] [a/ADDRESS] [f/AMOUNT]`
 
 * `n/NAME`, `g/GUARDIAN_NAME`, and `gp/GUARDIAN_PHONE` are required; `p/PHONE`, `e/EMAIL`, `a/ADDRESS`, and `f/AMOUNT` are optional.
+* If any required parameters are missing, the error names all of them, such as `Missing required parameter(s): g/, gp/.`
 * Each prefix may appear at most once in an `add` command.
 * `ADDRESS` may contain text such as `c/o`, `Blk A/B`, or `N/A`. Other parameters must not contain unrecognised prefixes such as `t/`.
 * `NAME` and `GUARDIAN_NAME` must be 1 to 70 characters long and contain at least one letter. They may use letters (including non-English letters such as `é` or `李`), digits, spaces, apostrophes, hyphens, periods and parentheses. Extra spaces are removed before the length is counted.
