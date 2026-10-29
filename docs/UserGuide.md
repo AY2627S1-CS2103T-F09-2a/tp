@@ -156,15 +156,22 @@ Format: `add n/NAME g/GUARDIAN_NAME gp/GUARDIAN_PHONE [p/PHONE] [e/EMAIL] [a/ADD
 * `n/NAME`, `g/GUARDIAN_NAME`, and `gp/GUARDIAN_PHONE` are required; `p/PHONE`, `e/EMAIL`, `a/ADDRESS`, and `f/AMOUNT` are optional.
 * Each prefix may appear at most once in an `add` command.
 * `ADDRESS` may contain text such as `c/o`, `Blk A/B`, or `N/A`. Other parameters must not contain unrecognised prefixes such as `t/`.
+* `NAME` and `GUARDIAN_NAME` must be 1 to 70 characters long and contain at least one letter. They may use letters (including non-English letters such as `é` or `李`), digits, spaces, apostrophes, hyphens, periods and parentheses. Extra spaces are removed before the length is counted.
+* `ADDRESS`, if provided, must be 1 to 150 characters long and fit on one line.
+* `EMAIL`, if provided, must be at most 254 characters long, with at most 64 characters before `@`, and must end in a domain such as `example.com` (the last part must be at least 2 letters).
 * `PHONE` and `GUARDIAN_PHONE` must be 8-digit Singapore numbers starting with `6`, `8`, or `9` (spaces and hyphens between digits are allowed and removed when stored).
 * `AMOUNT`, if provided, must be a positive amount between `0.01` and `99999.99` with up to 2 decimal places (and is stored to 2 decimal places).
 * Two students are considered duplicates if they share the same normalized student name (case-insensitive, with consecutive spaces collapsed) and the same normalized guardian phone number.
-* `NAME` and `GUARDIAN_NAME` may include `S/O` or `D/O` as a separate word, such as `Ravi S/O Raj`. Other slashes are not allowed in names.
-  S/O and D/O must be separated from other name text by spaces; for example, use `Tan S/O Lim` rather than `Tan (S/O Lim)`. The marker must come between names, so `S/O Raj`, `Ravi S/O` and `S/O` alone are not valid names.
+* `NAME` and `GUARDIAN_NAME` may include `S/O` or `D/O` as a separate word, such as `Ravi S/O Raj`. Separate the marker from adjacent text with spaces; for example, use `Tan ( S/O Lim)` rather than `Tan (S/O Lim)`. The marker must come between names, so `S/O Raj`, `Ravi S/O` and `S/O` alone are not valid names. Other slashes are not allowed in names.
+* Names accept only the straight apostrophe (`'`) and the ASCII hyphen (`-`). Curly apostrophes (`’`) and other dashes (`‐`, `–`), which some keyboards and copied text produce, are rejected; retype them as `'` or `-`.
+* In `EMAIL`, the part before `@` may use only ASCII letters (A-Z, a-z), digits, `.`, `_`, `+` and `-`. Addresses with other characters, such as an apostrophe (`o'connor@example.com`), are not supported.
 
 Examples:
 * `add n/Alex Tan g/Mei Tan gp/92345678`
 * `add n/Riya Kumar g/Anil Kumar gp/97654321 p/98765432 e/riya@example.com a/12 Clementi Ave 3 f/75.50`
+* `add n/José O'Neil-Tan g/Maria O'Neil gp/91112222` is accepted: accented letters, apostrophes and hyphens are allowed in names.
+* `add n/Tom & Jerry g/Mei Tan gp/92345678` is rejected because `&` is not allowed in names.
+* `add n/Alex Tan g/Mei Tan gp/92345678 e/alex@example` is rejected because the email has no domain ending such as `.com`.
 
 ### Listing all students: `list`
 
@@ -282,7 +289,7 @@ Finds students whose names contain any of the given keywords.
 
 Format: `find KEYWORD [MORE_KEYWORDS]`
 
-* The search is case-insensitive; for example, `hans` matches `Hans`.
+* The search is case-insensitive; for example, `hans` matches `Hans`. Letters are compared one at a time, so a letter that capitalises to two letters is not matched by them; for example, `STRASSE` does not match `Straße`. The same rule applies when checking for duplicate students.
 * Keyword order does not matter; for example, `Hans Bo` matches `Bo Hans`.
 * The search considers only student names. Guardian details, contact details and fees are not searched.
 * Only full words match; for example, `Han` does not match `Hans`.
@@ -407,6 +414,7 @@ reopen just one before editing that folder again; use a backup if changes have a
 
 1. **When using multiple screens**, if you move the application to a secondary screen, and later switch to using only the primary screen, the GUI will open off-screen. The remedy is to delete the `preferences.json` file created by the application before running the application again.
 2. **If you minimize the Help Window** and then run the `help` command (or use the `Help` menu, or the keyboard shortcut `F1`) again, the original Help Window will remain minimized, and no new Help Window will appear. The remedy is to manually restore the minimized Help Window.
+3. **Names and emails with less common characters**, such as curly apostrophes (`’`), Unicode dashes or apostrophes in emails, are rejected, and letters such as `ß` are not matched with `SS` in `find` or duplicate checks. The remedy is to type the name with `'` and `-`, use an email without the unsupported characters, and search with the spelling stored in Poco Book.
 
 --------------------------------------------------------------------------------------------------------------------
 

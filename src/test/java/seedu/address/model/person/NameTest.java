@@ -96,4 +96,20 @@ public class NameTest {
         assertFalse(Name.isValidName("D/O s/o")); // markers only
         assertFalse(Name.isValidName("Ravi / Raj"));
     }
+
+    @Test
+    public void messageConstraints_describesSupportedCharacters() {
+        assertEquals("Names must be 1-70 characters long, contain at least one letter, and use only letters, "
+                + "numbers, spaces, straight apostrophes ('), ASCII hyphens (-), periods, parentheses, or S/O and D/O "
+                + "as separate words between names.",
+                Name.MESSAGE_CONSTRAINTS);
+    }
+
+    @Test
+    public void isValidName_patronymicMarkersOnly_returnsFalse() {
+        assertFalse(Name.isValidName("S/O"));
+        assertFalse(Name.isValidName("D/O D/O"));
+        assertTrue(Name.isValidName("Ravi S/O Kumar"));
+    }
+
 }

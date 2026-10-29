@@ -13,8 +13,9 @@ import java.text.Normalizer;
 public class Name {
 
     public static final String MESSAGE_CONSTRAINTS =
-            "Names must be 1-70 characters long, contain at least one letter, and use only letters, numbers, "
-            + "spaces, apostrophes, hyphens, periods, parentheses, or S/O and D/O as separate words between names.";
+            "Names must be 1-70 characters long, contain at least one letter, and use only letters, "
+            + "numbers, spaces, straight apostrophes ('), ASCII hyphens (-), periods, parentheses, or S/O and D/O "
+            + "as separate words between names.";
     public static final String VALIDATION_REGEX = "[\\p{L}\\p{M}0-9 '.()\\-]+";
     /** S/O or D/O (son of, daughter of), in any case. */
     public static final String PATRONYMIC_MARKER = "[SsDd]/[Oo]";
