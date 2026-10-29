@@ -191,7 +191,7 @@ Format: `edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [a/ADDRESS] [g/GUARDIAN_NAME] [
 * Edits the student at the specified `INDEX`. The index refers to the index number shown in the displayed student list. The index **must be a positive integer** 1, 2, 3, …​
 * At least one of the optional fields must be provided.
 * Existing values will be updated to the input values.
-* If every given value is the same as the student's current details, the edit is rejected with `No changes made: the student already has these details.` and nothing is saved.
+* If every given value is the same as the student's current details, the edit is rejected with `No changes made: the student already has these details.` and nothing is saved. A change in capitalisation alone, such as `edit 1 g/mei tan` for a guardian saved as `Mei Tan`, counts as a change and is saved.
 * When editing tags, all of the student's existing tags are removed; adding tags is not cumulative.
 * To remove all of a student's tags, enter `t/` without a tag after it.
 * To remove a student's phone, email or address, enter `p/`, `e/` or `a/` with nothing after it. Omitting the prefix keeps the existing value.

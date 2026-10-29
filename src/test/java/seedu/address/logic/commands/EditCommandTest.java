@@ -261,6 +261,39 @@ public class EditCommandTest {
     }
 
     @Test
+    public void execute_guardianNameCapitalisationOnly_success() {
+        Person originalPerson = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
+        String lowerCaseGuardianName = originalPerson.getGuardianName().getFullName().toLowerCase();
+        Person editedPerson = new PersonBuilder(originalPerson).withGuardianName(lowerCaseGuardianName).build();
+        EditCommand editCommand = new EditCommand(INDEX_FIRST_PERSON,
+                new EditPersonDescriptorBuilder().withGuardianName(lowerCaseGuardianName).build());
+
+        String expectedMessage = String.format(EditCommand.MESSAGE_EDIT_PERSON_SUCCESS, Messages.format(editedPerson));
+
+        Model expectedModel = new ModelManager(new AddressBook(model.getAddressBook()), new UserPrefs());
+        expectedModel.setPerson(originalPerson, editedPerson);
+
+        assertCommandSuccess(editCommand, model, expectedMessage, expectedModel);
+        assertEquals(lowerCaseGuardianName,
+                model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased()).getGuardianName().getFullName());
+    }
+
+    @Test
+    public void execute_tagCapitalisationOnly_success() {
+        Person originalPerson = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
+        Person editedPerson = new PersonBuilder(originalPerson).withTags("Friends").build();
+        EditCommand editCommand = new EditCommand(INDEX_FIRST_PERSON,
+                new EditPersonDescriptorBuilder().withTags("Friends").build());
+
+        String expectedMessage = String.format(EditCommand.MESSAGE_EDIT_PERSON_SUCCESS, Messages.format(editedPerson));
+
+        Model expectedModel = new ModelManager(new AddressBook(model.getAddressBook()), new UserPrefs());
+        expectedModel.setPerson(originalPerson, editedPerson);
+
+        assertCommandSuccess(editCommand, model, expectedMessage, expectedModel);
+    }
+
+    @Test
     public void execute_filteredList_success() {
         showPersonAtIndex(model, INDEX_FIRST_PERSON);
 
