@@ -41,7 +41,9 @@ public class AddCommand extends Command {
             + PREFIX_OUTSTANDING_FEE + "75.50";
 
     public static final String MESSAGE_SUCCESS = "New student added:\n%1$s";
-    public static final String MESSAGE_DUPLICATE_PERSON = "This student already exists";
+    public static final String MESSAGE_DUPLICATE_PERSON = "This student already exists: another student has the "
+            + "same name (ignoring case and extra spaces) and guardian phone. "
+            + "Change the name or guardian phone to tell them apart.";
 
     private final Person toAdd;
 
