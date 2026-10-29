@@ -77,4 +77,39 @@ public class NameTest {
         // different values -> returns false
         assertFalse(name.equals(new Name("Other Valid Name")));
     }
+
+    @Test
+    public void isValidName_patronymic() {
+        // S/O and D/O as whole words, in any case
+        assertTrue(Name.isValidName("Ravi S/O Raj"));
+        assertTrue(Name.isValidName("Priya d/o Kumar"));
+        assertTrue(Name.isValidName("Ravi s/O Raj"));
+
+        // other slashes are still rejected
+        assertFalse(Name.isValidName("Ravi A/B Raj"));
+        assertFalse(Name.isValidName("Ravi S/Oh Raj"));
+        assertFalse(Name.isValidName("Ravi XS/O Raj"));
+        assertFalse(Name.isValidName("S/O Raj")); // marker must come between names
+        assertFalse(Name.isValidName("Ravi d/o"));
+        assertFalse(Name.isValidName(" Ravi S/O "));
+        assertFalse(Name.isValidName("S/O")); // marker only, no other letter
+        assertFalse(Name.isValidName("D/O s/o")); // markers only
+        assertFalse(Name.isValidName("Ravi / Raj"));
+    }
+
+    @Test
+    public void messageConstraints_describesSupportedCharacters() {
+        assertEquals("Names must be 1-70 characters long, contain at least one letter, and use only letters, "
+                + "numbers, spaces, straight apostrophes ('), ASCII hyphens (-), periods, parentheses, or S/O and D/O "
+                + "as separate words between names.",
+                Name.MESSAGE_CONSTRAINTS);
+    }
+
+    @Test
+    public void isValidName_patronymicMarkersOnly_returnsFalse() {
+        assertFalse(Name.isValidName("S/O"));
+        assertFalse(Name.isValidName("D/O D/O"));
+        assertTrue(Name.isValidName("Ravi S/O Kumar"));
+    }
+
 }

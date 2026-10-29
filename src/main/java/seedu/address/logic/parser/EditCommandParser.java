@@ -16,6 +16,7 @@ import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Logger;
+import java.util.stream.Stream;
 
 import seedu.address.commons.core.LogsCenter;
 import seedu.address.commons.core.index.Index;
@@ -32,6 +33,8 @@ public class EditCommandParser implements Parser<EditCommand> {
     public static final String MESSAGE_CLEAR_TAGS_WITH_TAGS = "t/ on its own clears all tags, so it cannot be "
             + "combined with other tags. Use t/ alone to clear the tags, or give only the tags to keep.";
     public static final String MESSAGE_REPEATED_CLEAR_TAGS = "t/ on its own clears all tags, so give it only once.";
+    public static final String MESSAGE_FEE_NOT_EDITABLE = "Outstanding fees cannot be changed with edit. "
+            + "Use setoutstanding INDEX AMOUNT or paid INDEX instead.";
 
     private static final Logger logger = LogsCenter.getLogger(EditCommandParser.class);
 
@@ -42,14 +45,18 @@ public class EditCommandParser implements Parser<EditCommand> {
      */
     public EditCommand parse(String args) throws ParseException {
         requireNonNull(args);
-        ArgumentMultimap argMultimap = ArgumentTokenizer.tokenize(args, PREFIX_NAME, PREFIX_PHONE, PREFIX_EMAIL,
-                PREFIX_ADDRESS, PREFIX_TAG, PREFIX_GUARDIAN_NAME, PREFIX_GUARDIAN_PHONE, PREFIX_OUTSTANDING_FEE);
+        Prefix[] prefixes = {PREFIX_NAME, PREFIX_PHONE, PREFIX_EMAIL, PREFIX_ADDRESS, PREFIX_TAG,
+            PREFIX_GUARDIAN_NAME, PREFIX_GUARDIAN_PHONE, PREFIX_OUTSTANDING_FEE};
+        ArgumentMultimap argMultimap = ArgumentTokenizer.tokenize(args, prefixes);
 
         Index index = ParserUtil.parseIndex(argMultimap.getPreamble(),
                 String.format(MESSAGE_INVALID_COMMAND_FORMAT, EditCommand.MESSAGE_USAGE));
 
         // Outstanding fees cannot be edited via edit; reject the prefix rather than absorbing it into another value.
         if (argMultimap.getValue(PREFIX_OUTSTANDING_FEE).isPresent()) {
+            throw new ParseException(MESSAGE_FEE_NOT_EDITABLE);
+        }
+        if (hasUnknownPrefix(argMultimap, prefixes)) {
             throw new ParseException(String.format(MESSAGE_INVALID_COMMAND_FORMAT, EditCommand.MESSAGE_USAGE));
         }
 
@@ -102,6 +109,17 @@ public class EditCommandParser implements Parser<EditCommand> {
 
         logger.fine("Parsed EditCommand for index " + index.getOneBased());
         return new EditCommand(index, editPersonDescriptor);
+    }
+
+    /**
+     * Returns true if a value other than the address contains a prefix-like token that {@code edit} does not
+     * accept, such as {@code x/}. Addresses may contain such text, for example {@code c/o} or {@code Blk A/B}.
+     */
+    private static boolean hasUnknownPrefix(ArgumentMultimap argMultimap, Prefix... prefixes) {
+        return Stream.of(prefixes)
+                .filter(prefix -> !prefix.equals(PREFIX_ADDRESS))
+                .flatMap(prefix -> argMultimap.getAllValues(prefix).stream())
+                .anyMatch(ParserUtil::containsPrefixLikeToken);
     }
 
     /**

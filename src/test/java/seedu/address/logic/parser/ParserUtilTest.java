@@ -74,6 +74,19 @@ public class ParserUtilTest {
     }
 
     @Test
+    public void normalizeCommandWord_anyCase_returnsLowerCase() {
+        assertEquals("list", ParserUtil.normalizeCommandWord("list"));
+        assertEquals("list", ParserUtil.normalizeCommandWord("LIST"));
+        assertEquals("findguardian", ParserUtil.normalizeCommandWord("FindGuardian"));
+        assertEquals("lsit.", ParserUtil.normalizeCommandWord("LSIT."));
+    }
+
+    @Test
+    public void normalizeCommandWord_null_throwsNullPointerException() {
+        assertThrows(NullPointerException.class, () -> ParserUtil.normalizeCommandWord(null));
+    }
+
+    @Test
     public void parseName_null_throwsNullPointerException() {
         assertThrows(NullPointerException.class, () -> ParserUtil.parseName((String) null));
     }
