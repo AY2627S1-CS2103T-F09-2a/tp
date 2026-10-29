@@ -13,7 +13,7 @@ public final class GuardianName {
     public static final String MESSAGE_CONSTRAINTS =
             "Guardian names must be 1-70 characters long, contain at least one letter, and use only letters, "
             + "numbers, spaces, straight apostrophes ('), ASCII hyphens (-), periods, parentheses, or S/O and D/O "
-            + "as separate words.";
+            + "as separate words between names.";
     public static final String VALIDATION_REGEX = Name.VALIDATION_REGEX;
 
     private final String fullName;

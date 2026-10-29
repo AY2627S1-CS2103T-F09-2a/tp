@@ -111,6 +111,9 @@ public class GuardianNameTest {
         assertFalse(GuardianName.isValidName("Ravi / Raj"));
 
         // a marker alone is not a name
+        assertFalse(GuardianName.isValidName("S/O Raj")); // marker must come between names
+        assertFalse(GuardianName.isValidName("Ravi d/o"));
+        assertFalse(GuardianName.isValidName(" Ravi S/O "));
         assertFalse(GuardianName.isValidName("S/O"));
     }
 
@@ -118,7 +121,7 @@ public class GuardianNameTest {
     public void messageConstraints_describesSupportedCharacters() {
         assertEquals("Guardian names must be 1-70 characters long, contain at least one letter, and use only letters, "
                 + "numbers, spaces, straight apostrophes ('), ASCII hyphens (-), periods, parentheses, or S/O and D/O "
-                + "as separate words.",
+                + "as separate words between names.",
                 GuardianName.MESSAGE_CONSTRAINTS);
     }
 }
