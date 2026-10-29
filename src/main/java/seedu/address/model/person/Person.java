@@ -7,6 +7,7 @@ import java.util.HashSet;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import seedu.address.commons.util.ToStringBuilder;
 import seedu.address.model.tag.Tag;
@@ -98,6 +99,21 @@ public class Person {
         return otherPerson != null
                 && otherPerson.getName().isSameNameIgnoreCase(getName())
                 && otherPerson.getGuardianPhone().equals(getGuardianPhone());
+    }
+
+    /**
+     * Returns true if both students would be displayed and saved with exactly the same text in every field.
+     * Unlike {@link #equals(Object)}, a difference in capitalisation counts, because guardian names and tags
+     * compare without regard to case.
+     */
+    public boolean hasIdenticalDetails(Person otherPerson) {
+        return equals(otherPerson)
+                && guardianName.getFullName().equals(otherPerson.guardianName.getFullName())
+                && tagNames().equals(otherPerson.tagNames());
+    }
+
+    private Set<String> tagNames() {
+        return tags.stream().map(tag -> tag.tagName).collect(Collectors.toSet());
     }
 
     /**

@@ -41,8 +41,8 @@ public class FindGuardianCommandParserTest {
         // prefix
         assertParseFailure(parser, "g/Mei", MESSAGE_INVALID_FORMAT);
 
-        // phone with a country code
-        assertParseFailure(parser, "+6592345678", MESSAGE_INVALID_FORMAT);
+        // phone with a country code other than +65
+        assertParseFailure(parser, "+6092345678", MESSAGE_INVALID_FORMAT);
     }
 
     @Test
@@ -55,6 +55,10 @@ public class FindGuardianCommandParserTest {
         // phone typed with a hyphen is kept as one keyword
         assertParseSuccess(parser, "9234-5678",
                 new FindGuardianCommand(new GuardianContainsKeywordsPredicate(List.of("9234-5678"))));
+
+        // phone typed with the Singapore country code
+        assertParseSuccess(parser, "+6592345678",
+                new FindGuardianCommand(new GuardianContainsKeywordsPredicate(List.of("+6592345678"))));
     }
 
     @Test

@@ -67,6 +67,26 @@ public class PersonTest {
     }
 
     @Test
+    public void hasIdenticalDetails() {
+        // same values -> returns true
+        assertTrue(ALICE.hasIdenticalDetails(new PersonBuilder(ALICE).build()));
+
+        // guardian name differing only in case -> equal, but not identical
+        Person lowerCaseGuardian = new PersonBuilder(ALICE).withGuardianName("anne pauline").build();
+        assertTrue(ALICE.equals(lowerCaseGuardian));
+        assertFalse(ALICE.hasIdenticalDetails(lowerCaseGuardian));
+
+        // tag differing only in case -> not identical
+        assertFalse(ALICE.hasIdenticalDetails(new PersonBuilder(ALICE).withTags("Friends").build()));
+
+        // student name differing only in case -> not identical
+        assertFalse(ALICE.hasIdenticalDetails(new PersonBuilder(ALICE).withName("alice pauline").build()));
+
+        // different person -> returns false
+        assertFalse(ALICE.hasIdenticalDetails(BOB));
+    }
+
+    @Test
     public void equals() {
         // same values -> returns true
         Person aliceCopy = new PersonBuilder(ALICE).build();

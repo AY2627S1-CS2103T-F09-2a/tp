@@ -12,7 +12,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
 import javafx.application.Platform;
+import javafx.geometry.Pos;
 import javafx.scene.control.Label;
+import javafx.scene.layout.VBox;
 import seedu.address.testutil.PersonBuilder;
 
 /**
@@ -23,11 +25,7 @@ public class PersonCardFeeTest {
 
     @BeforeAll
     public static void initializeToolkit() {
-        try {
-            Platform.startup(() -> {});
-        } catch (IllegalStateException e) {
-            // Another UI test may already have initialized JavaFX.
-        }
+        JavaFxTestToolkit.startOrReuse();
     }
 
     @Test
@@ -72,6 +70,18 @@ public class PersonCardFeeTest {
             assertFalse(((Label) card.getRoot().lookup("#phone")).isVisible());
             assertFalse(((Label) card.getRoot().lookup("#address")).isVisible());
             assertFalse(((Label) card.getRoot().lookup("#email")).isVisible());
+            return null;
+        });
+        Platform.runLater(assertion);
+        assertion.get(10, TimeUnit.SECONDS);
+    }
+
+    @Test
+    public void create_studentWithFewDetails_startsContentAtTopOfCard() throws Exception {
+        FutureTask<Void> assertion = new FutureTask<>(() -> {
+            PersonCard card = new PersonCard(new PersonBuilder().withoutContactDetails().build(), 1);
+            VBox content = (VBox) card.getRoot().lookup("#name").getParent().getParent();
+            assertEquals(Pos.TOP_LEFT, content.getAlignment());
             return null;
         });
         Platform.runLater(assertion);

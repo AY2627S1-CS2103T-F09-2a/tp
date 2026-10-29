@@ -9,7 +9,21 @@ title: Developer Guide
 
 ## **Acknowledgements**
 
-* _{List the sources of reused or adapted ideas, code, documentation, and third-party libraries here, with links to the originals.}_
+Poco Book is a brownfield project built on the **AddressBook-Level3 (AB3)** codebase that the CS2103T course supplies as the starting point for team projects (<https://github.com/se-edu/addressbook-level3>). The overall architecture, the Gradle build, the JavaFX scaffolding, the storage format and the structure of this Developer Guide follow AB3, which is the expected design reuse for a brownfield project. `build.gradle` lists the exact dependencies.
+
+Third-party libraries:
+
+* [JavaFX](https://openjfx.io/) 17.0.7 (`javafx-base`, `javafx-controls`, `javafx-fxml`, `javafx-graphics`) — the GUI toolkit.
+* [Jackson](https://github.com/FasterXML/jackson) 2.7 (`jackson-databind`, `jackson-datatype-jsr310`) — reading and writing the `addressbook.json` and `preferences.json` files.
+* [JUnit 5](https://junit.org/junit5/) — the test framework used by `src/test`.
+* [Gradle](https://gradle.org/), [Checkstyle](https://checkstyle.org/) and [JaCoCo](https://www.jacoco.org/jacoco/) — build, style checking and coverage reporting.
+
+Documentation and diagrams:
+
+* Diagrams are written in [PlantUML](https://plantuml.com/) and use the colour definitions and layout conventions from the SE-EDU [_PlantUML tutorial_](https://se-education.org/guides/tutorials/plantUml.html).
+* The documentation site uses [Jekyll](https://jekyllrb.com/) with the `_layouts`, `_includes` and `_sass` files carried over from AB3.
+
+**AI assistance.** Members used generative AI coding assistants during the project, for example to draft code and tests, to review documentation and to speed up repetitive editing. Each member reviewed the changes that they merged and remains responsible for the resulting behaviour.
 
 --------------------------------------------------------------------------------------------------------------------
 
@@ -89,7 +103,7 @@ The `UI` component,
 * keeps a reference to the `Logic` component, because the `UI` relies on the `Logic` to execute commands.
 * depends on some classes in the `Model` component because it displays `Person` objects from the model.
 
-For `view INDEX`, `ViewCommand` reads the student at that index in the filtered list and returns the `Person` in `CommandResult` with a feedback message. It does not update the filter or model. `LogicManager` skips the storage write because `ViewCommand.shouldSaveAddressBook()` returns false. `MainWindow` selects that person in `PersonListPanel`; the list selection updates `PersonDetailsPanel`, which shows all stored fields. The details pane unwraps optional student contact fields and shows `Not provided` when a field is absent. It formats an outstanding fee as `S$` followed by two decimal places, or `None` when absent. A failed parse or out-of-range index produces no `CommandResult`, so the current selection and details remain unchanged.
+For `view INDEX`, `ViewCommand` reads the student at that index in the filtered list and returns the `Person` in `CommandResult` with a feedback message. It does not update the filter or model. `LogicManager` skips the storage write because `ViewCommand.shouldSaveAddressBook()` returns false. `MainWindow` selects that person in `PersonListPanel`; the list selection updates `PersonDetailsPanel`, which shows all stored fields. The details pane unwraps optional student contact fields and shows `Not provided` when a field is absent. It formats an outstanding fee as `S$` followed by two decimal places, or `None` when absent. It lists tags, or `Tags: None` when there are none, in the order given by `Messages#sortTagNames(Collection)`: alphabetical order ignoring case, then character code (uppercase first) for names that differ only in case. Names are compared character by character, so length matters only when one name starts with the other, ignoring case, and the shorter name comes first (`bio` before `biology`). Digits are compared as characters too, so `Sec10` comes before `Sec3`. Student cards and the result of commands such as `edit` list tags in the same order. A failed parse or out-of-range index produces no `CommandResult`, so the current selection and details remain unchanged.
 
 For `delete INDEX`, `MainWindow` asks the tutor to confirm before `Logic` executes the command. See [Delete confirmation](#delete-confirmation).
 
@@ -103,7 +117,22 @@ A command can also fail after it has changed the data. For example, if saving to
 
 To find out which records a command replaced, `PersonListPanel` listens to the full student list from `Logic#getPersonList()`. When a command replaces a record, that list reports the old record replaced by the new one. The panel does not use changes to the displayed list, because a search reports one change that removes all of the old results and adds all of the new ones. If the old and new results have the same number of students, pairing them by position would treat the student now at the selected index as the selected student's new record. For example, `find David`, `view 1`, `find Irfan` would then select Irfan. A search does not change the full list, so it never moves the selection to a different student. It keeps the selected student if the results include them, and clears the selection otherwise.
 
+`PersonCard` shows each tag as a label in a `FlowPane`. A long tag is cut off with `...` so that it stays inside the card. `DarkTheme.css` sets two widths of 230 pixels:
+
+* Each tag label is at most 230 pixels wide. The tag row is never narrower than 239 pixels: the student list is at least 300 pixels wide, even with the divider dragged fully left, and a selected card has a border.
+* The tag row is at least 230 pixels wide. Without a minimum, a `FlowPane` is at least as wide as the full text of its widest tag, because `FlowPane#computeMinWidth` uses each tag's preferred width and ignores its maximum width, so a long tag pushed the row past the edge of the card. The card's height is calculated as if the tag row were 230 pixels wide, because the card's `GridPane` column has a preferred width of 150 pixels, which would otherwise give a narrower row. A card whose tags fit in fewer rows when the card is wider therefore has some blank space, for example in a wide window. A smaller minimum would add blank rows even on the narrowest cards.
+
+The details pane wraps its text, so it shows long tags in full. Tag length is not limited: a card now fits a tag of any length, and data files from earlier versions may already contain longer tags, which would fail to load if the limit were checked when loading.
+
 ### Logic component
+
+**Bulk clear policy:** `clear` removes the entire stored book in one successful command, regardless of the
+current filter or extra arguments. Unlike `delete`, it has no confirmation step or built-in undo. The User
+Guide explicitly warns tutors and explains how to back up the data file beforehand. A confirmation or
+recovery workflow remains a separate design decision: it must cover cancellation, displayed-filter state,
+unpaid fees and restart behavior before changing this command. Protecting the previous data file from a
+*failed write* does not restore records after a *successful* `clear` save (see
+[the save-safety change](https://github.com/AY2627S1-CS2103T-F09-2a/tp/pull/239)).
 
 **API** : [`Logic.java`](https://github.com/AY2627S1-CS2103T-F09-2a/tp/tree/master/src/main/java/seedu/address/logic/Logic.java)
 
@@ -124,8 +153,8 @@ How the `Logic` component works:
 
 1. When `Logic` is called upon to execute a command, the command is passed to an `AddressBookParser` object, which in turn creates a parser that matches the command (e.g., `DeleteCommandParser`) and uses it to parse the command.
 1. This results in a `Command` object (more precisely, an object of one of its subclasses e.g., `DeleteCommand`) which is executed by the `LogicManager`.
-1. The command can communicate with the `Model` when it is executed (e.g. to delete a person).<br>
-   Note that although this is shown as a single step in the diagram above for simplicity, the code can require several interactions between the command object and the `Model` to complete the operation.
+1. The command can communicate with the `Model` when it is executed (e.g. to delete a student).<br>
+   In the diagram above, `DeleteCommand` gets the displayed list from the `Model` and uses `DeleteCommand#getTarget(List)` to find the student `p` at index 1 of that list. It then passes `p` itself, not the index, to `Model#deletePerson(Person)`. If the index is beyond the end of the list, `getTarget` returns an empty `Optional` instead, and `DeleteCommand` throws a `CommandException` without deleting anything. Other commands may need different or more interactions with the `Model`.
 1. The result of the command execution is encapsulated as a `CommandResult` object which is returned from `Logic`.
 
 Here are the other classes in `Logic` (omitted from the class diagram above) that are used for parsing a user command:
@@ -135,11 +164,13 @@ Here are the other classes in `Logic` (omitted from the class diagram above) tha
 How the parsing works:
 * When called upon to parse a user command, the `AddressBookParser` class creates an `XYZCommandParser` (`XYZ` is a placeholder for the specific command name, e.g., `AddCommandParser`). The parser uses the other classes shown above to parse the user command and create an `XYZCommand` object (e.g., `AddCommand`). The `AddressBookParser` returns that object as a `Command` object.
 * All `XYZCommandParser` classes, such as `AddCommandParser` and `DeleteCommandParser`, implement the `Parser` interface so they can be treated similarly where appropriate, for example during testing.
+* `AddressBookParser` matches the command word in any letter case, so `LIST` and `list` create the same command. Only the command word is converted; the arguments reach the `XYZCommandParser` unchanged. See [Command words and unknown commands](#command-words-and-unknown-commands).
 
 ### Model component
 **API** : [`Model.java`](https://github.com/AY2627S1-CS2103T-F09-2a/tp/tree/master/src/main/java/seedu/address/model/Model.java)
 
-<img src="images/ModelClassDiagram.png" width="450" />
+<a href="images/ModelClassDiagram.png"><img src="images/ModelClassDiagram.png" width="450"
+    alt="Model class diagram with separate all and filtered Person associations" /></a>
 
 
 The `Model` component,
@@ -163,9 +194,21 @@ The `Model` component,
 <img src="images/StorageClassDiagram.png" width="550" />
 
 The `Storage` component,
-* can save both address book data and user preference data in JSON format, and read them back into corresponding objects.
+* can save both address book data and user preference data in JSON format, and read them back into corresponding objects. Reading rejects a file with content after its first JSON value or a repeated field name (see [Strict reading of data files](#strict-reading-of-data-files)).
+* saves each file by writing a temporary file first and then replacing the old file with it, so a save that fails partway leaves the previous save intact (see [Saving data safely](#saving-data-safely)).
 * is implemented by `StorageManager`, which delegates the actual JSON file access to `JsonAddressBookStorage` and `JsonUserPrefsStorage` (one class per data file).
 * depends on some classes in the `Model` component (because the `Storage` component's job is to save/retrieve objects that belong to the `Model`)
+
+`MainWindow` validates saved GUI dimensions when applying `GuiSettings` to the stage. Nonfinite or nonpositive
+dimensions fall back to defaults. A saved position is kept if its title area overlaps the visual bounds of any
+connected screen; otherwise the stage is centered on an available screen. The settings file is not rewritten
+until the normal preferences save, so a disconnected monitor does not prevent startup.
+
+**Supported usage constraint:** Only one running Poco Book instance may use a given home folder at a time.
+Each instance loads its own in-memory copy of `data/addressbook.json`, and `LogicManager` saves that copy
+after a data-changing command. The app does not synchronize instances or detect stale copies: a later save
+from an older instance can silently replace records saved by another instance. Concurrent use of the same
+home folder is outside the supported workflow; users are warned in the User Guide's quick start and FAQ.
 
 **Design consideration: unknown fields in the data files**
 
@@ -203,7 +246,13 @@ The `fees [min/AMOUNT]` command replaces the displayed-list filter with one that
 
 The sequence diagram below shows a successful `fees min/100` call. Tokenization, predicate evaluation and result construction are summarized in notes rather than shown as separate lifelines.
 
-![Sequence diagram for minimum outstanding-fee filtering](images/FeesSequenceDiagram.png)
+The essential sequence is: `LogicManager#execute` parses the input through `AddressBookParser` and
+`FeesCommandParser`; `FeesCommand#execute` installs the fee predicate with `Model#updateFilteredPersonList`,
+reads the filtered list size, and returns the result. `LogicManager` does not save this read-only command.
+For small screens, open the [full-size fee sequence diagram](images/FeesSequenceDiagram.png) to read its notes
+and message labels without shrinking them to the page width.
+
+[![Sequence diagram for minimum outstanding-fee filtering](images/FeesSequenceDiagram.png)](images/FeesSequenceDiagram.png)
 
 Diagram source: [FeesSequenceDiagram.puml](diagrams/FeesSequenceDiagram.puml).
 
@@ -231,9 +280,9 @@ The activity diagram below shows what happens when the tutor enters `delete INDE
 1. If there is no target, `MainWindow` passes the input to `Logic#execute(String)`, as it did before this feature. This happens when the input is another command, cannot be parsed, or has an index beyond the end of the list. Invalid `delete` commands therefore report the usual errors without opening a dialog.
 1. Otherwise, `MainWindow` calls `DeleteConfirmationHandler#confirmAndDelete(String, Person)` with the target. The handler asks its `DeletionConfirmer` whether to delete the student. In the app, `MainWindow` supplies a confirmer that opens a `DeleteConfirmationDialog` over the main window and waits for the tutor to respond.
 1. If the tutor cancels, the handler returns a `CommandResult` with a cancellation message without calling `Logic#execute(String)`, so nothing is deleted or saved. `MainWindow` then restores the selection as it does after any other successful command.
-1. If the tutor confirms, the handler calls `Logic#getDeletionTarget(String)` again to check that the index still identifies the same student. It then calls `Logic#execute(String)`, which deletes the student and saves the data as before. While the dialog is open, the tutor cannot enter commands, so the displayed list cannot change. The second check is a safeguard in case a future change allows the list to change during confirmation: if a different student now has that index, the handler throws a `CommandException` and deletes nothing.
+1. If the tutor confirms, the handler calls `Logic#getDeletionTarget(String)` again to check that the index still identifies the same student. It then calls `Logic#execute(String)`, which deletes the student and saves the data as before. While the dialog is open, the tutor cannot enter commands, so the displayed list cannot change. The second check is a safeguard in case a future change allows the list to change during confirmation: if a different student now has that index, or the student's details have changed, the handler throws a `CommandException` and deletes nothing.
 
-The sequence diagram below shows these steps for `delete 2`. For simplicity, it leaves out the error that the handler reports if the second check finds a different student.
+The sequence diagram below shows these steps for `delete 2`, including the second check and the `CommandException` with `DeleteConfirmationHandler.MESSAGE_TARGET_CHANGED` that the handler throws if that check fails.
 
 <img src="images/DeleteConfirmationSequenceDiagram.png" width="800" />
 
@@ -244,7 +293,7 @@ The sequence diagram below shows these steps for `delete 2`. For simplicity, it 
 * All other key presses except Esc, including Enter and Space, are consumed without answering the dialog, so no button or keyboard shortcut in the dialog can act on them. Esc is left to the **Cancel (N)** button. If the tutor presses Enter twice, or starts typing the next command before noticing the dialog, those keys go to the dialog. No command word starts with Y or N, so the start of the next command cannot answer the dialog, although a Y or N typed later would. D was avoided because `delete` starts with D.
 * The **Delete (Y)** and **Cancel (N)** buttons can be clicked, but the keyboard cannot reach them: Tab does not move to them, and Enter and Space do not press them. When a dialog opens, JavaFX gives keyboard focus to its main button. The Delete button is therefore created as a secondary button (`ButtonData.APPLY`) rather than the main one (`ButtonData.OK_DONE`), so that it never starts with focus.
 * If the student still owes a fee, the dialog shows a warning icon and a red banner stating the amount, because deleting the student also deletes the unpaid fee. Pressing Y still deletes the student.
-* The dialog is 520 pixels wide, and long names wrap rather than widening it. With the longest valid names and a fee, it measured 520 by 416 pixels on macOS. A 1280x720 screen at 150% scaling leaves about 853 by 432 pixels above a Windows 11 taskbar.
+* The dialog is 680 pixels wide, and long names wrap rather than widening it. A 1280x720 screen at 150% scaling leaves about 853 by 432 pixels above a Windows 11 taskbar; `DeleteConfirmationDialogTest` checks that the dialog, with the longest valid names and a fee, fits within that area.
 
 #### Design considerations
 
@@ -252,7 +301,7 @@ The sequence diagram below shows these steps for `delete 2`. For simplicity, it 
 
 * **Alternative 1 (current choice):** Ask in the `UI`, which first calls `Logic#getDeletionTarget(String)`.
   * Pros: `Logic` contains no UI code and never waits for the tutor. The `UI` uses only the `Logic` API, and deletion and saving still use the existing path.
-  * Cons: The `Logic` API gains a method that only `delete` uses. Asking and deleting are separate steps, so the target must be checked again after confirmation. Every command is parsed twice, and a confirmed `delete` three times, but parsing is fast.
+  * Cons: The `Logic` API gains a method that only `delete` uses. Asking and deleting are separate steps, so the target must be checked again after confirmation. Most commands are parsed twice; see the next aspect.
 * **Alternative 2:** Let `DeleteCommand#execute(Model)` call a confirmation callback that the `UI` provides.
   * Pros: Each command is parsed once. Asking and deleting happen in one step, so no second check is needed.
   * Cons: `Logic` would wait on a UI dialog in the middle of a command. The `UI` can only provide the callback after `Logic` is created, so `Logic` would need a setter. The callback would also have to reach each `DeleteCommand`, either through `AddressBookParser` and `DeleteCommandParser`, or by `LogicManager` handing it over after parsing.
@@ -260,9 +309,56 @@ The sequence diagram below shows these steps for `delete 2`. For simplicity, it 
   * Pros: The `Logic` API is unchanged.
   * Cons: The `UI` would depend on classes that are internal to `Logic`, breaking the rule that components interact only through each other's APIs.
 
+**Aspect: How often to parse the input**
+
+* **Alternative 1 (current choice):** Each call to `Logic` parses the command text again.
+  * Pros: The `UI` decides whether to ask with the same parser that `Logic#execute(String)` uses, so every input that would delete a student is confirmed first. The `Logic` API takes plain text, and parse errors are reported in one place, by `Logic#execute(String)`.
+  * Cons: Most commands are parsed twice, a cancelled `delete` once and a confirmed `delete` three times. Measured on JDK 25, the extra parsing costs at most about 1 ms per command just after startup, and far less once the JVM has warmed up, well within the 1-second target of [NFR 2](#non-functional-requirements).
+* **Alternative 2:** Parse once. `Logic` returns an opaque prepared command, which the `UI` passes back to `Logic` to find the target and to execute it.
+  * Pros: Each command is parsed once, and the check after confirmation needs no parsing.
+  * Cons: The `Logic` API gains a type and changes two methods, and the `UI` holds the prepared command while the dialog is open. The check after confirmation is still needed. The prepared command must hide the parsed `Command`, or the `UI` would depend on classes internal to `Logic`.
+* **Alternative 3:** Check the command word before parsing, and parse fully only for `delete`.
+  * Pros: Other commands are parsed once, and only `LogicManager` changes.
+  * Cons: `delete` would be recognised in two places. If they drifted apart, for example if the parser accepted an alias, or a command word in upper case, that the check did not, a deletion could run without asking.
+
 **Testing**
 
-`DeleteConfirmationHandlerTest` replaces the dialog with a confirmer that records each request and returns a fixed answer. It covers confirming, cancelling, deleting from `find` and `fees` results, and a list that changes or empties, or a student whose details change, during confirmation, all without a display. `LogicManagerTest` checks that `Logic#getDeletionTarget(String)` finds the displayed student for a valid `delete` command, and finds no student for other commands or for invalid or malformed indexes. `DeleteConfirmationDialogTest` checks the dialog's content, fee warning, keys, buttons and size with JavaFX. It checks that Enter, Tab, Space, the letters of a typed command, Y with Control, Command (Meta) or Alt, and N with Control each leave the dialog open, and that such key presses cannot reach a keyboard shortcut. It also checks that Shift+Y, and Y for a student who owes a fee, still confirm, and that the longest valid names fit with a fee warning without cut-off text. Like the other JavaFX tests, it runs only when the environment variable `POCO_UI_TESTS` is `true`. The branch in `MainWindow#executeCommand(String)` that connects these parts needs the full main window, so the manual tests in [Deleting a student](#deleting-a-student) check it instead.
+* `DeleteConfirmationHandlerTest` replaces the dialog with a confirmer that records each request and returns a fixed answer. It covers confirming, cancelling, deleting from `find` and `fees` results, and a list that changes or empties, or a student whose details change, during confirmation, all without a display.
+* `LogicManagerTest` checks that `Logic#getDeletionTarget(String)` finds the displayed student for a valid `delete` command, and finds no student for other commands or for invalid or malformed indexes.
+* `DeleteConfirmationDialogTest` checks the dialog's content, fee warning, keys, buttons and size with JavaFX. It checks that Enter, Tab, Space, the letters of a typed command, Y with Control, Command (Meta) or Alt, and N with Control each leave the dialog open, and that such key presses cannot reach a keyboard shortcut. It also checks that Shift+Y, and Y for a student who owes a fee, still confirm, and that the longest valid names fit with a fee warning without cut-off text.
+* `MainWindowDeletionTest` builds the full main window, types each command into the window's own command box, and reads the feedback the window displays. With a confirmer that records each request instead of showing a dialog, it checks that a confirmed `delete` removes the student, that a cancelled one keeps them, and that a command without a deletion target and an index outside the displayed list never reach the handler, which covers the branch in `MainWindow#executeCommand(String)` that connects these parts. Two further tests use the public constructor, so the dialog `MainWindow` shows is opened for real, and answer it with Y and with N.
+* Like the other JavaFX tests, the last two need the environment variable `POCO_UI_TESTS` to be `true`.
+* The manual tests in [Deleting a student](#deleting-a-student) still check the dialog that a real tutor sees.
+
+The `JavaFX UI tests` job in the Java CI workflow sets `POCO_UI_TESTS` and runs `./gradlew test coverage` under `xvfb-run` on a Linux runner, so the JavaFX suite executes in a virtual display on every push instead of being gated off. A follow-up step, [`.github/verify-ui-test-results.py`](../.github/verify-ui-test-results.py), reads the JUnit report and fails the job if any test that the variable gates was skipped rather than executed. That job runs beside the three required cross-platform builds, which keep their own settings, and uploads its coverage to Codecov alongside them so the dialog and window lines are measured in CI.
+
+### Adding a charge to an outstanding fee
+
+A tutor who bills the same student again before the earlier amount is settled needs to add to the recorded fee, not replace it. `setoutstanding INDEX +AMOUNT` performs that addition, so the tutor does not have to work out the new total and cannot drop the earlier charge by mistyping the sum.
+
+#### Implementation
+
+`SetOutstandingCommandParser` treats a leading `+` as the only difference between the two meanings of the command. It strips the sign, validates the remaining digits with `OutstandingFee.VALIDATION_REGEX` and `OutstandingFee#isValidOutstandingFee`, and then builds the command with `SetOutstandingCommand#addToOutstandingFee(Index, OutstandingFee)`. Replacement, addition and clearing therefore share one parser and one command class, so `setoutstanding` keeps a single entry in `AddressBookParser`, in the user guide and in the command summary.
+
+`SetOutstandingCommand` keeps a `boolean` that records which meaning was parsed. For an addition, `execute` reads the current amount from `Person#getOutstandingFee()`, which returns an `Optional`, treats an absent fee as `BigDecimal.ZERO`, adds the parsed amount and rebuilds the `Person` with every other field copied verbatim. Two guards run before the record is written:
+
+* `+0` is rejected at parse time with `MESSAGE_INVALID_INCREMENT`, because adding nothing is either a typo or a no-op that would still cost the tutor a step.
+* If the sum would exceed the `S$99999.99` cap, `execute` throws `CommandException` with `MESSAGE_TOTAL_TOO_LARGE`, which names the amount that was refused and the total it would have produced. The bounds check runs before `new OutstandingFee(...)`; otherwise the value object's own `checkArgument` would throw an `IllegalArgumentException`, which no caller turns into a message for the tutor.
+
+Feedback for an addition reports the transition rather than only the new value — `Added S$50.00 to the outstanding fee for Alex Yeoh: S$120.00 -> S$170.00` — so the tutor can confirm what the previous balance was. Replacement and clearing keep their existing feedback.
+
+#### Design considerations
+
+* **An addition mode on `setoutstanding` instead of a new `charge` command (current choice).** The parser already owns `INDEX AMOUNT`, and the `+` prefix is the same convention the tutor sees on a receipt. One command word, one parser, one success message family and one help entry stay in step, and the change is a few dozen lines inside the existing class instead of a new command, parser, `AddressBookParser` case, help entry and test suite.
+  * Cons: `+AMOUNT` is a second grammar in the same command, so the user guide has to explain both forms, and the two forms have different bounded ranges (`0` clears but `+0` is invalid).
+* **A separate `charge` command.** This keeps every command with exactly one grammar, which is easier to document and to test.
+  * Cons: it duplicates index validation and the copy-then-replace of `Person`, and a tutor who wants to correct an amount still needs `setoutstanding` as well, so the two commands must be read together to understand one field.
+* **Recording a payment history instead of a running total.** Storing each charge as a row would make partial payments and statements possible.
+  * Cons: it changes the storage format, the `Person` model and the fee total calculations in one step, which is a larger change than the iteration allows. The running total stays the single source of truth for v1.5.
+
+#### Testing
+
+`SetOutstandingCommandParserTest` covers `+50`, `+0.01`, `+99999.99` and the `AddressBookParser` route, and rejects `+0`, `+`, `++50`, `+50.001`, `+100000` and `+abc`. `SetOutstandingCommandTest` checks that an addition to an existing fee increases the total and preserves every other field, that an addition to a student with no fee records the added amount, that an addition to exactly `S$99999.99` succeeds, and that an addition beyond the cap is rejected with the record unchanged.
 
 ### Fee summary and full-payment commands
 
@@ -284,7 +380,9 @@ The corresponding sources are `docs/diagrams/PaidSequenceDiagram.puml`, `FeeSumm
 
 * **Query vs mutation.** Only `paid` mutates and saves; `feesummary` opts out of saving so that a read-only command cannot report a save failure the user cannot act on.
 * **Exact money arithmetic.** Amounts use `BigDecimal` rather than `double`, so totals of many two-decimal fees cannot drift by a cent, and the summary can legitimately exceed the S$99999.99 per-student cap.
-* **Displayed index vs stored index.** Both commands act on the *displayed* list, matching `delete`, `edit`, `view` and `setoutstanding`. This keeps the mental model consistent, at the cost of the user needing to re-run `fees` after a payment because indexes shift.
+* **Displayed list vs complete book.** `paid` takes a one-based index into the *displayed* list, matching `delete`, `edit`, `view` and `setoutstanding`, so the student the tutor sees at that position is the student who is charged. `feesummary` deliberately does not: it totals every stored student, including students hidden by the current `find` or `fees` filter, for the reason given in alternative (a) below.
+* **Scope shown in feedback.** The two commands therefore differ in scope on purpose, and both word their feedback to say which scope they used: `paid` names the student whose fee it cleared (`Marked outstanding fee as paid for Alex Yeoh: S$120.00`), while `feesummary` starts with `Across all stored students` and ends with `Displayed list unchanged`.
+* **Index shift after `paid`.** The cost of the index-based `paid` is that, in a `fees` result, a paid student drops out of the list, so the students below them move up one index and the tutor must re-read the index before the next `paid`.
 * **Alternatives considered.** (a) Making `feesummary` respect the current filter was rejected because a filtered total is easy to misread as the amount still owed overall. (b) Making `paid` accept a partial amount was rejected for v1.4: it needs a payment-history model, which is a larger change than the iteration allows, so `setoutstanding INDEX 0` and `paid INDEX` both clear a whole fee. (c) Reusing `setoutstanding` with amount `0` instead of adding `paid` was considered, but a dedicated command gives clearer feedback (`S$AMOUNT` cleared) and cannot be confused with re-setting a fee.
 
 ### Editing guardian contact details
@@ -296,6 +394,10 @@ The `edit` command supports updating a student's guardian name (`g/`) and guardi
 `EditCommandParser` tokenizes `g/` (`PREFIX_GUARDIAN_NAME`) and `gp/` (`PREFIX_GUARDIAN_PHONE`) together with the existing student prefixes, rejects duplicate `g/` or `gp/` prefixes via `ArgumentMultimap#verifyNoDuplicatePrefixesFor(...)`, and validates any supplied values through `ParserUtil#parseGuardianName` and `ParserUtil#parseGuardianPhone` before storing them on `EditPersonDescriptor`. It also explicitly tokenizes and rejects `f/` (`PREFIX_OUTSTANDING_FEE`) so that fee edits must go through `setoutstanding` or `paid` rather than being absorbed into an adjacent field value.
 
 During execution, `EditCommand#execute(Model)` looks up `personToEdit` from `Model#getFilteredPersonList()` and constructs `editedPerson` via `EditCommand#createEditedPerson(personToEdit, editPersonDescriptor)`. Unedited fields fall back to the existing values on `personToEdit`, including `personToEdit.getOutstandingFee()`. Because student identity in `Person#isSamePerson(Person)` is defined by the combination of student `Name` (case-insensitive, whitespace-normalized) and `GuardianPhone`, editing `gp/` (or `n/`) can change a student's identity. Whenever `!personToEdit.isSamePerson(editedPerson)` holds, `EditCommand` checks `Model#hasPerson(editedPerson)` before calling `Model#setPerson(personToEdit, editedPerson)`, throwing a `CommandException` if the updated `(Name, GuardianPhone)` pair would collide with another existing student.
+
+The descriptor distinguishes omitted optional contacts from explicit clearing: an omitted `p/`, `e/` or `a/` leaves that contact unchanged, while an empty value clears it. Guardian fields remain required. A supplied `t/` replaces the tag set; a lone empty `t/` clears all tags. Combining an empty `t/` with a nonempty tag is rejected. The command rejects an unchanged record before replacing it, while case-only changes remain valid updates.
+
+Changing a guardian phone updates only the selected student. The success feedback names any other students who still have the old phone; the tutor must edit those records separately. The details pane is refreshed explicitly after selection retention, including the command-failure path, because a replacement record may compare equal despite a case-only display change.
 
 The sequence diagram below shows the interactions within the `Logic` and `Model` components for `edit 1 g/May Tan gp/98765432`.
 
@@ -315,18 +417,24 @@ The `findguardian KEYWORD [MORE_KEYWORDS]...` command lists students whose guard
 
 #### Implementation
 
-`AddressBookParser` passes the arguments to `FindGuardianCommandParser`. The parser trims the arguments, normalizes them to Unicode NFC and splits them on whitespace. Each keyword must match `GuardianName.VALIDATION_REGEX`, so it may contain only letters, combining marks, digits, apostrophes, hyphens, periods and parentheses. Unlike a stored guardian name, a keyword does not need a letter, so phone keywords such as `9234-5678` are accepted. Empty input, or a keyword with any other character (such as the `/` in `g/Mei`), causes a `ParseException`, so the current filter is left unchanged. The keywords are wrapped in a `GuardianContainsKeywordsPredicate`, which is passed to a new `FindGuardianCommand`.
+`AddressBookParser` passes the arguments to `FindGuardianCommandParser`. The parser trims the arguments, normalizes them to Unicode NFC and splits them on whitespace. Each keyword must match `GuardianName.VALIDATION_REGEX` or be a valid `GuardianPhone`, so it may contain only letters, combining marks, digits, apostrophes, hyphens, periods and parentheses, or be a phone starting with `+65`. Unlike a stored guardian name, a keyword does not need a letter, so phone keywords such as `9234-5678` are accepted. Empty input, or a keyword with any other character (such as the `/` in `g/Mei`), causes a `ParseException`, so the current filter is left unchanged. The keywords are wrapped in a `GuardianContainsKeywordsPredicate`, which is passed to a new `FindGuardianCommand`.
 
 The sequence diagram below shows a successful `findguardian mei 9234-5678` call.
 
-![Sequence diagram for guardian search](images/FindGuardianSequenceDiagram.png)
+The essential sequence is: `LogicManager#execute` asks `AddressBookParser` and `FindGuardianCommandParser`
+to parse the keywords; `FindGuardianCommand#execute` installs the guardian predicate through
+`Model#updateFilteredPersonList` and reports the filtered list size. `LogicManager` does not save the search.
+For small screens, open the [full-size guardian-search sequence diagram](images/FindGuardianSequenceDiagram.png)
+to read its notes and message labels without shrinking them to the page width.
+
+[![Sequence diagram for guardian search](images/FindGuardianSequenceDiagram.png)](images/FindGuardianSequenceDiagram.png)
 
 Diagram source: [FindGuardianSequenceDiagram.puml](diagrams/FindGuardianSequenceDiagram.puml).
 
 `FindGuardianCommand#execute` calls `Model#updateFilteredPersonList` with the predicate. `GuardianContainsKeywordsPredicate#test` returns true when any keyword
 
 * equals a whole word of the guardian name, ignoring case (`StringUtil#containsWordIgnoreCase`), or
-* is a valid `GuardianPhone` that equals the stored guardian phone after its spaces and hyphens are removed, so `9234-5678` matches a guardian stored as `92345678`.
+* is a valid `GuardianPhone` that equals the stored guardian phone after its spaces, hyphens and `+65` country code are removed, so `9234-5678` and `+6592345678` match a guardian stored as `92345678`.
 
 The command then reports the size of the filtered list with the shared `N student(s) listed!` message. `FindGuardianCommand#shouldSaveAddressBook()` returns `false`, so `LogicManager` does not write to storage.
 
@@ -336,6 +444,66 @@ The command then reports the size of the filtered list with the shared `N studen
 * **Whole-word name matching.** Words are split on whitespace only, so `Anne-Marie` matches the keyword `anne-marie` but not `anne`. This is consistent with `find`.
 * **Phone keywords are normalized like stored phones.** Tutors may type a number the way it was entered with `add`, including a hyphen. Partial numbers such as `9234` never match, which keeps results predictable.
 * **Predicate copies its keywords.** `GuardianContainsKeywordsPredicate` stores `List.copyOf(keywords)`, so a caller changing its list later cannot silently change an installed filter.
+
+### Strict reading of data files
+
+`data/addressbook.json` and `preferences.json` are both read by `JsonUtil#readJsonFile`. It rejects two kinds of hand-edited file that Jackson would otherwise load only in part:
+
+* content after the first JSON value, such as `GARBAGE` or a second `{ "persons" : [ ] }` after the final `}`. Whitespace, including blank lines, may follow the value.
+* a field name repeated within one JSON object, at any depth, such as two `persons` fields, or two `name` fields for one student. Jackson would keep only the last value.
+
+#### Implementation
+
+`JsonUtil`'s `ObjectMapper` enables `JsonParser.Feature.STRICT_DUPLICATE_DETECTION`, so reading fails with an exception that names the repeated field, such as `Duplicate field 'name'`. `JsonUtil#fromJsonString` reads the value through a `JsonParser`, then calls `JsonUtil#requireEndOfInput`, which fails with a `JsonParseException` if any token, valid or not, follows the value. A valid second value, such as `{ }` or `null`, gives `Unexpected content after the first JSON value`; text that is not JSON, such as `GARBAGE`, gives Jackson's `Unrecognized token` error. Both kinds of failure are `IOException`s, so `readJsonFile` logs the cause and wraps it in a `DataLoadingException`, as for any other invalid file:
+
+* For the address book, `MainApp` starts with an empty address book, without any on-screen message. `LogicManager#execute` saves only after a command succeeds, and only if `Command#shouldSaveAddressBook()` returns `true`. Display-only commands override it to return `false` (`LogicManagerTest` and the command tests cover all eight). Of the commands that keep the default, `delete`, `edit`, `paid` and `setoutstanding` need an index and fail on the empty list, so only `add` and `clear` can overwrite the file. Until then, the tutor can still repair it.
+* For preferences, `MainApp` uses the default preferences and saves them at once, as for any other invalid preferences file.
+
+#### Design considerations
+
+* **Reject the file instead of documenting the permissive behaviour.** A partly loaded file looks valid, and the next save silently and permanently drops the ignored content. Rejecting it reuses the existing invalid-file handling. Files written by Poco Book are unaffected, because they always hold one object with unique field names.
+* **Check for trailing content in `JsonUtil` instead of upgrading Jackson.** Jackson 2.7.4 has no `DeserializationFeature.FAIL_ON_TRAILING_TOKENS`, which was added in Jackson 2.9. `requireEndOfInput` makes the same single `nextToken()` check, without changing the dependency that every JSON read and write uses. If Jackson is upgraded, that feature can replace `requireEndOfInput`.
+* **Apply the same rules to preferences.** One reader for both files keeps their behaviour consistent, and an invalid preferences file only resets the window size and position.
+* **Compare field names exactly, as Jackson matches fields to Java fields.** `name` and `Name` are different fields, so `Name` is not a duplicate; it is ignored like any other unknown field.
+
+### Saving data safely
+
+If a save stops partway, for example because the disk is full, the data file must still hold the last successful save. Otherwise, Poco Book cannot load the file at the next launch, and every saved student is lost.
+
+#### Implementation
+
+`JsonAddressBookStorage` and `JsonUserPrefsStorage` save through `JsonUtil#saveJsonFile(T, Path)`, which converts the data to JSON and passes it to `FileUtil#writeToFile(Path, String)`. That method never writes to the data file itself:
+
+1. If the data file exists, it checks that the file is writable, by opening it for writing and closing it without changing it. If the file is read-only, or is a folder, saving fails with the same error as before. The check is needed because on macOS and Linux, step 3 can replace a read-only file, so a read-only data file would otherwise be overwritten.
+1. It writes the JSON to a new temporary file in the same folder, such as `data/addressbook.json.5784445305140543549.tmp`.
+1. It replaces the data file with the temporary file using `Files#move` with `ATOMIC_MOVE`, so the data file always holds either its old or its new content. If the file system cannot replace a file in one step, saving fails. It does not fall back to an ordinary move, because that deletes the data file before moving the new one, so a failure would lose both.
+1. If any step fails, it deletes the temporary file where possible and throws the `IOException`. `LogicManager` reports it as a save error, as before.
+
+Saving now also needs permission to create files in the data folder. If Poco Book cannot create files there, saving fails even if the data file itself is writable.
+
+On macOS and Linux, the temporary file is given the permissions of the data file it replaces, so saving does not change the permissions of an existing file. A file that does not exist yet gets the permissions of the temporary file, which only its owner can read and write (`rw-------`). This applies to a new `preferences.json`, which holds only the window size and position. A new `data/addressbook.json` still gets the default permissions for new files, such as `rw-r--r--`, because `JsonAddressBookStorage` creates the empty file before saving to it.
+
+Saving does not undo the change in the app's memory: as before, a change that could not be saved stays in the app while it is open. Closing Poco Book does not save student data, so if it is closed before another save succeeds, the change is lost and the next launch loads the last successful save. If a later command saves successfully, that save also writes the earlier change, because each save writes all the data in memory.
+
+Every save creates a temporary file, which normally replaces the data file and so does not remain. If Poco Book stops while saving, for example because of a power cut, the temporary file may be left in the folder. Poco Book loads only the data file, never a leftover temporary file, so it can be deleted.
+
+#### Design considerations
+
+**Aspect: How to save without losing the previous save**
+
+* **Alternative 1 (current choice):** Write a temporary file in the same folder, then replace the data file with it.
+  * Pros: The data file is never partly written. Replacing a file in one step works on Windows, macOS and Linux when both files are in the same folder.
+  * Cons: Poco Book must be allowed to create files in the data folder, not just to change the data file. It also needs the extra check in step 1, because on macOS and Linux the replacement would otherwise overwrite a read-only data file. On Windows, the replacement can also fail if another program, such as an antivirus scanner or a file sync tool, has the data file or the temporary file open at that moment. Poco Book does not retry. The command reports a save error: a permission error if Windows denies access to the file, or a general save error if Windows reports that the file is in use. Either way, the previous save stays intact, and a later successful save also writes the change that could not be saved.
+* **Alternative 2:** Write over the data file directly, as AB3 did.
+  * Pros: Simpler.
+  * Cons: A save that stops partway leaves a partly written file, which cannot be loaded.
+* **Alternative 3:** Copy the data file to a backup before each save.
+  * Pros: A partly written file could be recovered from the backup.
+  * Cons: Poco Book would have to detect a damaged file and restore the backup at startup, and each save would write the data twice.
+
+**Testing**
+
+`FileUtilTest` replaces the step that writes the temporary file with one that writes half the content and then fails, as a full disk would. It checks that the data file keeps its old content and that no temporary file remains. Another replacement writes the whole temporary file and then makes the folder read-only, so that only the replacing fails. The tests also check a read-only file, a read-only folder, a folder in place of the file, a symbolic link and file permissions. A test that needs permissions or symbolic links is skipped where the system does not support them, such as read-only folders on Windows.
 
 ### \[Proposed\] Undo/redo feature
 
@@ -419,13 +587,35 @@ The following activity diagram summarizes what happens when a user executes a ne
   * Pros: Will use less memory (e.g. for `delete`, just save the person being deleted).
   * Cons: We must ensure that the implementation of each individual command is correct.
 
-_{more aspects and alternatives to be added}_
+Undo/redo is not implemented in v1.5. The walkthrough and activity diagram above describe the inherited SE-EDU AB3 design where individual commands call `Model#commitAddressBook()`. The two aspects below record why an alternative architecture was considered for Poco Book:
+
+**Aspect: Where history is committed:**
+
+* **Alternative 1 (proposed):** `LogicManager#execute` commits once, after a successful execution.
+  * Pros: One place decides when a state is worth recording, so a new command cannot forget to commit, and a command that throws never records a state.
+  * Cons: The history records every saving command, including a `setoutstanding` that restored the previous amount.
+* **Alternative 2 (legacy walkthrough above):** Each `Command` calls `Model#commitAddressBook()` inside `execute`.
+  * Pros: The command decides whether its change is worth an undo step, so a no-op `setoutstanding` could be skipped.
+  * Cons: The rule is spread over every command, and a command that forgets the call silently loses its undo step.
+
+**Aspect: What is kept out of the history:**
+
+* **Alternative 1 (proposed):** Only saving commands are recorded, so `list`, `find`, `fees`, `findguardian` and `feesummary` leave the history untouched and `undo` always reverses a change to the stored records.
+  * Pros: `undo` is never spent on a display-only command, and the number of undo steps matches the number of changes the tutor made.
+  * Cons: `undo` does not restore the previous filter, so the displayed list after an `undo` can differ from the list before the undone command.
+* **Alternative 2:** Record every command, including display-only ones.
+  * Pros: `undo` would restore the exact previous view.
+  * Cons: A tutor who filtered a few times would need several `undo` commands before reaching the change they regret, which is worse for the common case.
 
 ### Command-specific help
 
-`help` continues to open the help window. `HelpCommandParser` accepts one optional, exact command word;
+`help` continues to open the help window. `HelpCommandParser` accepts one optional command word in any letter case;
 `help COMMAND` returns that command's usage in the result area without invoking its parser or action.
-Unknown targets and extra arguments fail with usage instructions and an alphabetical list of available commands.
+An unknown target, such as `help lsit`, fails with the `Messages.MESSAGE_UNKNOWN_COMMAND` line and the alphabetical
+list of available commands, as described in [Command words and unknown commands](#command-words-and-unknown-commands).
+The `help COMMAND` hint is left out because the tutor is already using `help`. More than one word after `help`, such
+as `help paid 1`, fails with `HelpCommand.MESSAGE_EXTRA_WORDS`, which asks for one command word. Neither error
+repeats the `help` usage, which would make the message several lines longer without telling the tutor more.
 
 `HelpCommand` reuses existing `MESSAGE_USAGE` constants for implemented commands, adding index/payment constraints
 where needed. Commands without usage constants have short local entries. The available-command list is derived
@@ -437,9 +627,91 @@ never changes the model or filter and returns `false` from `shouldSaveAddressBoo
 all supported targets, including `clear`, `exit`, `paid` and `list`, against filtered records and an existing data
 file to catch accidental execution, filter replacement or storage writes.
 
+### Command words and unknown commands
+
+#### Implementation
+
+`AddressBookParser#parseCommand(String)` splits the input into a command word and its arguments. Before choosing a
+parser, it converts the command word with `ParserUtil#normalizeCommandWord(String)`, which returns it in lower case
+using `Locale.ROOT`. Every `COMMAND_WORD` constant is lower case, so `LIST`, `List` and `list` all reach the `list`
+case. `Locale.ROOT` keeps the result independent of the computer's language: in a Turkish locale, the default lower
+case of `LIST` is `lıst`, with a dotless `ı`. `HelpCommandParser` converts its target with the same method, so
+`help PAID` shows the same usage as `help paid`. `Logic#getDeletionTarget(String)` uses the same parser, so
+`DELETE 1` opens the deletion confirmation dialog just as `delete 1` does.
+
+Only the command word is converted. The arguments, including prefixes such as `n/` and `find` keywords, are passed to
+the `XYZCommandParser` unchanged.
+
+If no case matches, the parser throws a `ParseException`. Its first line joins `Messages.MESSAGE_UNKNOWN_COMMAND`,
+which quotes the command word as the tutor typed it, and `HelpCommand.MESSAGE_HELP_HINT`, which suggests
+`help COMMAND`. Its second line, `HelpCommand#getAvailableCommandsMessage()`, lists the available command words.
+For example, `lsit` produces:
+
+```
+Unknown command: "lsit". Type help COMMAND to see a command's format and an example.
+Available commands: add, clear, delete, edit, exit, fees, feesummary, find, findguardian, help, list, paid, setoutstanding, view
+```
+
+The list comes from the same entries as command-specific help. `help` with an unknown target shows the same
+message without the `help COMMAND` hint. `AddressBookParserTest` checks that every listed word, in lower and upper
+case, is passed to a command or its parser instead of producing the unknown-command message. So that test fails if
+the message lists a word that the parser does not accept, or if a new `COMMAND_WORD` with a help entry is not lower
+case.
+
+#### Design considerations
+
+**Aspect: Letter case of command words:**
+
+* **Alternative 1 (current choice):** Match command words in any letter case.
+  * Pros: A tutor who has Caps Lock on, or who capitalises the first word out of habit, does not have to retype the
+    command. No two command words differ only in letter case, so no input becomes ambiguous.
+  * Cons: Developers must write every `COMMAND_WORD` constant in lower case. The parser lower-cases the typed word
+    before comparing it, so a constant such as `feeSummary` would never match any input, however the tutor types it.
+* **Alternative 2:** Keep exact, lower-case matching, and only say in the error message that command words are
+  lower case.
+  * Pros: Parsing does not change.
+  * Cons: The tutor still has to retype the command, although the intended command is clear. Requiring a letter case
+    that carries no meaning is an arbitrary rule the tutor must remember.
+
+**Aspect: Letter case of prefixes:**
+
+* **Alternative 1 (current choice):** Keep prefixes such as `n/` and `gp/` exact.
+  * Pros: Upper-case text that looks like a prefix stays part of a value. For example, `a/Blk 5 N/A` keeps `N/A` in
+    the address.
+  * Cons: With Caps Lock on, `ADD N/AMY ...` is rejected with the `add` format message.
+* **Alternative 2:** Match prefixes in any letter case as well.
+  * Pros: A whole command typed with Caps Lock on would work.
+  * Cons: Any value containing a space followed by text such as `N/`, `P/` or `A/` would be split into another
+    parameter, which changes how existing valid input is parsed.
+
+**Aspect: Content of the unknown-command message:**
+
+* **Alternative 1 (current choice):** Quote the typed word, suggest `help COMMAND`, then list every command word.
+  * Pros: The list is short, so the tutor can spot the intended word. Quoting the word shows which part of the input
+    was read as the command word, for example `list.` when a stray character is attached. The list comes last because
+    it wraps in a narrow window: if the result area is too short, only the end of the list needs scrolling, and the
+    quoted word and the `help COMMAND` hint stay visible unless the typed word is very long.
+  * Cons: The message is longer than the old `Unknown command.`, and the tutor may still need to scroll to see the
+    whole list in a narrow window.
+* **Alternative 2:** Also suggest the closest command word, such as "Did you mean `list`?", using edit distance.
+  * Pros: Points straight to the most likely command.
+  * Cons: Needs a distance threshold and rules for ties, and a wrong suggestion can mislead. The full list already
+    contains the intended word, so this was left as a possible later improvement.
+
 ### \[Proposed\] Data archiving
 
-_{Explain here how the data archiving feature will be implemented}_
+Archiving is **not implemented**; this section records the intended design so that a future iteration does not have to rediscover its constraints.
+
+**Goal:** keep the record of a student who has stopped lessons without leaving that student in the working list, and without losing the outstanding fee or the guardian contacts.
+
+**Proposed design:**
+
+* Add an `archived` boolean to `Person`, defaulting to `false`. `JsonAdaptedPerson` writes it as an optional field and treats a missing field as `false`, so an existing `addressbook.json` loads unchanged and no data-file migration is needed.
+* Add `archive INDEX` and `unarchive INDEX`, modelled on `paid`: both validate the displayed index, build a new immutable `Person` with the flag flipped, and call `Model#setPerson`. The flag lives in `Person` rather than in a separate list so that `find`, `fees` and `feesummary` keep working on one in-memory collection.
+* The predicate behind `list` excludes archived students. `find` and `findguardian` search every stored student, and archived matches carry a visible `Archived` label so the tutor can tell them apart. `feesummary` reports the archived total on a second line instead of adding it silently to the active total.
+* `archive` is not destructive, preserving student records unlike `delete` (which removes a specific student permanently) and `clear` (which wipes the entire address book including hidden records); it needs no confirmation dialog as `unarchive` can immediately restore the student.
+
+**Why it was not built in v1.5:** the change reaches the storage format, the model API, the default `list` filter and the fee totals at once. That is a larger change than a v1.5 bug fix, and it would put the pre-release data-format compatibility checks and the fee-total tests at risk while the team is in feature freeze. Recording the design here keeps the v1.5 claim honest: archiving is a proposal, not a delivered feature.
 
 
 --------------------------------------------------------------------------------------------------------------------
@@ -447,7 +719,7 @@ _{Explain here how the data archiving feature will be implemented}_
 ## **Documentation, logging, testing, dev-ops**
 
 * [Documentation guide](Documentation.md)
-* [Testing guide](Testing.md)
+* [Testing guide](Testing.md), including [running the JavaFX UI tests](Testing.md#running-the-javafx-ui-tests)
 * [Logging guide](Logging.md)
 * [DevOps guide](DevOps.md)
 
@@ -541,7 +813,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 * 2a. Poco Book is unable to save the data.
 
-    * 2a1. Poco Book shows an error message that the data could not be saved. The change is kept only until Poco Book is closed.
+    * 2a1. Poco Book shows an error message that the data could not be saved. The change stays in Poco Book and is saved with the next successful save. If Poco Book is closed before then, the change is lost.
 
       Use case ends.
 
@@ -654,7 +926,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 * 5a. Poco Book is unable to save the data.
 
-    * 5a1. Poco Book shows an error message that the data could not be saved. The change is kept only until Poco Book is closed.
+    * 5a1. Poco Book shows an error message that the data could not be saved. The change stays in Poco Book and is saved with the next successful save. If Poco Book is closed before then, the change is lost.
 
       Use case ends.
 
@@ -683,15 +955,15 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 **Guarantees:**
 
-* Only the specified student's outstanding fee is changed. The new amount replaces the previous fee and is never added to or subtracted from it.
+* Only the specified student's outstanding fee is changed. A plain amount replaces the previous fee, and an amount written as `+AMOUNT` adds to it; no other stored field is changed.
 * If the request is invalid, no student data is changed.
 * If the data is saved successfully, the new outstanding fee, or its absence after a fee is cleared, still applies after Poco Book restarts.
 
 **MSS**
 
 1.  Tutor <u>finds the student by name (UC02)</u>.
-2.  Tutor requests to set the outstanding fee of a specific student in the displayed list to a new amount.
-3.  Poco Book replaces the student's outstanding fee with the new amount, saves the data, and shows the student's new outstanding fee.
+2.  Tutor requests to set the outstanding fee of a specific student in the displayed list to a new amount, or to add an amount to the fee already recorded.
+3.  Poco Book replaces or increases the student's outstanding fee accordingly, saves the data, and shows the resulting amount, together with the previous amount when the tutor added to it.
 
     Use case ends.
 
@@ -711,9 +983,15 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
       Use case resumes at step 2.
 
-* 2b. The amount is missing or invalid (e.g., negative, above S$99999.99, or with more than two decimal places).
+* 2b. The amount is missing or invalid (e.g., negative, above S$99999.99, with more than two decimal places, or `+0` when adding).
 
     * 2b1. Poco Book shows an error message describing valid amounts.
+
+      Use case resumes at step 2.
+
+* 2c. Adding the amount would take the fee above S$99999.99.
+
+    * 2c1. Poco Book shows an error message naming the amount that was refused and the total it would have produced. Nothing is changed.
 
       Use case resumes at step 2.
 
@@ -725,7 +1003,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 * 3b. Poco Book is unable to save the data.
 
-    * 3b1. Poco Book shows an error message that the data could not be saved. The change is kept only until Poco Book is closed.
+    * 3b1. Poco Book shows an error message that the data could not be saved. The change stays in Poco Book and is saved with the next successful save. If Poco Book is closed before then, the change is lost.
 
       Use case ends.
 
@@ -796,7 +1074,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 * 3a. Poco Book is unable to save the data.
 
-    * 3a1. Poco Book shows an error message that the data could not be saved. The change is kept only until Poco Book is closed.
+    * 3a1. Poco Book shows an error message that the data could not be saved. The change stays in Poco Book and is saved with the next successful save. If Poco Book is closed before then, the change is lost.
 
       Use case ends.
 
@@ -805,7 +1083,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 These are quality targets for the intended Poco Book MVP, not claims that every target has already been achieved.
 
 1. **Portability:** The same executable JAR should launch and support the core student-management workflow on Windows, macOS, and Linux with Java 25 installed, without recompilation for each operating system.
-2. **Performance:** With up to 1,000 student records, at least 95% of valid `add`, `delete`, `find`, `list`, `view`, `fees`, and `setoutstanding` commands should update the result area and displayed list within 1 second on a reference laptop with at least 8 GB RAM and SSD storage. Measure 20 executions per command after startup; exclude deliberate debugger pauses.
+2. **Performance:** With up to 1,000 student records, at least 95% of executions of each of these valid commands — `add`, `edit`, `delete`, `clear`, `find`, `findguardian`, `list`, `view`, `fees`, `setoutstanding`, `paid`, `feesummary` and `help COMMAND` — should update the result area and displayed list within 1 second on a reference laptop with at least 8 GB RAM and SSD storage. Measure 20 executions per command after startup; the target is met when, for each listed command, at least 19 of its 20 executions finish within 1 second; exclude deliberate debugger pauses. This list names every command implemented in v1.5 apart from `exit` and plain `help`, which opens a separate window.
 3. **Usability:** After completing the User Guide's quick-start instructions, a first-time user should be able to add a student, find that student, list outstanding fees, and set or clear an outstanding fee using only the keyboard. Invalid input should produce an explanatory message without terminating the application.
 4. **Offline operation:** All core student-management commands should work without an Internet connection. The MVP should not require a remote account, remote database, or online payment service.
 5. **Reliability:** Following a successful data save and normal shutdown, restarting the application should restore the same student details, guardian contacts, and outstanding-fee values. Invalid commands should not modify student records. If a save fails, the application should report the failure rather than claim that the change is durably saved.
@@ -818,7 +1096,7 @@ These are quality targets for the intended Poco Book MVP, not claims that every 
 * **Tutor**: The intended user: an independent small-group tutor who personally manages student records and fee follow-up using typed commands.
 * **Guardian**: A parent or other responsible adult whose contact details are associated with a student record. A guardian is not a separately indexed student record.
 * **Outstanding fee**: The positive amount in Singapore dollars currently recorded as owed for a student. It is not a payment history, invoice, or proof of a financial transaction.
-* **Cleared outstanding fee**: The recorded state after the tutor sets a student's outstanding fee to zero using `setoutstanding INDEX 0`. This updates the record; it does not transfer money or verify a bank payment. Partial payment tracking is outside the MVP.
+* **Cleared outstanding fee**: The recorded state after the tutor records a full payment with `paid INDEX`, or equivalently sets the amount to zero with `setoutstanding INDEX 0`. Both reach the same stored state; `paid INDEX` is the documented way to record a payment, and `setoutstanding INDEX AMOUNT` is used to correct an amount or to clear a fee that was recorded in error. Clearing a fee updates the record; it does not transfer money or verify a bank payment. Partial payment tracking is outside the MVP.
 * **Displayed list**: The ordered student records currently visible in the GUI, including results of `find` or `fees`. Hidden records remain stored even when they are not shown.
 * **Displayed index**: A one-based position in the current displayed list. Indices can change after filtering, deletion, or a fee update; they are not permanent student identifiers.
 * **MVP (Minimum Viable Product)**: The smallest coherent set of features without which the intended tutor cannot perform the essential student-management and outstanding-fee workflow.
@@ -844,14 +1122,15 @@ testers are expected to do more *exploratory* testing.
 
    1. Download the JAR file and copy it into an empty folder.
 
-   1. Double-click the JAR file.<br>
+   1. In a terminal, run `java -version` and check that it reports Java 25 or later. In the folder containing
+      `addressbook.jar`, run `java -jar addressbook.jar`.<br>
       Expected: The GUI opens with a set of sample contacts. The window size may not be optimal.
 
 1. Saving window preferences
 
    1. Resize the window to an optimal size. Move the window to a different location. Close the window.
 
-   1. Relaunch the app by double-clicking the JAR file.<br>
+   1. In the same folder, run `java -jar addressbook.jar` again.<br>
        Expected: The most recent window size and location are retained.
 
 ### Adding and finding students
@@ -883,6 +1162,10 @@ testers are expected to do more *exploratory* testing.
 
 1. Enter `view 1`, then `setoutstanding 1 75.50`.<br>
    Expected: Alex remains selected; his card and details pane show S$75.50. His other fields stay unchanged.
+
+1. Enter `setoutstanding 1 +24.50`.<br>
+   Expected: The feedback reads `Added S$24.50 to the outstanding fee for Alex Yeoh: S$75.50 -> S$100.00`, and his card and details pane show S$100.00. Enter `setoutstanding 1 +0` and `setoutstanding 1 +99999.99`.<br>
+   Expected: Both report an error and Alex still owes S$100.00.
 
 1. Enter `setoutstanding 1 0`.<br>
    Expected: Alex leaves the filtered list, Charlotte becomes index 1, and Alex's selection and details pane clear.
@@ -949,6 +1232,11 @@ testers are expected to do more *exploratory* testing.
    Expected: Alex Yeoh stays selected. His card shows `S$75.50 outstanding`, and the details pane shows
    `Outstanding fee: S$75.50`. Enter `fees`, then `setoutstanding 1 0`.<br>
    Expected: Alex disappears from the filtered list, and the selection and details pane clear.
+
+1. Enter `list`, `edit 2 t/biology t/Chemistry t/aMath`, then `view 2`.<br>
+   Expected: The result of `edit`, which you may need to scroll, ends with `Tags: aMath, biology, Chemistry`.
+   Bernice Yu's card shows her tags in alphabetical order, ignoring case: `aMath`, `biology`, `Chemistry`.
+   The details pane shows `Tags: aMath, biology, Chemistry`.
 
 ### Deleting a student
 
@@ -1029,6 +1317,30 @@ testers are expected to do more *exploratory* testing.
    should have no fee label. Run `fees` to verify that Alex is excluded. Restart the app and run `find Alex` to
    verify that the fee remains cleared.
 
+### Long tags on student cards
+
+1. Start with sample data and resize the window to its minimum size (750 by 450). Enter
+   `edit 1 t/ThisTagIsFarTooLongToFitOnOneStudentCardAtAnyWindowSize t/math`.<br>
+   Expected: Alex Yeoh's card shows the long tag cut off with `...`, inside the card, and `math` as a separate tag.
+   His contact details remain visible.
+
+1. Drag the divider between the student list and the details pane fully to the left.<br>
+   Expected: The long tag is still cut off with `...` and stays inside the card.
+
+1. Enter `view 1`.<br>
+   Expected: The details pane shows the full tag, wrapping onto another line if it does not fit. Scroll down the
+   details pane if the tags are not visible.
+
+1. Close and restart the app, then enter `view 1`.<br>
+   Expected: Alex Yeoh's card still shows the long tag cut off with `...`, and the details pane still shows it in full.
+   Scroll down the details pane if the tags are not visible.
+
+1. Enter `edit 1 t/ThisTagIsFarTooLongToFitOnOneStudentCardAtAnyWindowSizeA t/ThisTagIsFarTooLongToFitOnOneStudentCardAtAnyWindowSizeB`,
+   then `view 1`.<br>
+   Expected: The two tags look the same on Alex Yeoh's card, because they differ only after the point where they are
+   cut off. This is a known limitation of cutting off long tags. The details pane shows both tags in full, the one
+   ending in `A` first. Scroll down the details pane if the tags are not visible.
+
 ### Reading command-specific help
 
 1. Prerequisites: Start a fresh disposable application folder with the supplied sample data, then enter `find Alex`.
@@ -1045,11 +1357,37 @@ testers are expected to do more *exploratory* testing.
    1. Enter `help clear`, `help exit` and `help list`.<br>
       Expected: Each shows instructions only. The app stays open, no student is deleted and the filter is unchanged.
 
-   1. Enter `help unknown` and `help paid 1`.<br>
-      Expected: Each reports invalid format, explains `help [COMMAND]` and lists the available command words.
+   1. Enter `help lsit`.<br>
+      Expected: `Unknown command: "lsit".`, followed by the available command words. The filter is unchanged.
+
+   1. Enter `help paid 1`.<br>
+      Expected: `Type only one command word after help, such as help paid.` No payment is recorded.
 
    1. Enter `help`.<br>
       Expected: The existing help window opens with the online guide link. Close the help window to continue.
+
+### Command words in any case and unknown commands
+
+1. Prerequisites: Start a fresh disposable application folder with the supplied sample data of six students.
+
+   1. Enter `find Alex`, then `LIST`.<br>
+      Expected: `Listed all students.` All six students are displayed again, as after `list`.
+
+   1. Enter `Help`, close the help window, then enter `help PAID`.<br>
+      Expected: `Help` opens the help window. `help PAID` shows the same payment instructions as `help paid`.
+
+   1. Enter `DELETE 2`, then press N in the dialog.<br>
+      Expected: The deletion confirmation dialog names Bernice Yu, as it would for `delete 2`. After N, she is
+      still displayed and all six students remain.
+
+   1. Enter `lsit`.<br>
+      Expected: The result area starts with `Unknown command: "lsit". Type help COMMAND to see a command's format
+      and an example.`, followed by the available command words. The command text turns red, and the displayed list
+      is unchanged.
+
+   1. Enter `ADD N/Amy Tan G/Mei Tan GP/91234567`.<br>
+      Expected: The `add` command is recognised, but its prefixes are not, so an invalid-command-format message with
+      the `add` usage is shown and no student is added.
 
 ### Saving data
 
@@ -1064,6 +1402,26 @@ testers are expected to do more *exploratory* testing.
 1. Relaunch and execute a valid `add` command.<br>
    Expected: The new record is saved as valid JSON, replacing the invalid file. Restore the backup if needed.
 
+1. In a disposable application folder with sample data, enter `setoutstanding 1 75.50` so that
+   `data/addressbook.json` is saved, then close the app and back up the file. In a text editor, add a last line
+   `GARBAGE` after the file's final `}`, then relaunch the app.<br>
+   Expected: The app starts with an empty list, as for any other invalid file, instead of loading the students
+   before `GARBAGE`. Close the app. The file still ends with `GARBAGE`. Restore the backup.
+
+1. With the app closed, in the restored file, change the line `"name" : "Alex Yeoh",` to
+   `"name" : "Alex Yeoh", "name" : "Changed Name",` and relaunch the app.<br>
+   Expected: The app starts with an empty list instead of showing a student named Changed Name. Close the app and
+   restore the backup.
+
+1. In a disposable application folder with sample data, enter `setoutstanding 1 75.50` so that `data/addressbook.json`
+   is saved. Make that file read-only (for example, `chmod 444 data/addressbook.json` on macOS or Linux, or
+   `attrib +r data\addressbook.json` on Windows), then enter `paid 1`.<br>
+   Expected: An error says the data could not be saved, and Alex Yeoh no longer shows a fee. Without closing the app,
+   make the file writable again (`chmod 644 data/addressbook.json`, or `attrib -r data\addressbook.json`), then
+   enter `setoutstanding 2 30`. Restart the app and enter `fees`.<br>
+   Expected: `3 student(s) with outstanding fees.` Alex Yeoh is not listed, because saving the fee for Bernice Yu also
+   saved the earlier payment. Bernice Yu owes S$30.00.
+
 1. In a disposable application folder with sample data, enter `setoutstanding 1 75.50` so that `data/addressbook.json`
    is saved. Make that file read-only (for example, `chmod 444 data/addressbook.json` on macOS or Linux, or
    `attrib +r data\addressbook.json` on Windows).
@@ -1073,25 +1431,65 @@ testers are expected to do more *exploratory* testing.
    `attrib -r data\addressbook.json`) and restart the app. `fees` still shows Alex owing S$75.50, because the payment
    was not saved.
 
+1. On macOS or Linux, in a disposable application folder with sample data, enter `setoutstanding 1 75.50`. Make the
+   `data` folder read-only (`chmod 555 data`), then enter `setoutstanding 1 80`.<br>
+   Expected: An error says the data could not be saved due to insufficient permissions, and no file ending in `.tmp`
+   is left in the `data` folder. Make the folder writable again (`chmod 755 data`) and restart the app. `fees` still
+   shows Alex owing S$75.50, because the new fee was not saved.
+
 1. Launch the JAR by its absolute path from a different empty working folder.<br>
    Expected: Data, preferences and logs remain beside the JAR; the unrelated working folder remains empty.
 
 ### Maintaining command-specific help
 
-When registering a new command in `AddressBookParser`, also add its `MESSAGE_USAGE` to
+When registering a new command in `AddressBookParser`, give it a lower-case `COMMAND_WORD`, add its `MESSAGE_USAGE` to
 `HelpCommand.COMMAND_USAGE`, update the UG command list and the `CommandHelpLogicTest` targets,
-and remove that command from `HelpCommandParserTest` invalid targets if present. Verify both the raw command
-and `help COMMAND` through `LogicManager`. `findguardian` is registered with command-specific help and covered by dispatcher-level search,
+and remove that command from the unknown-word inputs in `HelpCommandParserTest` if present. The help entry also adds the word
+to the unknown-command message, so update the example message in
+[Command words and unknown commands](#command-words-and-unknown-commands) too. Verify both the raw command and
+`help COMMAND` through `LogicManager`. `findguardian` is registered with command-specific help and covered by dispatcher-level search,
 filtered-index payment, invalid-input and persistence regression tests.
 
 ### Guardian search and persisted fee updates
 
-1. In a disposable folder, add two students sharing a guardian, with different positive outstanding fees.
-1. Run a student-name search that hides both, then `findguardian GUARDIAN_NAME`.<br>
-   Expected: Both siblings appear once, in stored order. `help findguardian` explains the search without changing it.
-1. Run `paid 1`, then `fees min/100` and `feesummary`.<br>
-   Expected: Only the chosen displayed student's fee is cleared. The minimum filter and all-student total reflect that change.
-1. Restart the app.<br>
-   Expected: The payment and guardian details persist. `findguardian GUARDIAN_PHONE` returns both students.
+1. In a fresh **disposable** application folder, enter `clear` to remove the sample students, then enter
+   `add n/Asha Rai g/Mei Tan gp/92345678 f/150` and `add n/Bina Rai g/Mei Tan gp/92345678 f/25`.<br>
+   Expected: Only these two students are stored with the same guardian; Asha owes S$150.00 and Bina owes S$25.00.
+1. Enter `find Nobody`, then `findguardian Mei`.<br>
+   Expected: The first search hides both students. The guardian search shows Asha at index 1 and Bina at index 2.
+   `help findguardian` explains the search without changing the displayed list.
+1. Enter `paid 1`, then `fees min/100`, then `feesummary`.<br>
+   Expected: Asha's fee is cleared. The minimum-fee search shows no students; the summary reports that, across all
+   stored students, one student owes a total of S$25.00. Neither command changes Bina's fee.
+1. Restart the app, then enter `findguardian 92345678`.<br>
+   Expected: Both students are displayed in stored order with their guardian details intact. Asha has no
+   outstanding fee and Bina still owes S$25.00. `feesummary` still reports one student owing S$25.00.
 1. Try `findguardian`, `findguardian g/NAME`, and `help findguardian extra`.<br>
    Expected: Invalid-input feedback; records and the current filter remain unchanged.
+
+### Editing guardian and optional contact details
+
+1. In a disposable folder, run `clear`, then
+   `add n/Style Check One g/May Tan gp/92345678 p/91234567 e/check@example.com a/12 Main Road`, `find One` and `view 1`.<br>
+   Expected: Style Check One is the only listed student and is shown in the details pane.
+
+1. Enter `edit 1 p/`, then `edit 1 p/91234567 e/ a/`.<br>
+   Expected: The first edit clears only the student phone. The second restores the phone and clears email and address.
+   Guardian details and the fee are unchanged.
+
+1. Enter `edit 1 p/123`, `edit 1 g/` and `edit 1 gp/`.<br>
+   Expected: Each edit is rejected and no field changes.
+
+1. Enter `edit 1 t/Math`, `edit 1 t/math`, `edit 1 t/`, then `edit 1 t/ t/Math`.<br>
+   Expected: The card and details pane both show `math` after the second edit. `t/` clears all tags.
+   Combining `t/` with a tag is rejected.
+
+1. Enter `edit 1 g/may tan` twice.<br>
+   Expected: The card and details pane both show the new capitalisation. The repeated edit reports that nothing changed.
+
+1. Enter `add n/Style Check Two g/may tan gp/92345678`, then `find One` and `edit 1 gp/93456789`.<br>
+   Expected: The feedback names Style Check Two as still using the old guardian phone. `find Two` then `view 1` shows
+   Style Check Two still has `92345678`.
+
+1. Enter `list`, then edit Style Check One to `n/Style Check Two gp/92345678` using its displayed index.<br>
+   Expected: The edit is rejected as a duplicate and both records are unchanged.

@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -80,6 +81,44 @@ public class JsonAddressBookStorageTest {
         String savedJson = Files.readString(filePath);
         assertFalse(savedJson.contains("schemaVersion"));
         assertFalse(savedJson.contains("lessonNotes"));
+    }
+
+    @Test
+    public void readAddressBook_nullRoot_throwDataLoadingException() {
+        assertThrows(DataLoadingException.class, () -> readAddressBook("nullRootAddressBook.json"));
+    }
+
+    @Test
+    public void readAddressBook_contentAfterAddressBook_throwDataLoadingException() {
+        assertThrows(DataLoadingException.class, () -> readAddressBook("contentAfterAddressBook.json"));
+    }
+
+    @Test
+    public void readAddressBook_secondRootAfterAddressBook_throwDataLoadingException() {
+        assertThrows(DataLoadingException.class, () -> readAddressBook("secondRootAddressBook.json"));
+    }
+
+    @Test
+    public void readAddressBook_duplicatePersonsField_throwDataLoadingException() {
+        assertThrows(DataLoadingException.class, () -> readAddressBook("duplicatePersonsFieldAddressBook.json"));
+    }
+
+    @Test
+    public void readAddressBook_duplicateNameField_throwDataLoadingException() {
+        assertThrows(DataLoadingException.class, () -> readAddressBook("duplicateNameFieldAddressBook.json"));
+    }
+
+    @Test
+    public void readAddressBook_whitespaceAfterSavedAddressBook_success() throws Exception {
+        Path filePath = testFolder.resolve("TempAddressBook.json");
+        AddressBook original = getTypicalAddressBook();
+        JsonAddressBookStorage jsonAddressBookStorage = new JsonAddressBookStorage(filePath);
+        jsonAddressBookStorage.saveAddressBook(original);
+        Files.writeString(filePath, System.lineSeparator() + " \t" + System.lineSeparator(),
+                StandardOpenOption.APPEND);
+
+        ReadOnlyAddressBook readBack = jsonAddressBookStorage.readAddressBook().get();
+        assertEquals(original, new AddressBook(readBack));
     }
 
     @Test

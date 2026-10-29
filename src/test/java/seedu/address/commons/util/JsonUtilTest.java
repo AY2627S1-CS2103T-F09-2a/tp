@@ -1,11 +1,14 @@
 package seedu.address.commons.util;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.IOException;
 import java.nio.file.Path;
 
 import org.junit.jupiter.api.Test;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
 
 import seedu.address.testutil.SerializableTestClass;
 import seedu.address.testutil.TestUtil;
@@ -37,6 +40,49 @@ public class JsonUtilTest {
         assertEquals(serializableTestClass.getName(), SerializableTestClass.getNameTestValue());
         assertEquals(serializableTestClass.getListOfLocalDateTimes(), SerializableTestClass.getListTestValues());
         assertEquals(serializableTestClass.getMapOfIntegerToString(), SerializableTestClass.getHashMapTestValues());
+    }
+
+    @Test
+    public void fromJsonString_whitespaceAfterValue_success() throws IOException {
+        String json = SerializableTestClass.JSON_STRING_REPRESENTATION + " \t\r\n\n";
+
+        SerializableTestClass serializableTestClass = JsonUtil.fromJsonString(json, SerializableTestClass.class);
+
+        assertEquals(SerializableTestClass.getNameTestValue(), serializableTestClass.getName());
+    }
+
+    @Test
+    public void fromJsonString_secondValueAfterValue_throwsJsonProcessingException() {
+        for (String secondValue : new String[] {"\n{ \"name\" : \"Second\" }", "null", "[ ]"}) {
+            String json = SerializableTestClass.JSON_STRING_REPRESENTATION + secondValue;
+
+            JsonProcessingException exception = assertThrows(JsonProcessingException.class, () ->
+                    JsonUtil.fromJsonString(json, SerializableTestClass.class));
+            assertEquals(JsonUtil.MESSAGE_CONTENT_AFTER_VALUE, exception.getOriginalMessage());
+        }
+    }
+
+    @Test
+    public void fromJsonString_invalidContentAfterValue_throwsIoException() {
+        for (String trailingContent : new String[] {"GARBAGE", "}", ","}) {
+            String json = SerializableTestClass.JSON_STRING_REPRESENTATION + trailingContent;
+            assertThrows(IOException.class, () -> JsonUtil.fromJsonString(json, SerializableTestClass.class),
+                    "Content after the value should be rejected: " + trailingContent);
+        }
+    }
+
+    @Test
+    public void fromJsonString_duplicateField_throwsIoException() {
+        String duplicateTopLevelField = "{ \"name\" : \"First\", \"name\" : \"Second\" }";
+        String duplicateNestedField = "{ \"mapOfIntegerToString\" : { \"1\" : \"One\", \"1\" : \"Uno\" } }";
+        String duplicateFieldInUnknownField = "{ \"unknown\" : { \"a\" : 1, \"a\" : 2 } }";
+
+        assertThrows(IOException.class, () ->
+                JsonUtil.fromJsonString(duplicateTopLevelField, SerializableTestClass.class));
+        assertThrows(IOException.class, () ->
+                JsonUtil.fromJsonString(duplicateNestedField, SerializableTestClass.class));
+        assertThrows(IOException.class, () ->
+                JsonUtil.fromJsonString(duplicateFieldInUnknownField, SerializableTestClass.class));
     }
 
     //TODO: @Test jsonUtil_readJsonStringToObjectInstance_correctObject()

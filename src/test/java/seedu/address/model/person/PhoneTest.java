@@ -34,7 +34,9 @@ public class PhoneTest {
         assertFalse(Phone.isValidPhone("71234567")); // starts with 7
         assertFalse(Phone.isValidPhone("phone")); // non-numeric
         assertFalse(Phone.isValidPhone("9011p041")); // alphabets within digits
-        assertFalse(Phone.isValidPhone("+65 9123 4567")); // country code
+        assertFalse(Phone.isValidPhone("65 9123 4567")); // country code without +
+        assertFalse(Phone.isValidPhone("+60 9123 4567")); // other country code
+        assertFalse(Phone.isValidPhone("+65")); // country code only
         assertFalse(Phone.isValidPhone("9123 4567 x12")); // extension
 
         // valid phone numbers
@@ -43,11 +45,14 @@ public class PhoneTest {
         assertTrue(Phone.isValidPhone("93121534")); // starts with 9
         assertTrue(Phone.isValidPhone("9123 4567")); // space between digits
         assertTrue(Phone.isValidPhone("9123-4567")); // hyphen between digits
+        assertTrue(Phone.isValidPhone("+65 9123 4567")); // Singapore country code
+        assertTrue(Phone.isValidPhone("+6591234567")); // country code without separator
     }
 
     @Test
     public void constructor_separators_removedBeforeStorage() {
         assertEquals("91234567", new Phone("9123 4567").value);
+        assertEquals("91234567", new Phone("+65 9123-4567").value);
         assertEquals("91234567", new Phone("9123-4567").value);
     }
 
