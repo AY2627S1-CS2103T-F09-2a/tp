@@ -128,7 +128,7 @@ The result states `N student(s) with outstanding fees.` An empty result is succe
 * `fees min/100` shows students owing at least S$100.00, including exactly S$100.00.
 * The minimum must be from `0` to `99999.99`, with at most two decimal places and no sign or exponent.
 * `fees min/0` still excludes students without an outstanding fee.
-* Missing or invalid amounts, duplicate `min/` prefixes, unknown prefixes and extra arguments are rejected.
+* Missing or invalid amounts, duplicate `min/` prefixes, unknown prefixes and extra arguments are rejected, with a message naming the problem; for example, `fees min/abc` reports `Invalid minimum amount: abc.`
 * The filter remains active when fees change. A student whose fee falls below the minimum disappears from the list.
 * The command does not change or save records. Use `list` to restore all students.
 
