@@ -48,6 +48,19 @@ Poco Book is a **desktop application for independent tutors to manage students, 
 
 ## Five-minute walkthrough
 
+### The main window
+
+![Poco Book main window with its six areas numbered](images/UiOverview.png)
+
+1. **Menu bar:** `File` → `Exit` closes Poco Book, and `Help` → `Help` (or `F1`) opens the help window.
+1. **Command box:** type a command here and press Enter.
+1. **Result display:** shows the result of your last command, or an error message explaining what to fix.
+1. **Student list:** the students currently displayed, each with an index, tags, any outstanding fee, contact details and guardian. Commands such as `view`, `paid` and `delete` use the index shown here.
+1. **Student record:** the full details of the student selected with `view INDEX`.
+1. **Status bar:** the location of the data file Poco Book saves to.
+
+### Walkthrough
+
 This walkthrough takes you through a typical first session: adding two students, finding a guardian, checking who owes fees, recording a payment, and confirming that Poco Book keeps your changes after a restart. It takes about five minutes.
 
 <div markdown="span" class="alert alert-warning">:exclamation: **Caution:**
@@ -77,6 +90,8 @@ Do this walkthrough in a **new, empty folder**, not the folder where you keep yo
 
 1. **Record a payment.** Type `fees` again. Check that index `1` is **Alpha Tan**, then type `paid 1`.<br>
    Poco Book shows `Marked outstanding fee as paid for Alpha Tan: S$180.00`. Alpha disappears from the `fees` list, so Beta Lim moves up to index `1`.
+
+   ![After paid 1: only Beta Lim remains in the fees list](images/walkthroughPaid.png)
 
    <div markdown="span" class="alert alert-primary">:bulb: **Tip:**
    Indexes always refer to the list currently on screen, and they change when the list changes. Check the name next to an index before every `paid`, `setoutstanding`, `edit` or `delete`.
@@ -153,12 +168,12 @@ Format: `help [COMMAND]`
 
 Adds a student to Poco Book with their required guardian contact and optional personal contact or outstanding fee details.
 
-Format: `add n/NAME g/GUARDIAN_NAME gp/GUARDIAN_PHONE [p/PHONE] [e/EMAIL] [a/ADDRESS] [f/AMOUNT]`
+Format: `add n/NAME g/GUARDIAN_NAME gp/GUARDIAN_PHONE [p/PHONE] [e/EMAIL] [a/ADDRESS] [f/AMOUNT] [t/TAG]…​`
 
-* `n/NAME`, `g/GUARDIAN_NAME`, and `gp/GUARDIAN_PHONE` are required; `p/PHONE`, `e/EMAIL`, `a/ADDRESS`, and `f/AMOUNT` are optional.
+* `n/NAME`, `g/GUARDIAN_NAME`, and `gp/GUARDIAN_PHONE` are required; `p/PHONE`, `e/EMAIL`, `a/ADDRESS`, `f/AMOUNT`, and `t/TAG` are optional.
 * If any required parameters are missing, the error names all of them, such as `Missing required parameter(s): g/, gp/.`
-* Each prefix may appear at most once in an `add` command.
-* `ADDRESS` may contain text such as `c/o`, `Blk A/B`, or `N/A`. Other parameters must not contain unrecognised prefixes such as `t/`.
+* `t/TAG` may be repeated to give the student several tags. Each tag may contain only ASCII letters and digits, with no spaces or punctuation, as for `edit`. Every other prefix may appear at most once in an `add` command.
+* `ADDRESS` may contain text such as `c/o`, `Blk A/B`, or `N/A`, but a `t/` in it starts a tag. Other parameters must not contain unrecognised prefixes such as `x/`.
 * Everything after `a/` up to the next recognised prefix is stored as the address. Prefixes are case-sensitive, so a mistyped optional prefix such as `P/91234567` becomes part of the address instead of setting that field. For example, `add n/Alex Tan g/Mei Tan gp/92345678 a/Blk 1 P/91234567` saves the address `Blk 1 P/91234567`. A prefix typed without its slash, such as `p 91234567`, is also stored as part of the address. The success message lists the saved values, so check it after adding.
 * `NAME` and `GUARDIAN_NAME` must be 1 to 70 characters long and contain at least one letter. They may use letters (including non-English letters such as `é` or `李`), digits, spaces, apostrophes, hyphens, periods and parentheses. Extra spaces are removed before the length is counted.
 * `ADDRESS`, if provided, must be 1 to 150 characters long and fit on one line.
@@ -175,6 +190,7 @@ Format: `add n/NAME g/GUARDIAN_NAME gp/GUARDIAN_PHONE [p/PHONE] [e/EMAIL] [a/ADD
 Examples:
 * `add n/Alex Tan g/Mei Tan gp/92345678`
 * `add n/Riya Kumar g/Anil Kumar gp/97654321 p/98765432 e/riya@example.com a/12 Clementi Ave 3 f/75.50`
+* `add n/Wei Ling g/Tan Mei gp/91234567 t/Math t/Sec3`: Adds a student with the tags `Math` and `Sec3`.
 * `add n/José O'Neil-Tan g/Maria O'Neil gp/91112222` is accepted: accented letters, apostrophes and hyphens are allowed in names.
 * `add n/Tom & Jerry g/Mei Tan gp/92345678` is rejected because `&` is not allowed in names.
 * `add n/Alex Tan g/Mei Tan gp/92345678 e/alex@example` is rejected because the email has no domain ending such as `.com`.
@@ -402,7 +418,8 @@ Poco Book data is saved automatically as a JSON file `[JAR file location]/data/a
 Close Poco Book and back up the file before editing it. Edits made while Poco Book is running are overwritten the next time it saves.<br>
 The file must hold exactly one JSON object: only spaces or blank lines may follow that object's closing `}`, and a field cannot appear twice in the same object (for example, two `name` fields for one student). Otherwise, the file is invalid, even if its first part is correct. A student with a missing or misspelled `name`, `guardianName`, or `guardianPhone`, or with a value outside the limits in [Adding a student](#adding-a-student-add), such as an `outstandingFee` above `99999.99`, also makes the whole file invalid.<br>
 If the file is invalid, Poco Book starts with no students next time, without any warning. It leaves the file unchanged until `add` or `clear` succeeds. Either command overwrites the file with the current list, so the students in the file are lost; `clear` does this even though the list is already empty. Commands that do not change data, such as `list`, `find`, `fees`, `view`, `help`, and `exit`, do not save. If the list is unexpectedly empty, close Poco Book and fix the file or restore your backup before entering anything else.<br>
-Some mistakes do not make the file invalid, but still lose data. A misspelled optional field, such as `outstandingFees` for `outstandingFee`, is ignored, and its value is removed from the file at the next save. Save the file as UTF-8, not "UTF-8 with BOM": otherwise, the file may be invalid, or characters such as `é` in an address may be replaced with `�`.
+Some mistakes do not make the file invalid, but still lose data. A misspelled optional field, such as `outstandingFees` for `outstandingFee`, is ignored, and its value is removed from the file at the next save. Save the file as UTF-8, not "UTF-8 with BOM": otherwise, the file may be invalid, or characters such as `é` in an address may be replaced with `�`.<br>
+Fields that Poco Book does not recognise, such as a field you add for lesson notes, are ignored when the file is loaded and removed the next time Poco Book saves.
 </div>
 
 ### Archiving data files `[coming in v2.0]`
@@ -438,7 +455,7 @@ reopen just one before editing that folder again; use a backup if changes have a
 
 Action | Format, Examples
 --------|------------------
-**Add** | `add n/NAME g/GUARDIAN_NAME gp/GUARDIAN_PHONE [p/PHONE] [e/EMAIL] [a/ADDRESS] [f/AMOUNT]` <br> e.g., `add n/Riya Kumar g/Anil Kumar gp/97654321 p/98765432 e/riya@example.com a/12 Clementi Ave 3 f/75.50`
+**Add** | `add n/NAME g/GUARDIAN_NAME gp/GUARDIAN_PHONE [p/PHONE] [e/EMAIL] [a/ADDRESS] [f/AMOUNT] [t/TAG]…​` <br> e.g., `add n/Riya Kumar g/Anil Kumar gp/97654321 p/98765432 e/riya@example.com a/12 Clementi Ave 3 f/75.50 t/Math`
 **Clear** | `clear`
 **Delete** | `delete INDEX`, then press Y to confirm or N to cancel<br> e.g., `delete 3`
 **Edit** | `edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [a/ADDRESS] [g/GUARDIAN_NAME] [gp/GUARDIAN_PHONE] [t/TAG]…​`<br> e.g., `edit 2 n/James Lee e/jameslee@example.com`
