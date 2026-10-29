@@ -1,6 +1,7 @@
 package seedu.address.logic.parser;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
 import static seedu.address.logic.Messages.MESSAGE_UNKNOWN_COMMAND;
@@ -8,9 +9,11 @@ import static seedu.address.testutil.Assert.assertThrows;
 import static seedu.address.testutil.TypicalIndexes.INDEX_FIRST_PERSON;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.Isolated;
 
 import seedu.address.logic.commands.AddCommand;
 import seedu.address.logic.commands.ClearCommand;
@@ -30,6 +33,11 @@ import seedu.address.testutil.EditPersonDescriptorBuilder;
 import seedu.address.testutil.PersonBuilder;
 import seedu.address.testutil.PersonUtil;
 
+/**
+ * Tests {@code AddressBookParser}. The class runs in isolation because one test changes the JVM-wide default locale,
+ * which must not affect tests in other classes if JUnit parallel execution is ever enabled.
+ */
+@Isolated
 public class AddressBookParserTest {
 
     private final AddressBookParser parser = new AddressBookParser();
@@ -109,7 +117,78 @@ public class AddressBookParserTest {
     }
 
     @Test
-    public void parseCommand_unknownCommand_throwsParseException() {
-        assertThrows(ParseException.class, MESSAGE_UNKNOWN_COMMAND, () -> parser.parseCommand("unknownCommand"));
+    public void parseCommand_commandWordInAnyCase_matchesLowerCaseCommandWord() throws Exception {
+        assertTrue(parser.parseCommand("LIST") instanceof ListCommand);
+        assertTrue(parser.parseCommand("List") instanceof ListCommand);
+        assertEquals(new DeleteCommand(INDEX_FIRST_PERSON), parser.parseCommand("DELETE 1"));
+        assertEquals(new ViewCommand(INDEX_FIRST_PERSON), parser.parseCommand("vIeW 1"));
+        assertEquals(new HelpCommand(), parser.parseCommand("Help"));
+        assertEquals(new HelpCommand("paid"), parser.parseCommand("HELP PAID"));
+    }
+
+    @Test
+    public void parseCommand_commandWordInAnyCase_passesArgumentsUnchanged() throws Exception {
+        Person person = new PersonBuilder().build();
+        assertEquals(new AddCommand(person), parser.parseCommand("ADD " + PersonUtil.getPersonDetails(person)));
+        assertEquals(new FindCommand(new NameContainsKeywordsPredicate(List.of("Alex", "YEOH"))),
+                parser.parseCommand("FIND Alex YEOH"));
+        // Prefixes are still matched exactly, so upper-case prefixes are read as preamble text
+        String upperCasePrefixes = PersonUtil.getPersonDetails(person).toUpperCase(Locale.ROOT);
+        String addFormatMessage = String.format(MESSAGE_INVALID_COMMAND_FORMAT, AddCommand.MESSAGE_USAGE);
+        assertThrows(ParseException.class, addFormatMessage, () -> parser.parseCommand("add " + upperCasePrefixes));
+    }
+
+    @Test
+    public void parseCommand_upperCaseInTurkishLocale_matchesCommandWord() throws Exception {
+        Locale defaultLocale = Locale.getDefault();
+        Locale displayLocale = Locale.getDefault(Locale.Category.DISPLAY);
+        Locale formatLocale = Locale.getDefault(Locale.Category.FORMAT);
+        try {
+            // In Turkish, the default lower case of "I" is a dotless "ı", so "LIST" would become "lıst"
+            Locale.setDefault(Locale.forLanguageTag("tr-TR"));
+            assertTrue(parser.parseCommand("LIST") instanceof ListCommand);
+            assertEquals(new HelpCommand("findguardian"), parser.parseCommand("HELP FINDGUARDIAN"));
+        } finally {
+            // setDefault(Locale) also replaces the category defaults, so restore those afterwards
+            Locale.setDefault(defaultLocale);
+            Locale.setDefault(Locale.Category.DISPLAY, displayLocale);
+            Locale.setDefault(Locale.Category.FORMAT, formatLocale);
+        }
+    }
+
+    @Test
+    public void parseCommand_everyAvailableCommandWord_isRecognisedInAnyCase() {
+        for (String commandWord : HelpCommand.getAvailableCommands().split(", ")) {
+            assertRecognisedCommandWord(commandWord);
+            assertRecognisedCommandWord(commandWord.toUpperCase(Locale.ROOT));
+        }
+    }
+
+    @Test
+    public void parseCommand_unknownCommand_namesWordAndListsAvailableCommands() {
+        for (String commandWord : List.of("unknownCommand", "lsit", "LSIT", "list.", "listt")) {
+            assertThrows(ParseException.class, getUnknownCommandMessage(commandWord), ()
+                -> parser.parseCommand(commandWord + " 1"));
+        }
+        assertThrows(ParseException.class, "Unknown command: \"lsit\". "
+                + "Type help COMMAND to see a command's format and an example.\n"
+                + "Available commands: " + HelpCommand.getAvailableCommands(), () -> parser.parseCommand("lsit"));
+    }
+
+    /**
+     * Asserts that {@code typedWord} is passed to a command or its parser instead of being reported as unknown.
+     * A command that needs arguments may still report its own format error.
+     */
+    private void assertRecognisedCommandWord(String typedWord) {
+        try {
+            parser.parseCommand(typedWord);
+        } catch (ParseException e) {
+            assertNotEquals(getUnknownCommandMessage(typedWord), e.getMessage(), typedWord);
+        }
+    }
+
+    private static String getUnknownCommandMessage(String commandWord) {
+        return String.format(MESSAGE_UNKNOWN_COMMAND, commandWord) + " " + HelpCommand.MESSAGE_HELP_HINT + "\n"
+                + HelpCommand.getAvailableCommandsMessage();
     }
 }
