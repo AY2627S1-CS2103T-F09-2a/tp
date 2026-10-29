@@ -117,6 +117,13 @@ A command can also fail after it has changed the data. For example, if saving to
 
 To find out which records a command replaced, `PersonListPanel` listens to the full student list from `Logic#getPersonList()`. When a command replaces a record, that list reports the old record replaced by the new one. The panel does not use changes to the displayed list, because a search reports one change that removes all of the old results and adds all of the new ones. If the old and new results have the same number of students, pairing them by position would treat the student now at the selected index as the selected student's new record. For example, `find David`, `view 1`, `find Irfan` would then select Irfan. A search does not change the full list, so it never moves the selection to a different student. It keeps the selected student if the results include them, and clears the selection otherwise.
 
+`PersonCard` shows each tag as a label in a `FlowPane`. A long tag is cut off with `...` so that it stays inside the card. `DarkTheme.css` sets two widths of 230 pixels:
+
+* Each tag label is at most 230 pixels wide. The tag row is never narrower than 239 pixels: the student list is at least 300 pixels wide, even with the divider dragged fully left, and a selected card has a border.
+* The tag row is at least 230 pixels wide. Without a minimum, a `FlowPane` is at least as wide as the full text of its widest tag, because `FlowPane#computeMinWidth` uses each tag's preferred width and ignores its maximum width, so a long tag pushed the row past the edge of the card. The card's height is calculated as if the tag row were 230 pixels wide, because the card's `GridPane` column has a preferred width of 150 pixels, which would otherwise give a narrower row. A card whose tags fit in fewer rows when the card is wider therefore has some blank space, for example in a wide window. A smaller minimum would add blank rows even on the narrowest cards.
+
+The details pane wraps its text, so it shows long tags in full. Tag length is not limited: a card now fits a tag of any length, and data files from earlier versions may already contain longer tags, which would fail to load if the limit were checked when loading.
+
 ### Logic component
 
 **API** : [`Logic.java`](https://github.com/AY2627S1-CS2103T-F09-2a/tp/tree/master/src/main/java/seedu/address/logic/Logic.java)
@@ -1178,6 +1185,30 @@ testers are expected to do more *exploratory* testing.
 1. Run `setoutstanding 1 0`. The feedback should show `Set outstanding fee for Alex Yeoh: S$0.00` and his card
    should have no fee label. Run `fees` to verify that Alex is excluded. Restart the app and run `find Alex` to
    verify that the fee remains cleared.
+
+### Long tags on student cards
+
+1. Start with sample data and resize the window to its minimum size (750 by 450). Enter
+   `edit 1 t/ThisTagIsFarTooLongToFitOnOneStudentCardAtAnyWindowSize t/math`.<br>
+   Expected: Alex Yeoh's card shows the long tag cut off with `...`, inside the card, and `math` as a separate tag.
+   His contact details remain visible.
+
+1. Drag the divider between the student list and the details pane fully to the left.<br>
+   Expected: The long tag is still cut off with `...` and stays inside the card.
+
+1. Enter `view 1`.<br>
+   Expected: The details pane shows the full tag, wrapping onto another line if it does not fit. Scroll down the
+   details pane if the tags are not visible.
+
+1. Close and restart the app, then enter `view 1`.<br>
+   Expected: Alex Yeoh's card still shows the long tag cut off with `...`, and the details pane still shows it in full.
+   Scroll down the details pane if the tags are not visible.
+
+1. Enter `edit 1 t/ThisTagIsFarTooLongToFitOnOneStudentCardAtAnyWindowSizeA t/ThisTagIsFarTooLongToFitOnOneStudentCardAtAnyWindowSizeB`,
+   then `view 1`.<br>
+   Expected: The two tags look the same on Alex Yeoh's card, because they differ only after the point where they are
+   cut off. This is a known limitation of cutting off long tags. The details pane shows both tags in full, the one
+   ending in `A` first. Scroll down the details pane if the tags are not visible.
 
 ### Reading command-specific help
 
