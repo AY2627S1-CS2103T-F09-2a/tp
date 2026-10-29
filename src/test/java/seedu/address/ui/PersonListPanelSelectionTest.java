@@ -2,6 +2,7 @@ package seedu.address.ui;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
@@ -41,6 +42,26 @@ public class PersonListPanelSelectionTest {
             panel.retainSelection(original);
 
             assertEquals(updated, panel.getSelectedPerson());
+            return null;
+        });
+        Platform.runLater(assertion);
+        assertion.get(10, TimeUnit.SECONDS);
+    }
+
+    @Test
+    public void retainSelection_guardianNameCaseChanged_returnsUpdatedRecord() throws Exception {
+        FutureTask<Void> assertion = new FutureTask<>(() -> {
+            Person original = new PersonBuilder().withGuardianName("Adrian Yeoh").build();
+            Person updated = new PersonBuilder(original).withGuardianName("adrian yeoh").build();
+            ObservableList<Person> persons = FXCollections.observableArrayList(original);
+            PersonListPanel panel = new PersonListPanel(persons, persons);
+            panel.selectPerson(original);
+
+            persons.set(0, updated);
+            panel.retainSelection(original);
+
+            // The records are equal, so only the reference shows whether the details pane gets the new record.
+            assertSame(updated, panel.getSelectedPerson());
             return null;
         });
         Platform.runLater(assertion);
