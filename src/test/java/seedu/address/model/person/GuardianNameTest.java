@@ -111,6 +111,9 @@ public class GuardianNameTest {
         assertFalse(GuardianName.isValidName("Ravi / Raj"));
 
         // a marker alone is not a name
+        assertFalse(GuardianName.isValidName("S/O Raj")); // marker must come between names
+        assertFalse(GuardianName.isValidName("Ravi d/o"));
+        assertFalse(GuardianName.isValidName(" Ravi S/O "));
         assertFalse(GuardianName.isValidName("S/O"));
     }
 }

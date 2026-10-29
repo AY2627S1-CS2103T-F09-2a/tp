@@ -89,6 +89,9 @@ public class NameTest {
         assertFalse(Name.isValidName("Ravi A/B Raj"));
         assertFalse(Name.isValidName("Ravi S/Oh Raj"));
         assertFalse(Name.isValidName("Ravi XS/O Raj"));
+        assertFalse(Name.isValidName("S/O Raj")); // marker must come between names
+        assertFalse(Name.isValidName("Ravi d/o"));
+        assertFalse(Name.isValidName(" Ravi S/O "));
         assertFalse(Name.isValidName("S/O")); // marker only, no other letter
         assertFalse(Name.isValidName("D/O s/o")); // markers only
         assertFalse(Name.isValidName("Ravi / Raj"));
