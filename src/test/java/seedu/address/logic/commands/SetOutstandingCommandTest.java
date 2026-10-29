@@ -162,12 +162,10 @@ public class SetOutstandingCommandTest {
         Person student = new PersonBuilder().withOutstandingFee("99999.00").build();
         model.addPerson(student);
 
-        CommandException exception = org.junit.jupiter.api.Assertions.assertThrows(CommandException.class, ()
+        assertThrows(CommandException.class,
+                String.format(SetOutstandingCommand.MESSAGE_TOTAL_TOO_LARGE, "1.00", "100000.00"), ()
                 -> SetOutstandingCommand.addToOutstandingFee(Index.fromOneBased(1), new OutstandingFee("1"))
                         .execute(model));
-
-        assertEquals(String.format(SetOutstandingCommand.MESSAGE_TOTAL_TOO_LARGE, "1.00", "100000.00"),
-                exception.getMessage());
         assertEquals(List.of(student), model.getAddressBook().getPersonList());
     }
 
