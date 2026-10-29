@@ -525,7 +525,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 * 2a. Poco Book is unable to save the data.
 
-    * 2a1. Poco Book shows an error message that the data could not be saved. The change is kept only until Poco Book is closed.
+    * 2a1. Poco Book shows an error message that the data could not be saved. The change stays in Poco Book and is saved with the next successful save. If Poco Book is closed before then, the change is lost.
 
       Use case ends.
 
@@ -638,7 +638,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 * 5a. Poco Book is unable to save the data.
 
-    * 5a1. Poco Book shows an error message that the data could not be saved. The change is kept only until Poco Book is closed.
+    * 5a1. Poco Book shows an error message that the data could not be saved. The change stays in Poco Book and is saved with the next successful save. If Poco Book is closed before then, the change is lost.
 
       Use case ends.
 
@@ -709,7 +709,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 * 3b. Poco Book is unable to save the data.
 
-    * 3b1. Poco Book shows an error message that the data could not be saved. The change is kept only until Poco Book is closed.
+    * 3b1. Poco Book shows an error message that the data could not be saved. The change stays in Poco Book and is saved with the next successful save. If Poco Book is closed before then, the change is lost.
 
       Use case ends.
 
@@ -780,7 +780,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 * 3a. Poco Book is unable to save the data.
 
-    * 3a1. Poco Book shows an error message that the data could not be saved. The change is kept only until Poco Book is closed.
+    * 3a1. Poco Book shows an error message that the data could not be saved. The change stays in Poco Book and is saved with the next successful save. If Poco Book is closed before then, the change is lost.
 
       Use case ends.
 
@@ -1047,6 +1047,15 @@ testers are expected to do more *exploratory* testing.
 
 1. Relaunch and execute a valid `add` command.<br>
    Expected: The new record is saved as valid JSON, replacing the invalid file. Restore the backup if needed.
+
+1. In a disposable application folder with sample data, enter `setoutstanding 1 75.50` so that `data/addressbook.json`
+   is saved. Make that file read-only (for example, `chmod 444 data/addressbook.json` on macOS or Linux, or
+   `attrib +r data\addressbook.json` on Windows), then enter `paid 1`.<br>
+   Expected: An error says the data could not be saved, and Alex Yeoh no longer shows a fee. Without closing the app,
+   make the file writable again (`chmod 644 data/addressbook.json`, or `attrib -r data\addressbook.json`), then
+   enter `setoutstanding 2 30`. Restart the app and enter `fees`.<br>
+   Expected: `3 student(s) with outstanding fees.` Alex Yeoh is not listed, because saving the fee for Bernice Yu also
+   saved the earlier payment. Bernice Yu owes S$30.00.
 
 1. In a disposable application folder with sample data, enter `setoutstanding 1 75.50` so that `data/addressbook.json`
    is saved. Make that file read-only (for example, `chmod 444 data/addressbook.json` on macOS or Linux, or

@@ -115,7 +115,8 @@ public class EditCommandParserTest {
         assertParseFailure(parser, "1" + INVALID_NAME_DESC, Name.MESSAGE_CONSTRAINTS); // invalid name
         assertParseFailure(parser, "1" + INVALID_PHONE_DESC, Phone.MESSAGE_CONSTRAINTS); // invalid phone
         assertParseFailure(parser, "1" + INVALID_EMAIL_DESC, Email.MESSAGE_CONSTRAINTS); // invalid email
-        assertParseFailure(parser, "1" + INVALID_ADDRESS_DESC, Address.MESSAGE_CONSTRAINTS); // invalid address
+        assertParseFailure(parser, "1 " + PREFIX_ADDRESS + "x".repeat(151),
+                Address.MESSAGE_CONSTRAINTS); // address too long
         assertParseFailure(parser, "1" + INVALID_GUARDIAN_NAME_DESC,
                 GuardianName.MESSAGE_CONSTRAINTS); // invalid guardian name
         assertParseFailure(parser, "1" + INVALID_GUARDIAN_PHONE_DESC,
