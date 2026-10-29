@@ -282,7 +282,9 @@ The corresponding sources are `docs/diagrams/PaidSequenceDiagram.puml`, `FeeSumm
 
 * **Query vs mutation.** Only `paid` mutates and saves; `feesummary` opts out of saving so that a read-only command cannot report a save failure the user cannot act on.
 * **Exact money arithmetic.** Amounts use `BigDecimal` rather than `double`, so totals of many two-decimal fees cannot drift by a cent, and the summary can legitimately exceed the S$99999.99 per-student cap.
-* **Displayed index vs stored index.** Both commands act on the *displayed* list, matching `delete`, `edit`, `view` and `setoutstanding`. This keeps the mental model consistent, at the cost of the user needing to re-run `fees` after a payment because indexes shift.
+* **Displayed list vs complete book.** `paid` takes a one-based index into the *displayed* list, matching `delete`, `edit`, `view` and `setoutstanding`, so the student the tutor sees at that position is the student who is charged. `feesummary` deliberately does not: it totals every stored student, including students hidden by the current `find` or `fees` filter, for the reason given in alternative (a) below.
+* **Scope shown in feedback.** The two commands therefore differ in scope on purpose, and both word their feedback to say which scope they used: `paid` names the student whose fee it cleared (`Marked outstanding fee as paid for Alex Yeoh: S$120.00`), while `feesummary` starts with `Across all stored students` and ends with `Displayed list unchanged`.
+* **Index shift after `paid`.** The cost of the index-based `paid` is that, in a `fees` result, a paid student drops out of the list, so the students below them move up one index and the tutor must re-read the index before the next `paid`.
 * **Alternatives considered.** (a) Making `feesummary` respect the current filter was rejected because a filtered total is easy to misread as the amount still owed overall. (b) Making `paid` accept a partial amount was rejected for v1.4: it needs a payment-history model, which is a larger change than the iteration allows, so `setoutstanding INDEX 0` and `paid INDEX` both clear a whole fee. (c) Reusing `setoutstanding` with amount `0` instead of adding `paid` was considered, but a dedicated command gives clearer feedback (`S$AMOUNT` cleared) and cannot be confused with re-setting a fee.
 
 ### Editing guardian contact details
@@ -539,7 +541,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 * 2a. Poco Book is unable to save the data.
 
-    * 2a1. Poco Book shows an error message that the data could not be saved. The change is kept only until Poco Book is closed.
+    * 2a1. Poco Book shows an error message that the data could not be saved. The change stays in Poco Book and is saved with the next successful save. If Poco Book is closed before then, the change is lost.
 
       Use case ends.
 
@@ -652,7 +654,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 * 5a. Poco Book is unable to save the data.
 
-    * 5a1. Poco Book shows an error message that the data could not be saved. The change is kept only until Poco Book is closed.
+    * 5a1. Poco Book shows an error message that the data could not be saved. The change stays in Poco Book and is saved with the next successful save. If Poco Book is closed before then, the change is lost.
 
       Use case ends.
 
@@ -723,7 +725,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 * 3b. Poco Book is unable to save the data.
 
-    * 3b1. Poco Book shows an error message that the data could not be saved. The change is kept only until Poco Book is closed.
+    * 3b1. Poco Book shows an error message that the data could not be saved. The change stays in Poco Book and is saved with the next successful save. If Poco Book is closed before then, the change is lost.
 
       Use case ends.
 
@@ -794,7 +796,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 * 3a. Poco Book is unable to save the data.
 
-    * 3a1. Poco Book shows an error message that the data could not be saved. The change is kept only until Poco Book is closed.
+    * 3a1. Poco Book shows an error message that the data could not be saved. The change stays in Poco Book and is saved with the next successful save. If Poco Book is closed before then, the change is lost.
 
       Use case ends.
 
@@ -1061,6 +1063,15 @@ testers are expected to do more *exploratory* testing.
 
 1. Relaunch and execute a valid `add` command.<br>
    Expected: The new record is saved as valid JSON, replacing the invalid file. Restore the backup if needed.
+
+1. In a disposable application folder with sample data, enter `setoutstanding 1 75.50` so that `data/addressbook.json`
+   is saved. Make that file read-only (for example, `chmod 444 data/addressbook.json` on macOS or Linux, or
+   `attrib +r data\addressbook.json` on Windows), then enter `paid 1`.<br>
+   Expected: An error says the data could not be saved, and Alex Yeoh no longer shows a fee. Without closing the app,
+   make the file writable again (`chmod 644 data/addressbook.json`, or `attrib -r data\addressbook.json`), then
+   enter `setoutstanding 2 30`. Restart the app and enter `fees`.<br>
+   Expected: `3 student(s) with outstanding fees.` Alex Yeoh is not listed, because saving the fee for Bernice Yu also
+   saved the earlier payment. Bernice Yu owes S$30.00.
 
 1. In a disposable application folder with sample data, enter `setoutstanding 1 75.50` so that `data/addressbook.json`
    is saved. Make that file read-only (for example, `chmod 444 data/addressbook.json` on macOS or Linux, or
