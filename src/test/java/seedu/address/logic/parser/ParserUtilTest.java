@@ -223,4 +223,12 @@ public class ParserUtilTest {
 
         assertEquals(expectedTagSet, actualTagSet);
     }
+
+    @Test
+    public void parseTags_tagsDifferingOnlyInCase_keepsFirstTag() throws Exception {
+        Set<Tag> actualTagSet = ParserUtil.parseTags(List.of("Math", "math"));
+
+        assertEquals(1, actualTagSet.size());
+        assertEquals("Math", actualTagSet.iterator().next().tagName);
+    }
 }

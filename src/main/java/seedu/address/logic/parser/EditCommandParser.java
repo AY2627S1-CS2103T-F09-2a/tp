@@ -30,6 +30,9 @@ import seedu.address.model.tag.Tag;
  */
 public class EditCommandParser implements Parser<EditCommand> {
 
+    public static final String MESSAGE_CLEAR_TAGS_WITH_TAGS = "t/ on its own clears all tags, so it cannot be "
+            + "combined with other tags. Use t/ alone to clear the tags, or give only the tags to keep.";
+    public static final String MESSAGE_REPEATED_CLEAR_TAGS = "t/ on its own clears all tags, so give it only once.";
     public static final String MESSAGE_FEE_NOT_EDITABLE = "Outstanding fees cannot be changed with edit. "
             + "Use setoutstanding INDEX AMOUNT or paid INDEX instead.";
 
@@ -130,8 +133,14 @@ public class EditCommandParser implements Parser<EditCommand> {
         if (tags.isEmpty()) {
             return Optional.empty();
         }
-        Collection<String> tagSet = tags.size() == 1 && tags.contains("") ? Collections.emptySet() : tags;
-        return Optional.of(ParserUtil.parseTags(tagSet));
+        if (!tags.contains("")) {
+            return Optional.of(ParserUtil.parseTags(tags));
+        }
+        if (tags.size() == 1) {
+            return Optional.of(Collections.emptySet());
+        }
+        boolean onlyClears = tags.stream().allMatch(String::isEmpty);
+        throw new ParseException(onlyClears ? MESSAGE_REPEATED_CLEAR_TAGS : MESSAGE_CLEAR_TAGS_WITH_TAGS);
     }
 
 }
