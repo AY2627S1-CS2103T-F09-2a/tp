@@ -13,6 +13,8 @@ public final class OutstandingFee {
 
     public static final String MESSAGE_CONSTRAINTS =
             "Outstanding fee must be between 0.01 and 99999.99, with at most two decimal places.";
+    public static final String MESSAGE_PLAIN_AMOUNT =
+            "Type the amount as a plain number without S$, $, commas or f/, e.g. 50 or 1200.";
     public static final String VALIDATION_REGEX = "[0-9]+(?:\\.[0-9]{1,2})?";
 
     private static final BigDecimal MINIMUM_FEE = new BigDecimal("0.01");

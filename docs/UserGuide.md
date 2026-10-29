@@ -162,6 +162,7 @@ Format: `add n/NAME g/GUARDIAN_NAME gp/GUARDIAN_PHONE [p/PHONE] [e/EMAIL] [a/ADD
 * `EMAIL`, if provided, must be at most 254 characters long, with at most 64 characters before `@`, and must end in a domain such as `example.com` (the last part must be at least 2 letters).
 * `PHONE` and `GUARDIAN_PHONE` must be 8-digit Singapore numbers starting with `6`, `8`, or `9`. They may start with the country code `+65`, e.g. `+65 9123 4567`. Spaces, hyphens and the country code are removed when stored.
 * `AMOUNT`, if provided, must be a positive amount between `0.01` and `99999.99` with up to 2 decimal places (and is stored to 2 decimal places).
+  Enter the amount as a plain number, without `S$`, `$` or commas; `f/` is only the field prefix before the number.
 * Two students are considered duplicates if they share the same normalized student name (case-insensitive, with consecutive spaces collapsed) and the same normalized guardian phone number. Adding or editing a student into a duplicate is rejected with a message explaining this rule.
 * `NAME` and `GUARDIAN_NAME` may include `S/O` or `D/O` as a separate word, such as `Ravi S/O Raj`. Separate the marker from adjacent text with spaces; for example, use `Tan ( S/O Lim)` rather than `Tan (S/O Lim)`. The marker must come between names, so `S/O Raj`, `Ravi S/O` and `S/O` alone are not valid names. Other slashes are not allowed in names.
 * Names accept only the straight apostrophe (`'`) and the ASCII hyphen (`-`). Curly apostrophes (`’`) and other dashes (`‐`, `–`), which some keyboards and copied text produce, are rejected; retype them as `'` or `-`.
@@ -231,6 +232,7 @@ Format: `setoutstanding INDEX AMOUNT` or `setoutstanding INDEX +AMOUNT`
 
 * `INDEX` identifies a student in the current displayed list, starting from 1. Signs and leading zeros are rejected.
 * `AMOUNT` without a sign replaces the full outstanding fee. Use a value from `0.01` to `99999.99`, with at most two decimal places.
+  Type a plain number without `S$`, `$`, commas or `f/`, e.g. `50` or `+50` rather than `S$50`.
 * `+AMOUNT` adds to the fee that is already recorded, instead of replacing it. Use it when you charge the same student again before the earlier amount is settled, so you do not have to work out the new total yourself. The amount to add must be from `0.01` to `99999.99`, and `+0` is rejected.
 * A student with no outstanding fee counts as owing `S$0.00`, so `setoutstanding 1 +50` on that student records `S$50.00`.
 * If an addition would push the fee above `S$99999.99`, the command is rejected with a message naming the amount that was refused and the total it would have produced. Nothing is changed.

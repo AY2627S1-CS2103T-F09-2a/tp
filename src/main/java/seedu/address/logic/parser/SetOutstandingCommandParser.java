@@ -28,6 +28,9 @@ public class SetOutstandingCommandParser implements Parser<SetOutstandingCommand
                 String.format(MESSAGE_INVALID_COMMAND_FORMAT, SetOutstandingCommand.MESSAGE_USAGE));
         boolean isIncrement = parts[1].startsWith(INCREMENT_PREFIX);
         String amount = isIncrement ? parts[1].substring(INCREMENT_PREFIX.length()) : parts[1];
+        if (ParserUtil.hasMoneyFormatting(amount)) {
+            throw new ParseException(OutstandingFee.MESSAGE_PLAIN_AMOUNT);
+        }
         if (!amount.matches(OutstandingFee.VALIDATION_REGEX)) {
             throw new ParseException(isIncrement
                     ? SetOutstandingCommand.MESSAGE_INVALID_INCREMENT
