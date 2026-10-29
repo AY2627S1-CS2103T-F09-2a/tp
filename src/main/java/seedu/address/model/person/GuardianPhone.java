@@ -10,7 +10,8 @@ import static seedu.address.commons.util.AppUtil.checkArgument;
  */
 public final class GuardianPhone {
 
-    public static final String MESSAGE_CONSTRAINTS = Phone.MESSAGE_CONSTRAINTS;
+    public static final String MESSAGE_CONSTRAINTS = "Guardian phone numbers must be 8 digits starting with 6, 8, "
+            + "or 9, optionally after +65. Spaces and hyphens are allowed.";
     public static final String VALIDATION_REGEX = Phone.VALIDATION_REGEX;
 
     private final String value;
