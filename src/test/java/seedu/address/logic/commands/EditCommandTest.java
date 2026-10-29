@@ -138,7 +138,11 @@ public class EditCommandTest {
     @Test
     public void execute_sharedGuardianPhoneDifferentStudentName_success() {
         Person firstPerson = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
-        Person secondPerson = model.getFilteredPersonList().get(INDEX_SECOND_PERSON.getZeroBased());
+        // Give the second student a different guardian phone, so that sharing the first's is a real change
+        Person typicalSecondPerson = model.getFilteredPersonList().get(INDEX_SECOND_PERSON.getZeroBased());
+        Person secondPerson = new PersonBuilder(typicalSecondPerson)
+                .withGuardianPhone(VALID_GUARDIAN_PHONE_BOB).build();
+        model.setPerson(typicalSecondPerson, secondPerson);
         Person editedSecondPerson = new PersonBuilder(secondPerson)
                 .withGuardianPhone(firstPerson.getGuardianPhone().getValue())
                 .build();
@@ -241,15 +245,19 @@ public class EditCommandTest {
     }
 
     @Test
-    public void execute_noFieldSpecifiedUnfilteredList_success() {
+    public void execute_noFieldSpecifiedUnfilteredList_failure() {
         EditCommand editCommand = new EditCommand(INDEX_FIRST_PERSON, new EditPersonDescriptor());
-        Person editedPerson = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
 
-        String expectedMessage = String.format(EditCommand.MESSAGE_EDIT_PERSON_SUCCESS, Messages.format(editedPerson));
+        assertCommandFailure(editCommand, model, EditCommand.MESSAGE_NO_CHANGE);
+    }
 
-        Model expectedModel = new ModelManager(new AddressBook(model.getAddressBook()), new UserPrefs());
+    @Test
+    public void execute_sameValuesAsCurrent_failure() {
+        Person firstPerson = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
+        EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder(firstPerson).build();
+        EditCommand editCommand = new EditCommand(INDEX_FIRST_PERSON, descriptor);
 
-        assertCommandSuccess(editCommand, model, expectedMessage, expectedModel);
+        assertCommandFailure(editCommand, model, EditCommand.MESSAGE_NO_CHANGE);
     }
 
     @Test

@@ -60,6 +60,8 @@ public class EditCommand extends Command {
     public static final String MESSAGE_EDIT_PERSON_SUCCESS = "Edited student:\n%1$s";
     public static final String MESSAGE_NOT_EDITED = "At least one field to edit must be provided.";
     public static final String MESSAGE_DUPLICATE_PERSON = AddCommand.MESSAGE_DUPLICATE_PERSON;
+    public static final String MESSAGE_NO_CHANGE =
+            "No changes made: the student already has these details.";
 
     private static final Logger logger = LogsCenter.getLogger(EditCommand.class);
 
@@ -91,6 +93,10 @@ public class EditCommand extends Command {
         logger.fine("Editing student at index " + index.getOneBased() + ": " + personToEdit.getName());
         Person editedPerson = createEditedPerson(personToEdit, editPersonDescriptor);
 
+        if (editedPerson.equals(personToEdit)) {
+            logger.fine("Rejected edit that would leave the student unchanged.");
+            throw new CommandException(MESSAGE_NO_CHANGE);
+        }
         if (!personToEdit.isSamePerson(editedPerson) && model.hasPerson(editedPerson)) {
             throw new CommandException(MESSAGE_DUPLICATE_PERSON);
         }
