@@ -76,7 +76,9 @@ Poco Book is a **desktop application for independent tutors to manage students, 
 
 Plain `help` opens the existing help window with the online guide link.
 
-![help window opened by plain help](images/helpMessage.png)
+![Help window showing the Poco Book User Guide URL and Copy URL button](images/helpMessage.png)
+
+The image shows the help window's contents (without the operating system's window frame).
 
 Type `help COMMAND` to read a command’s purpose, syntax and example in the result area without leaving the app.
 For example, `help paid` explains how to clear a displayed student’s full outstanding fee; it does not record a payment.
