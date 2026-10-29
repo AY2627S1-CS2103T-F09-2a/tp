@@ -1,0 +1,14 @@
+{
+  "schemaVersion" : 2,
+  "persons" : [ {
+    "name" : "Alice Pauline",
+    "phone" : "94351253",
+    "email" : "alice@example.com",
+    "address" : "123, Jurong West Ave 6, #08-111",
+    "guardianName" : "Anne Pauline",
+    "guardianPhone" : "91234567",
+    "outstandingFee" : "0.01",
+    "tags" : [ "friends" ],
+    "lessonNotes" : "Revise algebra"
+  } ]
+}

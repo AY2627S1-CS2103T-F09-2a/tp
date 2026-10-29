@@ -210,6 +210,22 @@ after a data-changing command. The app does not synchronize instances or detect 
 from an older instance can silently replace records saved by another instance. Concurrent use of the same
 home folder is outside the supported workflow; users are warned in the User Guide's quick start and FAQ.
 
+**Design consideration: unknown fields in the data files**
+
+`JsonUtil` reads both `addressbook.json` and `preferences.json` with `FAIL_ON_UNKNOWN_PROPERTIES` set to `false`. A field that Poco Book does not know, such as a hand-added `lessonNotes` on a student or a `schemaVersion` at the root, is ignored when the file is read. Poco Book only writes the fields it knows, so the next save drops those unknown fields.
+
+* **Alternative 1 (current choice):** ignore unknown fields on reading and drop them on saving.
+  * Pros: a file with an extra field still loads, instead of the tutor losing every student to the invalid-file fallback. The format has no versions to migrate yet.
+  * Cons: data that a tutor or a newer version added by hand is lost silently after the next saving command.
+* **Alternative 2:** reject a file that has unknown fields.
+  * Pros: nothing is dropped silently.
+  * Cons: one stray field makes Poco Book start with an empty address book, which is a worse outcome for a tutor than losing the unknown field.
+* **Alternative 3:** keep unknown fields and write them back.
+  * Pros: no data is lost.
+  * Cons: every model class would need to carry data it cannot validate. This is worth revisiting only if the data format gains versions.
+
+Unknown fields are not supported data, so the User Guide tells users that such fields are not kept.
+
 ### Common classes
 
 Classes used by multiple components are in the `seedu.address.commons` package.
