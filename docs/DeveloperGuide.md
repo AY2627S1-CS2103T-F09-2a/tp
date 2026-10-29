@@ -195,6 +195,7 @@ The `Model` component,
 
 The `Storage` component,
 * can save both address book data and user preference data in JSON format, and read them back into corresponding objects.
+* saves each file by writing a temporary file first and then replacing the old file with it, so a save that fails partway leaves the previous save intact (see [Saving data safely](#saving-data-safely)).
 * is implemented by `StorageManager`, which delegates the actual JSON file access to `JsonAddressBookStorage` and `JsonUserPrefsStorage` (one class per data file).
 * depends on some classes in the `Model` component (because the `Storage` component's job is to save/retrieve objects that belong to the `Model`)
 
@@ -400,6 +401,45 @@ The command then reports the size of the filtered list with the shared `N studen
 * **Whole-word name matching.** Words are split on whitespace only, so `Anne-Marie` matches the keyword `anne-marie` but not `anne`. This is consistent with `find`.
 * **Phone keywords are normalized like stored phones.** Tutors may type a number the way it was entered with `add`, including a hyphen. Partial numbers such as `9234` never match, which keeps results predictable.
 * **Predicate copies its keywords.** `GuardianContainsKeywordsPredicate` stores `List.copyOf(keywords)`, so a caller changing its list later cannot silently change an installed filter.
+
+### Saving data safely
+
+If a save stops partway, for example because the disk is full, the data file must still hold the last successful save. Otherwise, Poco Book cannot load the file at the next launch, and every saved student is lost.
+
+#### Implementation
+
+`JsonAddressBookStorage` and `JsonUserPrefsStorage` save through `JsonUtil#saveJsonFile(T, Path)`, which converts the data to JSON and passes it to `FileUtil#writeToFile(Path, String)`. That method never writes to the data file itself:
+
+1. If the data file exists, it checks that the file is writable, by opening it for writing and closing it without changing it. If the file is read-only, or is a folder, saving fails with the same error as before. The check is needed because on macOS and Linux, step 3 can replace a read-only file, so a read-only data file would otherwise be overwritten.
+1. It writes the JSON to a new temporary file in the same folder, such as `data/addressbook.json.5784445305140543549.tmp`.
+1. It replaces the data file with the temporary file using `Files#move` with `ATOMIC_MOVE`, so the data file always holds either its old or its new content. If the file system cannot replace a file in one step, saving fails. It does not fall back to an ordinary move, because that deletes the data file before moving the new one, so a failure would lose both.
+1. If any step fails, it deletes the temporary file where possible and throws the `IOException`. `LogicManager` reports it as a save error, as before.
+
+Saving now also needs permission to create files in the data folder. If Poco Book cannot create files there, saving fails even if the data file itself is writable.
+
+On macOS and Linux, the temporary file is given the permissions of the data file it replaces, so saving does not change the permissions of an existing file. A file that does not exist yet gets the permissions of the temporary file, which only its owner can read and write (`rw-------`). This applies to a new `preferences.json`, which holds only the window size and position. A new `data/addressbook.json` still gets the default permissions for new files, such as `rw-r--r--`, because `JsonAddressBookStorage` creates the empty file before saving to it.
+
+Saving does not undo the change in the app's memory: as before, a change that could not be saved stays in the app while it is open. Closing Poco Book does not save student data, so if it is closed before another save succeeds, the change is lost and the next launch loads the last successful save. If a later command saves successfully, that save also writes the earlier change, because each save writes all the data in memory.
+
+Every save creates a temporary file, which normally replaces the data file and so does not remain. If Poco Book stops while saving, for example because of a power cut, the temporary file may be left in the folder. Poco Book loads only the data file, never a leftover temporary file, so it can be deleted.
+
+#### Design considerations
+
+**Aspect: How to save without losing the previous save**
+
+* **Alternative 1 (current choice):** Write a temporary file in the same folder, then replace the data file with it.
+  * Pros: The data file is never partly written. Replacing a file in one step works on Windows, macOS and Linux when both files are in the same folder.
+  * Cons: Poco Book must be allowed to create files in the data folder, not just to change the data file. It also needs the extra check in step 1, because on macOS and Linux the replacement would otherwise overwrite a read-only data file. On Windows, the replacement can also fail if another program, such as an antivirus scanner or a file sync tool, has the data file or the temporary file open at that moment. Poco Book does not retry. The command reports a save error: a permission error if Windows denies access to the file, or a general save error if Windows reports that the file is in use. Either way, the previous save stays intact, and a later successful save also writes the change that could not be saved.
+* **Alternative 2:** Write over the data file directly, as AB3 did.
+  * Pros: Simpler.
+  * Cons: A save that stops partway leaves a partly written file, which cannot be loaded.
+* **Alternative 3:** Copy the data file to a backup before each save.
+  * Pros: A partly written file could be recovered from the backup.
+  * Cons: Poco Book would have to detect a damaged file and restore the backup at startup, and each save would write the data twice.
+
+**Testing**
+
+`FileUtilTest` replaces the step that writes the temporary file with one that writes half the content and then fails, as a full disk would. It checks that the data file keeps its old content and that no temporary file remains. Another replacement writes the whole temporary file and then makes the folder read-only, so that only the replacing fails. The tests also check a read-only file, a read-only folder, a folder in place of the file, a symbolic link and file permissions. A test that needs permissions or symbolic links is skipped where the system does not support them, such as read-only folders on Windows.
 
 ### \[Proposed\] Undo/redo feature
 
@@ -1310,6 +1350,12 @@ testers are expected to do more *exploratory* testing.
    and the details pane is cleared. Make the file writable again (`chmod 644 data/addressbook.json`, or
    `attrib -r data\addressbook.json`) and restart the app. `fees` still shows Alex owing S$75.50, because the payment
    was not saved.
+
+1. On macOS or Linux, in a disposable application folder with sample data, enter `setoutstanding 1 75.50`. Make the
+   `data` folder read-only (`chmod 555 data`), then enter `setoutstanding 1 80`.<br>
+   Expected: An error says the data could not be saved due to insufficient permissions, and no file ending in `.tmp`
+   is left in the `data` folder. Make the folder writable again (`chmod 755 data`) and restart the app. `fees` still
+   shows Alex owing S$75.50, because the new fee was not saved.
 
 1. Launch the JAR by its absolute path from a different empty working folder.<br>
    Expected: Data, preferences and logs remain beside the JAR; the unrelated working folder remains empty.
