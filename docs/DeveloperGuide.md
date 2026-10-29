@@ -199,6 +199,11 @@ The `Storage` component,
 * is implemented by `StorageManager`, which delegates the actual JSON file access to `JsonAddressBookStorage` and `JsonUserPrefsStorage` (one class per data file).
 * depends on some classes in the `Model` component (because the `Storage` component's job is to save/retrieve objects that belong to the `Model`)
 
+`MainWindow` validates saved GUI dimensions when applying `GuiSettings` to the stage. Nonfinite or nonpositive
+dimensions fall back to defaults. A saved position is kept if its title area overlaps the visual bounds of any
+connected screen; otherwise the stage is centered on an available screen. The settings file is not rewritten
+until the normal preferences save, so a disconnected monitor does not prevent startup.
+
 **Supported usage constraint:** Only one running Poco Book instance may use a given home folder at a time.
 Each instance loads its own in-memory copy of `data/addressbook.json`, and `LogicManager` saves that copy
 after a data-changing command. The app does not synchronize instances or detect stale copies: a later save

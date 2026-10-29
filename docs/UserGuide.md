@@ -381,6 +381,10 @@ Format: `exit`
 
 Poco Book saves student data automatically. You do not need to save manually.
 
+Window size and position are remembered between launches. If the saved size is invalid, Poco Book uses its
+default size. If the saved position is no longer on an available screen (for example, after disconnecting a
+monitor), Poco Book recenters the window on an available screen.
+
 If saving fails, for example because the disk is full, Poco Book shows an error, and the data file still holds the data from the last successful save. If Poco Book closes unexpectedly while saving, a file ending in `.tmp`, such as `addressbook.json.5784445305140543549.tmp`, may be left in the `data` folder or beside the JAR file. Poco Book does not use it, so you can delete it.
 
 ### Editing the data file
@@ -418,9 +422,8 @@ reopen just one before editing that folder again; use a backup if changes have a
 
 ## Known issues
 
-1. **When using multiple screens**, if you move the application to a secondary screen, and later switch to using only the primary screen, the GUI will open off-screen. The remedy is to delete the `preferences.json` file created by the application before running the application again.
-2. **If you minimize the Help Window** and then run the `help` command (or use the `Help` menu, or the keyboard shortcut `F1`) again, the original Help Window will remain minimized, and no new Help Window will appear. The remedy is to manually restore the minimized Help Window.
-3. **Names and emails with less common characters**, such as curly apostrophes (`’`), Unicode dashes or apostrophes in emails, are rejected, and letters such as `ß` are not matched with `SS` in `find` or duplicate checks. The remedy is to type the name with `'` and `-`, use an email without the unsupported characters, and search with the spelling stored in Poco Book.
+1. **If you minimize the Help Window** and then run the `help` command (or use the `Help` menu, or the keyboard shortcut `F1`) again, the original Help Window will remain minimized, and no new Help Window will appear. The remedy is to manually restore the minimized Help Window.
+2. **Names and emails with less common characters**, such as curly apostrophes (`’`), Unicode dashes or apostrophes in emails, are rejected, and letters such as `ß` are not matched with `SS` in `find` or duplicate checks. The remedy is to type the name with `'` and `-`, use an email without the unsupported characters, and search with the spelling stored in Poco Book.
 
 --------------------------------------------------------------------------------------------------------------------
 
