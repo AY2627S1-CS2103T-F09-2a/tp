@@ -2,6 +2,7 @@ package seedu.address.model.person;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.testutil.Assert.assertThrows;
 
@@ -88,4 +89,47 @@ public class GuardianNameTest {
             assertEquals(first.hashCode(), second.hashCode());
         }
     }
+
+    @Test
+    public void messageConstraints_namesGuardianField() {
+        // The message must say which field failed, as add and edit also validate student names.
+        assertTrue(GuardianName.MESSAGE_CONSTRAINTS.startsWith("Guardian names "));
+        assertNotEquals(Name.MESSAGE_CONSTRAINTS, GuardianName.MESSAGE_CONSTRAINTS);
+    }
+
+    @Test
+    public void isValidName_patronymic() {
+        // S/O and D/O as whole words, in any case
+        assertTrue(GuardianName.isValidName("Ravi S/O Raj"));
+        assertTrue(GuardianName.isValidName("Priya d/o Kumar"));
+        assertTrue(GuardianName.isValidName("Ravi s/O Raj"));
+
+        // other slashes are still rejected
+        assertFalse(GuardianName.isValidName("Ravi A/B Raj"));
+        assertFalse(GuardianName.isValidName("Ravi S/Oh Raj"));
+        assertFalse(GuardianName.isValidName("Ravi XS/O Raj"));
+        assertFalse(GuardianName.isValidName("Ravi / Raj"));
+
+        // a marker alone is not a name
+        assertFalse(GuardianName.isValidName("S/O Raj")); // marker must come between names
+        assertFalse(GuardianName.isValidName("Ravi d/o"));
+        assertFalse(GuardianName.isValidName(" Ravi S/O "));
+        assertFalse(GuardianName.isValidName("S/O"));
+    }
+
+    @Test
+    public void messageConstraints_describesSupportedCharacters() {
+        assertEquals("Guardian names must be 1-70 characters long, contain at least one letter, and use only letters, "
+                + "numbers, spaces, straight apostrophes ('), ASCII hyphens (-), periods, parentheses, or S/O and D/O "
+                + "as separate words between names.",
+                GuardianName.MESSAGE_CONSTRAINTS);
+    }
+
+    @Test
+    public void isValidName_patronymicMarkersOnly_returnsFalse() {
+        assertFalse(GuardianName.isValidName("S/O"));
+        assertFalse(GuardianName.isValidName("D/O D/O"));
+        assertTrue(GuardianName.isValidName("Ravi S/O Kumar"));
+    }
+
 }

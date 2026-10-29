@@ -188,6 +188,14 @@ public class AddCommandParserTest {
     }
 
     @Test
+    public void parse_patronymicNames_success() {
+        Person expectedPerson = new PersonBuilder(BOB).withoutContactDetails().withoutOutstandingFee()
+                .withName("Ravi S/O Raj").withGuardianName("Raj D/O Kumar").withTags().build();
+        assertParseSuccess(parser, " n/Ravi S/O Raj g/Raj D/O Kumar" + GUARDIAN_PHONE_DESC_BOB,
+                new AddCommand(expectedPerson));
+    }
+
+    @Test
     public void parse_unexpectedText_failure() {
         // non-empty preamble
         assertParseFailure(parser, PREAMBLE_NON_EMPTY + ALL_DESC_BOB, MESSAGE_INVALID_FORMAT);

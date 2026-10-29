@@ -99,8 +99,28 @@ public class EditCommandParserTest {
 
     @Test
     public void parse_uneditableFieldPrefix_failure() {
-        assertParseFailure(parser, "1" + PHONE_DESC_AMY + " f/10", MESSAGE_INVALID_FORMAT);
-        assertParseFailure(parser, "1 f/10", MESSAGE_INVALID_FORMAT);
+        assertParseFailure(parser, "1" + PHONE_DESC_AMY + " f/10", EditCommandParser.MESSAGE_FEE_NOT_EDITABLE);
+        assertParseFailure(parser, "1 f/10", EditCommandParser.MESSAGE_FEE_NOT_EDITABLE);
+    }
+
+    @Test
+    public void parse_unknownPrefixInValue_failure() {
+        // unknown prefix absorbed into a name is reported as a format error, as in add
+        assertParseFailure(parser, "1 n/Alex x/foo", MESSAGE_INVALID_FORMAT);
+        assertParseFailure(parser, "1 g/Mei x/foo", MESSAGE_INVALID_FORMAT);
+    }
+
+    @Test
+    public void parse_patronymicNames_success() {
+        EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder().withName("Ravi S/O Raj")
+                .withGuardianName("Raj D/O Kumar").build();
+        assertParseSuccess(parser, "1 n/Ravi S/O Raj g/Raj D/O Kumar", new EditCommand(INDEX_FIRST_PERSON, descriptor));
+    }
+
+    @Test
+    public void parse_addressWithSlashes_success() {
+        EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder().withAddress("c/o Mr Lim").build();
+        assertParseSuccess(parser, "1 a/c/o Mr Lim", new EditCommand(INDEX_FIRST_PERSON, descriptor));
     }
 
     @Test
@@ -115,7 +135,8 @@ public class EditCommandParserTest {
         assertParseFailure(parser, "1" + INVALID_NAME_DESC, Name.MESSAGE_CONSTRAINTS); // invalid name
         assertParseFailure(parser, "1" + INVALID_PHONE_DESC, Phone.MESSAGE_CONSTRAINTS); // invalid phone
         assertParseFailure(parser, "1" + INVALID_EMAIL_DESC, Email.MESSAGE_CONSTRAINTS); // invalid email
-        assertParseFailure(parser, "1" + INVALID_ADDRESS_DESC, Address.MESSAGE_CONSTRAINTS); // invalid address
+        assertParseFailure(parser, "1 " + PREFIX_ADDRESS + "x".repeat(151),
+                Address.MESSAGE_CONSTRAINTS); // address too long
         assertParseFailure(parser, "1" + INVALID_GUARDIAN_NAME_DESC,
                 GuardianName.MESSAGE_CONSTRAINTS); // invalid guardian name
         assertParseFailure(parser, "1" + INVALID_GUARDIAN_PHONE_DESC,

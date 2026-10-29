@@ -14,7 +14,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import seedu.address.logic.commands.AddCommand;
@@ -35,9 +34,6 @@ public class AddCommandParser implements Parser<AddCommand> {
 
     public static final String MESSAGE_MISSING_PARAMETER = "Missing required parameter(s): %1$s.";
     public static final String MESSAGE_REPEATED_PARAMETER = "The %1$s parameter must not be repeated.";
-
-    /** Matches a token that looks like a prefix: letters followed by '/' at the start of a word. */
-    private static final Pattern PREFIX_LIKE_TOKEN = Pattern.compile("(?<=^|\\s)([A-Za-z]+/)");
 
     private static final List<Prefix> REQUIRED_PREFIXES =
             List.of(PREFIX_NAME, PREFIX_GUARDIAN_NAME, PREFIX_GUARDIAN_PHONE);
@@ -95,7 +91,7 @@ public class AddCommandParser implements Parser<AddCommand> {
         return PARAMETER_NAMES.keySet().stream()
                 .filter(prefix -> !prefix.equals(PREFIX_ADDRESS))
                 .flatMap(prefix -> argMultimap.getAllValues(prefix).stream())
-                .anyMatch(value -> PREFIX_LIKE_TOKEN.matcher(value).find());
+                .anyMatch(ParserUtil::containsPrefixLikeToken);
     }
 
     /**

@@ -51,8 +51,14 @@ public class PersonListPanel extends UiPart<Region> {
         personListView.scrollTo(person);
     }
 
+    /**
+     * Returns the selected student's current record, or null if no student is selected.
+     * The record is read from the list by index: when an edit replaces a student with a record that is
+     * {@code equals} to the old one, such as a change in letter case only, the selection model keeps the old record.
+     */
     public Person getSelectedPerson() {
-        return personListView.getSelectionModel().getSelectedItem();
+        int index = personListView.getSelectionModel().getSelectedIndex();
+        return index < 0 ? null : personListView.getItems().get(index);
     }
 
     /**

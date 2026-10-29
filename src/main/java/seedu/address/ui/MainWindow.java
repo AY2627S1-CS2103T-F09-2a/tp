@@ -64,12 +64,23 @@ public class MainWindow extends UiPart<Stage> {
      * and the data file path to show in the status bar.
      */
     public MainWindow(Stage primaryStage, Logic logic, Path dataFilePath) {
+        this(primaryStage, logic, dataFilePath, new DeleteConfirmationHandler(logic, student ->
+                new DeleteConfirmationDialog(primaryStage, student).showAndConfirm()));
+    }
+
+    /**
+     * Creates a {@code MainWindow} that confirms deletions with {@code deleteConfirmationHandler}.
+     * A test supplies this handler so that a deletion can be confirmed without a dialog.
+     */
+    MainWindow(Stage primaryStage, Logic logic, Path dataFilePath,
+            DeleteConfirmationHandler deleteConfirmationHandler) {
         super(FXML, primaryStage);
 
         // Set dependencies
         this.primaryStage = primaryStage;
         this.logic = logic;
         this.dataFilePath = dataFilePath;
+        this.deleteConfirmationHandler = deleteConfirmationHandler;
 
         // Configure the UI
         setWindowDefaultSize(logic.getGuiSettings());
@@ -77,8 +88,6 @@ public class MainWindow extends UiPart<Stage> {
         setAccelerators();
 
         helpWindow = new HelpWindow();
-        deleteConfirmationHandler = new DeleteConfirmationHandler(logic, student ->
-                new DeleteConfirmationDialog(primaryStage, student).showAndConfirm());
     }
 
     public Stage getPrimaryStage() {
@@ -204,6 +213,8 @@ public class MainWindow extends UiPart<Stage> {
 
             commandResult.getViewedPerson().ifPresentOrElse(personListPanel::selectPerson, () ->
                     personListPanel.retainSelection(previouslySelected));
+            // The selection listener does not fire when the new record equals the old one, so refresh explicitly.
+            personDetailsPanel.showPerson(personListPanel.getSelectedPerson());
 
             if (commandResult.isShowHelp()) {
                 handleHelp();
@@ -218,6 +229,7 @@ public class MainWindow extends UiPart<Stage> {
             logger.info("An error occurred while executing command: " + commandText);
             resultDisplay.setFeedbackToUser(e.getMessage());
             personListPanel.retainSelectionAfterFailure(previouslySelected);
+            personDetailsPanel.showPerson(personListPanel.getSelectedPerson());
             throw e;
         }
     }

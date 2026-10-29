@@ -1,8 +1,5 @@
 package seedu.address.ui;
 
-import java.util.Comparator;
-import java.util.stream.Collectors;
-
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
 import javafx.scene.layout.Region;
@@ -64,10 +61,7 @@ public class PersonDetailsPanel extends UiPart<Region> {
         guardianPhone.setText("Guardian phone: " + person.getGuardianPhone());
         outstandingFee.setText("Outstanding fee: " + person.getOutstandingFee()
                 .map(fee -> "S$" + fee).orElse(Messages.NO_FEE));
-        String tagNames = person.getTags().stream()
-                .sorted(Comparator.comparing(tag -> tag.tagName))
-                .map(tag -> tag.tagName)
-                .collect(Collectors.joining(", "));
+        String tagNames = String.join(", ", Messages.sortTagNames(person.getTags()));
         tags.setText("Tags: " + (tagNames.isEmpty() ? "None" : tagNames));
     }
 }

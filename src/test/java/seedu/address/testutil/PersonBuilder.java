@@ -103,6 +103,30 @@ public class PersonBuilder {
     }
 
     /**
+     * Removes the student's {@code Phone} from the {@code Person} that we are building.
+     */
+    public PersonBuilder withoutPhone() {
+        this.phone = null;
+        return this;
+    }
+
+    /**
+     * Removes the student's {@code Email} from the {@code Person} that we are building.
+     */
+    public PersonBuilder withoutEmail() {
+        this.email = null;
+        return this;
+    }
+
+    /**
+     * Removes the student's {@code Address} from the {@code Person} that we are building.
+     */
+    public PersonBuilder withoutAddress() {
+        this.address = null;
+        return this;
+    }
+
+    /**
      * Removes the student's {@code Phone}, {@code Email} and {@code Address} from the {@code Person} that we are
      * building, as when only the required details are given.
      */

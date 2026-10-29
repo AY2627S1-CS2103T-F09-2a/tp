@@ -89,7 +89,18 @@ public class EditPersonDescriptorTest {
                 + editPersonDescriptor.getAddress().orElse(null) + ", guardianName="
                 + editPersonDescriptor.getGuardianName().orElse(null) + ", guardianPhone="
                 + editPersonDescriptor.getGuardianPhone().orElse(null) + ", tags="
-                + editPersonDescriptor.getTags().orElse(null) + "}";
+                + editPersonDescriptor.getTags().orElse(null) + ", isPhoneCleared=false, isEmailCleared=false, "
+                + "isAddressCleared=false}";
         assertEquals(expected, editPersonDescriptor.toString());
+    }
+
+    @Test
+    public void clearOptionalContact_differsFromNoChange() {
+        EditPersonDescriptor clearsPhone = new EditPersonDescriptor();
+        clearsPhone.clearPhone();
+
+        assertTrue(clearsPhone.isAnyFieldEdited());
+        assertFalse(clearsPhone.equals(new EditPersonDescriptor()));
+        assertTrue(clearsPhone.equals(new EditPersonDescriptor(clearsPhone)));
     }
 }
