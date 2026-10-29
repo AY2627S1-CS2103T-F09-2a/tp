@@ -274,6 +274,7 @@ Format: `edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [a/ADDRESS] [g/GUARDIAN_NAME] [
 * To remove all of a student's tags, enter `t/` without a tag after it.
 * To remove a student's phone, email or address, enter `p/`, `e/` or `a/` with nothing after it. Omitting the prefix keeps the existing value.
 * Use `g/` and/or `gp/` to change guardian details. Omitted fields keep their existing values; guardian fields cannot be blank or cleared. Duplicate guardian prefixes are rejected.
+* `edit` changes only the student at `INDEX`. If you change the guardian phone and other students (such as siblings) still have the old number, the result names them so you can edit them too.
 * Outstanding fees cannot be changed with `edit`; `f/` is rejected. Use `setoutstanding` to change a fee.
 * A successful edit returns to the full student list.
 

@@ -16,6 +16,9 @@ import static seedu.address.logic.commands.CommandTestUtil.assertCommandSuccess;
 import static seedu.address.logic.commands.CommandTestUtil.showPersonAtIndex;
 import static seedu.address.testutil.TypicalIndexes.INDEX_FIRST_PERSON;
 import static seedu.address.testutil.TypicalIndexes.INDEX_SECOND_PERSON;
+import static seedu.address.testutil.TypicalPersons.ALICE;
+import static seedu.address.testutil.TypicalPersons.AMY;
+import static seedu.address.testutil.TypicalPersons.BENSON;
 import static seedu.address.testutil.TypicalPersons.getTypicalAddressBook;
 
 import java.nio.file.Path;
@@ -87,7 +90,11 @@ public class EditCommandTest {
                 .build();
         EditCommand editCommand = new EditCommand(INDEX_FIRST_PERSON, descriptor);
 
-        String expectedMessage = String.format(EditCommand.MESSAGE_EDIT_PERSON_SUCCESS, Messages.format(editedPerson));
+        // The six other students in the initial model share Alice's guardian phone.
+        String expectedMessage = String.format(EditCommand.MESSAGE_EDIT_PERSON_SUCCESS, Messages.format(editedPerson))
+                + "\nNote: 6 other students still have the old guardian phone 91234567: Benson Meier, "
+                + "Carl Kurz, Daniel Meier, Elle Meyer, Fiona Kunz, George Best. "
+                + "Edit them too if the guardian changed number.";
 
         Model expectedModel = new ModelManager(new AddressBook(model.getAddressBook()), new UserPrefs());
         expectedModel.setPerson(originalPerson, editedPerson);
@@ -116,6 +123,51 @@ public class EditCommandTest {
     }
 
     @Test
+    public void execute_guardianPhoneSharedBySibling_namesSibling() {
+        Model siblingModel = new ModelManager(addressBookOf(ALICE, BENSON, AMY), new UserPrefs());
+        Person editedPerson = new PersonBuilder(ALICE).withGuardianPhone(VALID_GUARDIAN_PHONE_BOB).build();
+        EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder()
+                .withGuardianPhone(VALID_GUARDIAN_PHONE_BOB)
+                .build();
+        EditCommand editCommand = new EditCommand(INDEX_FIRST_PERSON, descriptor);
+
+        String expectedMessage = String.format(EditCommand.MESSAGE_EDIT_PERSON_SUCCESS, Messages.format(editedPerson))
+                + "\nNote: 1 other student still has the old guardian phone 91234567: Benson Meier. "
+                + "Edit them too if the guardian changed number.";
+
+        Model expectedModel = new ModelManager(addressBookOf(editedPerson, BENSON, AMY), new UserPrefs());
+        assertCommandSuccess(editCommand, siblingModel, expectedMessage, expectedModel);
+    }
+
+    @Test
+    public void execute_guardianPhoneNotShared_noNote() {
+        Model siblingModel = new ModelManager(addressBookOf(ALICE, BENSON, AMY), new UserPrefs());
+        Person editedPerson = new PersonBuilder(AMY).withGuardianPhone(VALID_GUARDIAN_PHONE_BOB).build();
+        EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder()
+                .withGuardianPhone(VALID_GUARDIAN_PHONE_BOB)
+                .build();
+        EditCommand editCommand = new EditCommand(Index.fromOneBased(3), descriptor);
+
+        String expectedMessage = String.format(EditCommand.MESSAGE_EDIT_PERSON_SUCCESS, Messages.format(editedPerson));
+
+        Model expectedModel = new ModelManager(addressBookOf(ALICE, BENSON, editedPerson), new UserPrefs());
+        assertCommandSuccess(editCommand, siblingModel, expectedMessage, expectedModel);
+    }
+
+    @Test
+    public void execute_guardianPhoneUnchanged_noNote() {
+        Model siblingModel = new ModelManager(addressBookOf(ALICE, BENSON, AMY), new UserPrefs());
+        Person editedPerson = new PersonBuilder(ALICE).withGuardianName("Anne Lim").build();
+        EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder().withGuardianName("Anne Lim").build();
+        EditCommand editCommand = new EditCommand(INDEX_FIRST_PERSON, descriptor);
+
+        String expectedMessage = String.format(EditCommand.MESSAGE_EDIT_PERSON_SUCCESS, Messages.format(editedPerson));
+
+        Model expectedModel = new ModelManager(addressBookOf(editedPerson, BENSON, AMY), new UserPrefs());
+        assertCommandSuccess(editCommand, siblingModel, expectedMessage, expectedModel);
+    }
+
+    @Test
     public void execute_guardianPhoneOnly_success() {
         Person originalPerson = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
         Person editedPerson = new PersonBuilder(originalPerson)
@@ -127,7 +179,11 @@ public class EditCommandTest {
                 .build();
         EditCommand editCommand = new EditCommand(INDEX_FIRST_PERSON, descriptor);
 
-        String expectedMessage = String.format(EditCommand.MESSAGE_EDIT_PERSON_SUCCESS, Messages.format(editedPerson));
+        // The six other students in the initial model share Alice's guardian phone.
+        String expectedMessage = String.format(EditCommand.MESSAGE_EDIT_PERSON_SUCCESS, Messages.format(editedPerson))
+                + "\nNote: 6 other students still have the old guardian phone 91234567: Benson Meier, "
+                + "Carl Kurz, Daniel Meier, Elle Meyer, Fiona Kunz, George Best. "
+                + "Edit them too if the guardian changed number.";
 
         Model expectedModel = new ModelManager(new AddressBook(model.getAddressBook()), new UserPrefs());
         expectedModel.setPerson(originalPerson, editedPerson);
@@ -449,5 +505,13 @@ public class EditCommandTest {
     private Person editFirstPerson(String args) throws Exception {
         new EditCommandParser().parse(INDEX_FIRST_PERSON.getOneBased() + args).execute(model);
         return model.getAddressBook().getPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
+    }
+
+    private static AddressBook addressBookOf(Person... persons) {
+        AddressBook addressBook = new AddressBook();
+        for (Person person : persons) {
+            addressBook.addPerson(person);
+        }
+        return addressBook;
     }
 }

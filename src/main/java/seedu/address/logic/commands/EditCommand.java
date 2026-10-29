@@ -58,6 +58,8 @@ public class EditCommand extends Command {
             + PREFIX_GUARDIAN_PHONE + "98765432";
 
     public static final String MESSAGE_EDIT_PERSON_SUCCESS = "Edited student:\n%1$s";
+    public static final String MESSAGE_SHARED_GUARDIAN_PHONE = "\nNote: %1$d other %4$s still %5$s "
+            + "the old guardian phone %2$s: %3$s. Edit them too if the guardian changed number.";
     public static final String MESSAGE_NOT_EDITED = "At least one field to edit must be provided.";
     public static final String MESSAGE_DUPLICATE_PERSON = AddCommand.MESSAGE_DUPLICATE_PERSON;
     public static final String MESSAGE_NO_CHANGE =
@@ -69,8 +71,10 @@ public class EditCommand extends Command {
     private final EditPersonDescriptor editPersonDescriptor;
 
     /**
-     * @param index of the student in the filtered student list to edit
-     * @param editPersonDescriptor details to edit the student with
+     * Creates an edit command for the student at the given index.
+     *
+     * @param index Index of the student in the filtered student list to edit.
+     * @param editPersonDescriptor Details to edit the student with.
      */
     public EditCommand(Index index, EditPersonDescriptor editPersonDescriptor) {
         requireNonNull(index);
@@ -104,7 +108,30 @@ public class EditCommand extends Command {
         model.setPerson(personToEdit, editedPerson);
         model.updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS);
         logger.info("Updated student details for: " + editedPerson.getName());
-        return new CommandResult(String.format(MESSAGE_EDIT_PERSON_SUCCESS, Messages.format(editedPerson)));
+        String feedback = String.format(MESSAGE_EDIT_PERSON_SUCCESS, Messages.format(editedPerson));
+        return new CommandResult(feedback + describeStudentsLeftOnOldPhone(model, personToEdit, editedPerson));
+    }
+
+    /**
+     * Returns a note naming the other students who still have {@code personToEdit}'s guardian phone,
+     * or an empty string if the guardian phone was not changed or no other student shares it.
+     * Siblings share a guardian, so a tutor who changes one student's guardian phone may need to change theirs too.
+     */
+    private static String describeStudentsLeftOnOldPhone(Model model, Person personToEdit, Person editedPerson) {
+        GuardianPhone oldPhone = personToEdit.getGuardianPhone();
+        if (oldPhone.equals(editedPerson.getGuardianPhone())) {
+            return "";
+        }
+
+        List<String> names = model.getAddressBook().getPersonList().stream()
+                .filter(person -> person.getGuardianPhone().equals(oldPhone))
+                .map(person -> person.getName().toString())
+                .toList();
+        if (names.isEmpty()) {
+            return "";
+        }
+        return String.format(MESSAGE_SHARED_GUARDIAN_PHONE, names.size(), oldPhone, String.join(", ", names),
+                names.size() == 1 ? "student" : "students", names.size() == 1 ? "has" : "have");
     }
 
     /**
