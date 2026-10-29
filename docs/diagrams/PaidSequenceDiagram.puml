@@ -1,19 +1,23 @@
 @startuml
 !include style.puml
 
-' style.puml sets FontColor #FFFFFFF for participant titles, which renders as white on the
-' pale LOGIC_COLOR_T1 / MODEL_COLOR_T1 / STORAGE_COLOR_T1 header boxes. Override it here so the
-' titles stay readable at the size the Developer Guide embeds the diagram.
-skinparam Participant {
-    FontColor #000000
-}
+skinparam ArrowFontStyle plain
 
 actor Tutor
-participant ":LogicManager" as Logic
-participant ":AddressBookParser" as Parser
-participant ":PaidCommand" as Paid
-participant ":Model" as Model
-participant ":Storage" as Storage
+box Logic LOGIC_COLOR_T1
+participant ":LogicManager" as Logic LOGIC_COLOR
+participant ":AddressBookParser" as Parser LOGIC_COLOR
+participant ":PaidCommand" as Paid LOGIC_COLOR
+end box
+
+box Model MODEL_COLOR_T1
+participant ":Model" as Model MODEL_COLOR
+end box
+
+box Storage STORAGE_COLOR_T1
+participant ":Storage" as Storage STORAGE_COLOR
+end box
+
 Tutor -> Logic : execute("paid 1")
 activate Logic
 Logic -> Parser : parseCommand("paid 1")
