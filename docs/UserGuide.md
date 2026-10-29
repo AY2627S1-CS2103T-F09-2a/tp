@@ -40,7 +40,57 @@ Poco Book is a **desktop application for independent tutors to manage students, 
 
    * `exit` : Exits the app.
 
+1. New to Poco Book? Try the [five-minute walkthrough](#five-minute-walkthrough) next.
+
 1. Refer to the [Features](#features) section below for details of each command.
+
+--------------------------------------------------------------------------------------------------------------------
+
+## Five-minute walkthrough
+
+This walkthrough takes you through a typical first session: adding two students, finding a guardian, checking who owes fees, recording a payment, and confirming that Poco Book keeps your changes after a restart. It takes about five minutes.
+
+<div markdown="span" class="alert alert-warning">:exclamation: **Caution:**
+Do this walkthrough in a **new, empty folder**, not the folder where you keep your real student records. Step 1 deletes everything in the address book, which is safe only in a new folder.
+</div>
+
+1. **Start with an empty book.** Copy `addressbook.jar` into a new folder, such as `poco-walkthrough`, and launch it from a terminal in that folder with `java -jar addressbook.jar`. Poco Book starts with six sample students. Type `clear` and press Enter.<br>
+   Poco Book shows `Address book has been cleared!` and the list is empty.
+
+1. **Add two students.** Type each command and press Enter:
+   * `add n/Alpha Tan g/Mei Tan gp/92345678 e/alpha@example.com f/180`
+   * `add n/Beta Lim g/Kumar Lim gp/98765432 p/91234567 f/75.50`
+
+   After each command, Poco Book shows `New student added:` with the student's details. The list now shows `1. Alpha Tan`, owing `S$180.00`, and `2. Beta Lim`, owing `S$75.50`. Student details you did not give show as `Not provided`.
+
+1. **Find a student by their guardian.** Type `findguardian Mei`.<br>
+   Poco Book shows `1 student(s) listed!` and the list shows only Alpha Tan, at index `1`.
+
+1. **View the complete record.** Type `view 1`.<br>
+   Poco Book shows `Viewing student: Alpha Tan`, and the details pane shows all of Alpha's details, including `Guardian name: Mei Tan`, `Guardian phone: 92345678` and `Outstanding fee: S$180.00`.
+
+1. **List who owes fees.** Type `fees`.<br>
+   Poco Book shows `2 student(s) with outstanding fees.` Then type `fees min/100`. Poco Book shows `1 student(s) with outstanding fees.` and only Alpha Tan is listed, because Beta owes less than S$100.00.
+
+1. **Total all fees.** Type `find Beta`, then `feesummary`.<br>
+   The list shows only Beta, but Poco Book shows `Across all stored students: 2 student(s) owe a total of S$255.50. Displayed list unchanged.` `feesummary` always counts **every** stored student, while `find`, `findguardian` and `fees` only change which students are displayed. Each of those three commands replaces the previous filter instead of narrowing it.
+
+1. **Record a payment.** Type `fees` again. Check that index `1` is **Alpha Tan**, then type `paid 1`.<br>
+   Poco Book shows `Marked outstanding fee as paid for Alpha Tan: S$180.00`. Alpha disappears from the `fees` list, so Beta Lim moves up to index `1`.
+
+   <div markdown="span" class="alert alert-primary">:bulb: **Tip:**
+   Indexes always refer to the list currently on screen, and they change when the list changes. Check the name next to an index before every `paid`, `setoutstanding`, `edit` or `delete`.
+   </div>
+
+1. **Check the new total.** Type `feesummary`.<br>
+   Poco Book shows `Across all stored students: 1 student(s) owe a total of S$75.50. Displayed list unchanged.`
+
+1. **Restart and check your data.** Type `exit`. Launch Poco Book again from the same folder with `java -jar addressbook.jar`, then type `list` and `view 1`.<br>
+   Both students are still there. Alpha Tan shows `Outstanding fee: None` and Beta Lim still owes `S$75.50`. Poco Book saved every change automatically.
+
+If Poco Book reports a save error during the walkthrough, your change is still shown but has not been saved yet. Make sure the folder is writable, then make another change; Poco Book saves everything the next time a save succeeds. Changes are lost if you close Poco Book before then.
+
+When you are done, you can delete the walkthrough folder. To keep using Poco Book, launch it from the folder you want to use for your real records. See [Features](#features) for every command.
 
 --------------------------------------------------------------------------------------------------------------------
 
