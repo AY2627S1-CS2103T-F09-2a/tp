@@ -134,6 +134,8 @@ When you are done, you can delete the walkthrough folder. To keep using Poco Boo
 
 * For `delete`, `edit`, `view`, and `setoutstanding`, `INDEX` uses ASCII digits without leading zeros, such as `1` or `12`. Leading zeros (`01`), signs (`+1`), decimals, and extra index tokens produce an invalid-command-format message. A positive index larger than `2147483647` produces `The student index provided is invalid.` No record or current list is changed when the index is rejected.
 
+* Separate the command word and parameters with ordinary spaces. The command box removes tabs and line breaks from pasted text, so the words on either side of them run together. This usually makes the command invalid, but inside a value it joins the words instead; for example, pasting `n/Alex` and `Tan` separated by a tab saves the name `AlexTan`. Other space characters, such as the non-breaking spaces that some documents and chat apps use, are not treated as separators either. If a pasted command is rejected, retype the spaces and press Enter again; if it succeeds, check the saved values in the success message.
+
 * Only `list`, `exit`, and `clear` ignore any text typed after the command word.<br>
   For example, `list 123` is interpreted as `list`, and `clear 123` still deletes all students.
   `feesummary` takes no parameters and rejects extra text, such as `feesummary 1`. `help` accepts one optional command word and rejects unknown command words or extra text, such as `help paid 1`.
@@ -172,6 +174,7 @@ Format: `add n/NAME g/GUARDIAN_NAME gp/GUARDIAN_PHONE [p/PHONE] [e/EMAIL] [a/ADD
 * If any required parameters are missing, the error names all of them, such as `Missing required parameter(s): g/, gp/.`
 * `t/TAG` may be repeated to give the student several tags. Each tag may contain only ASCII letters and digits, with no spaces or punctuation, as for `edit`. Every other prefix may appear at most once in an `add` command.
 * `ADDRESS` may contain text such as `c/o`, `Blk A/B`, or `N/A`, but a `t/` in it starts a tag. Other parameters must not contain unrecognised prefixes such as `x/`.
+* Everything after `a/` up to the next recognised prefix is stored as the address. Prefixes are case-sensitive, so a mistyped optional prefix such as `P/91234567` becomes part of the address instead of setting that field. For example, `add n/Alex Tan g/Mei Tan gp/92345678 a/Blk 1 P/91234567` saves the address `Blk 1 P/91234567`. A prefix typed without its slash, such as `p 91234567`, is also stored as part of the address. The success message lists the saved values, so check it after adding.
 * `NAME` and `GUARDIAN_NAME` must be 1 to 70 characters long and contain at least one letter. They may use letters (including non-English letters such as `é` or `李`), digits, spaces, apostrophes, hyphens, periods and parentheses. Extra spaces are removed before the length is counted.
 * `ADDRESS`, if provided, must be 1 to 150 characters long and fit on one line.
 * `EMAIL`, if provided, must be at most 254 characters long, with at most 64 characters before `@`, and must end in a domain such as `example.com` (the last part must be at least 2 letters).
@@ -182,6 +185,7 @@ Format: `add n/NAME g/GUARDIAN_NAME gp/GUARDIAN_PHONE [p/PHONE] [e/EMAIL] [a/ADD
 * `NAME` and `GUARDIAN_NAME` may include `S/O` or `D/O` as a separate word, such as `Ravi S/O Raj`. Separate the marker from adjacent text with spaces; for example, use `Tan ( S/O Lim)` rather than `Tan (S/O Lim)`. The marker must come between names, so `S/O Raj`, `Ravi S/O` and `S/O` alone are not valid names. Other slashes are not allowed in names.
 * Names accept only the straight apostrophe (`'`) and the ASCII hyphen (`-`). Curly apostrophes (`’`) and other dashes (`‐`, `–`), which some keyboards and copied text produce, are rejected; retype them as `'` or `-`.
 * In `EMAIL`, the part before `@` may use only ASCII letters (A-Z, a-z), digits, `.`, `_`, `+` and `-`. Addresses with other characters, such as an apostrophe (`o'connor@example.com`), are not supported.
+* A successful `add` returns to the full student list, so the new student is visible even if a `find`, `findguardian` or `fees` filter was active.
 
 Examples:
 * `add n/Alex Tan g/Mei Tan gp/92345678`
@@ -297,7 +301,8 @@ Format: `edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [a/ADDRESS] [g/GUARDIAN_NAME] [
 * Use `g/` and/or `gp/` to change guardian details. Omitted fields keep their existing values; guardian fields cannot be blank or cleared. Duplicate guardian prefixes are rejected.
 * `edit` changes only the student at `INDEX`. If you change the guardian phone and other students (such as siblings) still have the old number, the result names them so you can edit them too.
 * Outstanding fees cannot be changed with `edit`; `f/` is rejected. Use `setoutstanding` to change a fee.
-* A successful edit returns to the full student list.
+* As in `add`, a mistyped prefix after `a/`, such as `GP/`, is stored as part of the address. The success message lists the saved values.
+* A successful edit returns to the full student list, so run your `find`, `findguardian` or `fees` filter again before using indexes from it. `delete`, `setoutstanding` and `paid` keep the current filter instead.
 
 Examples:
 * `edit 1 g/Mei Tan gp/92345678` Updates the guardian contact while preserving other fields.
