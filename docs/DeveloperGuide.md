@@ -253,7 +253,7 @@ The activity diagram below shows what happens when the tutor enters `delete INDE
 1. If there is no target, `MainWindow` passes the input to `Logic#execute(String)`, as it did before this feature. This happens when the input is another command, cannot be parsed, or has an index beyond the end of the list. Invalid `delete` commands therefore report the usual errors without opening a dialog.
 1. Otherwise, `MainWindow` calls `DeleteConfirmationHandler#confirmAndDelete(String, Person)` with the target. The handler asks its `DeletionConfirmer` whether to delete the student. In the app, `MainWindow` supplies a confirmer that opens a `DeleteConfirmationDialog` over the main window and waits for the tutor to respond.
 1. If the tutor cancels, the handler returns a `CommandResult` with a cancellation message without calling `Logic#execute(String)`, so nothing is deleted or saved. `MainWindow` then restores the selection as it does after any other successful command.
-1. If the tutor confirms, the handler calls `Logic#getDeletionTarget(String)` again to check that the index still identifies the same student. It then calls `Logic#execute(String)`, which deletes the student and saves the data as before. While the dialog is open, the tutor cannot enter commands, so the displayed list cannot change. The second check is a safeguard in case a future change allows the list to change during confirmation: if a different student now has that index, the handler throws a `CommandException` and deletes nothing.
+1. If the tutor confirms, the handler calls `Logic#getDeletionTarget(String)` again to check that the index still identifies the same student. It then calls `Logic#execute(String)`, which deletes the student and saves the data as before. While the dialog is open, the tutor cannot enter commands, so the displayed list cannot change. The second check is a safeguard in case a future change allows the list to change during confirmation: if a different student now has that index, or the student's details have changed, the handler throws a `CommandException` and deletes nothing.
 
 The sequence diagram below shows these steps for `delete 2`. For simplicity, it leaves out the error that the handler reports if the second check finds a different student.
 
@@ -274,13 +274,25 @@ The sequence diagram below shows these steps for `delete 2`. For simplicity, it 
 
 * **Alternative 1 (current choice):** Ask in the `UI`, which first calls `Logic#getDeletionTarget(String)`.
   * Pros: `Logic` contains no UI code and never waits for the tutor. The `UI` uses only the `Logic` API, and deletion and saving still use the existing path.
-  * Cons: The `Logic` API gains a method that only `delete` uses. Asking and deleting are separate steps, so the target must be checked again after confirmation. Every command is parsed twice, and a confirmed `delete` three times, but parsing is fast.
+  * Cons: The `Logic` API gains a method that only `delete` uses. Asking and deleting are separate steps, so the target must be checked again after confirmation. Most commands are parsed twice; see the next aspect.
 * **Alternative 2:** Let `DeleteCommand#execute(Model)` call a confirmation callback that the `UI` provides.
   * Pros: Each command is parsed once. Asking and deleting happen in one step, so no second check is needed.
   * Cons: `Logic` would wait on a UI dialog in the middle of a command. The `UI` can only provide the callback after `Logic` is created, so `Logic` would need a setter. The callback would also have to reach each `DeleteCommand`, either through `AddressBookParser` and `DeleteCommandParser`, or by `LogicManager` handing it over after parsing.
 * **Alternative 3:** Let the `UI` parse the input with its own `AddressBookParser`.
   * Pros: The `Logic` API is unchanged.
   * Cons: The `UI` would depend on classes that are internal to `Logic`, breaking the rule that components interact only through each other's APIs.
+
+**Aspect: How often to parse the input**
+
+* **Alternative 1 (current choice):** Each call to `Logic` parses the command text again.
+  * Pros: The `UI` decides whether to ask with the same parser that `Logic#execute(String)` uses, so every input that would delete a student is confirmed first. The `Logic` API takes plain text, and parse errors are reported in one place, by `Logic#execute(String)`.
+  * Cons: Most commands are parsed twice, a cancelled `delete` once and a confirmed `delete` three times. Measured on JDK 25, the extra parsing costs at most about 1 ms per command just after startup, and far less once the JVM has warmed up, well within the 1-second target of [NFR 2](#non-functional-requirements).
+* **Alternative 2:** Parse once. `Logic` returns an opaque prepared command, which the `UI` passes back to `Logic` to find the target and to execute it.
+  * Pros: Each command is parsed once, and the check after confirmation needs no parsing.
+  * Cons: The `Logic` API gains a type and changes two methods, and the `UI` holds the prepared command while the dialog is open. The check after confirmation is still needed. The prepared command must hide the parsed `Command`, or the `UI` would depend on classes internal to `Logic`.
+* **Alternative 3:** Check the command word before parsing, and parse fully only for `delete`.
+  * Pros: Other commands are parsed once, and only `LogicManager` changes.
+  * Cons: `delete` would be recognised in two places. If they drifted apart, for example if the parser accepted an alias, or a command word in upper case, that the check did not, a deletion could run without asking.
 
 **Testing**
 
