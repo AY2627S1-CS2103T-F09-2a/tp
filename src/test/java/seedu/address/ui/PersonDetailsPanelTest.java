@@ -20,19 +20,14 @@ import javafx.stage.Stage;
 import seedu.address.testutil.PersonBuilder;
 
 /**
- * Verifies that the details pane displays optional contact fields as user-facing text.
+ * Verifies how the details pane displays a student's fields, such as optional contact fields, the fee and tags.
  */
 @EnabledIfEnvironmentVariable(named = "POCO_UI_TESTS", matches = "true")
 public class PersonDetailsPanelTest {
 
     @BeforeAll
     public static void initializeToolkit() {
-        try {
-            Platform.startup(() -> {});
-        } catch (IllegalStateException e) {
-            // Another UI test may already have initialized JavaFX.
-        }
-        Platform.setImplicitExit(false);
+        JavaFxTestToolkit.startOrReuse();
     }
 
     @Test
@@ -88,6 +83,19 @@ public class PersonDetailsPanelTest {
             } finally {
                 stage.close();
             }
+            return null;
+        });
+        Platform.runLater(assertion);
+        assertion.get(10, TimeUnit.SECONDS);
+    }
+
+    @Test
+    public void showPerson_mixedCaseTags_listsTagsAlphabeticallyIgnoringCase() throws Exception {
+        FutureTask<Void> assertion = new FutureTask<>(() -> {
+            PersonDetailsPanel panel = new PersonDetailsPanel();
+            VBox content = (VBox) ((ScrollPane) panel.getRoot()).getContent();
+            panel.showPerson(new PersonBuilder().withTags("biology", "Chemistry", "aMath").build());
+            assertEquals("Tags: aMath, biology, Chemistry", ((Label) content.lookup("#tags")).getText());
             return null;
         });
         Platform.runLater(assertion);

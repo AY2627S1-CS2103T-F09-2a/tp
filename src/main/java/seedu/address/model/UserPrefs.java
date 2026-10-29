@@ -20,10 +20,16 @@ public class UserPrefs implements ReadOnlyUserPrefs {
 
     /**
      * Creates a {@code UserPrefs} with the prefs in {@code userPrefs}.
+     * A {@code null} nested {@code GuiSettings}, which a hand-edited or corrupted
+     * {@code preferences.json} can produce, is replaced by the default settings so that
+     * startup recovers instead of failing with a {@code NullPointerException}.
      */
     public UserPrefs(ReadOnlyUserPrefs userPrefs) {
         requireNonNull(userPrefs);
-        setGuiSettings(userPrefs.getGuiSettings());
+        GuiSettings storedGuiSettings = userPrefs.getGuiSettings();
+        if (storedGuiSettings != null) {
+            setGuiSettings(storedGuiSettings);
+        }
     }
 
     public GuiSettings getGuiSettings() {
