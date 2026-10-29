@@ -13,8 +13,8 @@ import java.text.Normalizer;
 public final class GuardianName {
 
     public static final String MESSAGE_CONSTRAINTS =
-            "Names must be 1-70 characters long, contain at least one letter, and use only letters, numbers, "
-            + "spaces, apostrophes, hyphens, periods, or parentheses.";
+            "Guardian names must be 1-70 characters long, contain at least one letter, and use only letters, "
+            + "numbers, spaces, apostrophes, hyphens, periods, or parentheses.";
     public static final String VALIDATION_REGEX = "[\\p{L}\\p{M}0-9 '.()\\-]+";
 
     private static final int MIN_NAME_LENGTH = 1;
