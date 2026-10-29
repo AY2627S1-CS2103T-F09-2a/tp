@@ -111,6 +111,13 @@ public class EditCommandParserTest {
     }
 
     @Test
+    public void parse_patronymicNames_success() {
+        EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder().withName("Ravi S/O Raj")
+                .withGuardianName("Raj D/O Kumar").build();
+        assertParseSuccess(parser, "1 n/Ravi S/O Raj g/Raj D/O Kumar", new EditCommand(INDEX_FIRST_PERSON, descriptor));
+    }
+
+    @Test
     public void parse_addressWithSlashes_success() {
         EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder().withAddress("c/o Mr Lim").build();
         assertParseSuccess(parser, "1 a/c/o Mr Lim", new EditCommand(INDEX_FIRST_PERSON, descriptor));
