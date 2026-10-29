@@ -28,6 +28,17 @@ public class ModelManagerTest {
     }
 
     @Test
+    public void constructor_nullGuiSettingsInUserPrefs_defaultGuiSettingsUsed() {
+        // This is the path that crashed at startup: MainApp reads a preferences.json with
+        // "guiSettings": null and passes it straight to ModelManager.
+        ReadOnlyUserPrefs corruptedPrefs = () -> null;
+
+        modelManager = new ModelManager(new AddressBook(), corruptedPrefs);
+
+        assertEquals(new GuiSettings(), modelManager.getGuiSettings());
+    }
+
+    @Test
     public void constructor_validUserPrefs_copiesUserPrefs() {
         UserPrefs userPrefs = new UserPrefs();
         userPrefs.setGuiSettings(new GuiSettings(1, 2, 3, 4));
