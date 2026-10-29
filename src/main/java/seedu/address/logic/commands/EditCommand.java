@@ -97,7 +97,7 @@ public class EditCommand extends Command {
         logger.fine("Editing student at index " + index.getOneBased() + ": " + personToEdit.getName());
         Person editedPerson = createEditedPerson(personToEdit, editPersonDescriptor);
 
-        if (editedPerson.equals(personToEdit)) {
+        if (editedPerson.hasIdenticalDetails(personToEdit)) {
             logger.fine("Rejected edit that would leave the student unchanged.");
             throw new CommandException(MESSAGE_NO_CHANGE);
         }
