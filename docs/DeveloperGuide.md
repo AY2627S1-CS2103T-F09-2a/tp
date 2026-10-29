@@ -426,7 +426,25 @@ The following activity diagram summarizes what happens when a user executes a ne
   * Pros: Will use less memory (e.g. for `delete`, just save the person being deleted).
   * Cons: We must ensure that the implementation of each individual command is correct.
 
-_{more aspects and alternatives to be added}_
+Undo/redo is not implemented in v1.5. The walkthrough and activity diagram above describe the inherited SE-EDU AB3 design where individual commands call `Model#commitAddressBook()`. The two aspects below record why an alternative architecture was considered for Poco Book:
+
+**Aspect: Where history is committed:**
+
+* **Alternative 1 (proposed):** `LogicManager#execute` commits once, after a successful execution.
+  * Pros: One place decides when a state is worth recording, so a new command cannot forget to commit, and a command that throws never records a state.
+  * Cons: The history records every saving command, including a `setoutstanding` that restored the previous amount.
+* **Alternative 2 (legacy walkthrough above):** Each `Command` calls `Model#commitAddressBook()` inside `execute`.
+  * Pros: The command decides whether its change is worth an undo step, so a no-op `setoutstanding` could be skipped.
+  * Cons: The rule is spread over every command, and a command that forgets the call silently loses its undo step.
+
+**Aspect: What is kept out of the history:**
+
+* **Alternative 1 (proposed):** Only saving commands are recorded, so `list`, `find`, `fees`, `findguardian` and `feesummary` leave the history untouched and `undo` always reverses a change to the stored records.
+  * Pros: `undo` is never spent on a display-only command, and the number of undo steps matches the number of changes the tutor made.
+  * Cons: `undo` does not restore the previous filter, so the displayed list after an `undo` can differ from the list before the undone command.
+* **Alternative 2:** Record every command, including display-only ones.
+  * Pros: `undo` would restore the exact previous view.
+  * Cons: A tutor who filtered a few times would need several `undo` commands before reaching the change they regret, which is worse for the common case.
 
 ### Command-specific help
 
@@ -446,7 +464,18 @@ file to catch accidental execution, filter replacement or storage writes.
 
 ### \[Proposed\] Data archiving
 
-_{Explain here how the data archiving feature will be implemented}_
+Archiving is **not implemented**; this section records the intended design so that a future iteration does not have to rediscover its constraints.
+
+**Goal:** keep the record of a student who has stopped lessons without leaving that student in the working list, and without losing the outstanding fee or the guardian contacts.
+
+**Proposed design:**
+
+* Add an `archived` boolean to `Person`, defaulting to `false`. `JsonAdaptedPerson` writes it as an optional field and treats a missing field as `false`, so an existing `addressbook.json` loads unchanged and no data-file migration is needed.
+* Add `archive INDEX` and `unarchive INDEX`, modelled on `paid`: both validate the displayed index, build a new immutable `Person` with the flag flipped, and call `Model#setPerson`. The flag lives in `Person` rather than in a separate list so that `find`, `fees` and `feesummary` keep working on one in-memory collection.
+* The predicate behind `list` excludes archived students. `find` and `findguardian` search every stored student, and archived matches carry a visible `Archived` label so the tutor can tell them apart. `feesummary` reports the archived total on a second line instead of adding it silently to the active total.
+* `archive` is not destructive, preserving student records unlike `delete` (which removes a specific student permanently) and `clear` (which wipes the entire address book including hidden records); it needs no confirmation dialog as `unarchive` can immediately restore the student.
+
+**Why it was not built in v1.5:** the change reaches the storage format, the model API, the default `list` filter and the fee totals at once. That is a larger change than a v1.5 bug fix, and it would put the pre-release data-format compatibility checks and the fee-total tests at risk while the team is in feature freeze. Recording the design here keeps the v1.5 claim honest: archiving is a proposal, not a delivered feature.
 
 
 --------------------------------------------------------------------------------------------------------------------
