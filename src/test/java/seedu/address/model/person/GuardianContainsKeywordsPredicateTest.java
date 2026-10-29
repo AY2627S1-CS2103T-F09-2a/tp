@@ -104,6 +104,10 @@ public class GuardianContainsKeywordsPredicateTest {
         predicate = new GuardianContainsKeywordsPredicate(List.of("9234-5678"));
         assertTrue(predicate.test(new PersonBuilder().withGuardianPhone("92345678").build()));
 
+        // Phone keyword typed with the Singapore country code
+        predicate = new GuardianContainsKeywordsPredicate(List.of("+6592345678"));
+        assertTrue(predicate.test(new PersonBuilder().withGuardianPhone("92345678").build()));
+
         // Phone keyword mixed with a non-matching name keyword
         predicate = new GuardianContainsKeywordsPredicate(List.of("Anil", "92345678"));
         assertTrue(predicate.test(new PersonBuilder().withGuardianName("Mei Tan")

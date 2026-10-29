@@ -3,7 +3,6 @@ package seedu.address.logic;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static seedu.address.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
 import static seedu.address.testutil.Assert.assertThrows;
 
 import java.nio.file.Files;
@@ -69,11 +68,12 @@ public class CommandHelpLogicTest {
         assertTrue(feeHelp.contains("Use 0 to clear the fee"));
         assertTrue(feeHelp.contains("current displayed index, starting at 1, without leading zeros"));
 
+        assertEquals(paidHelp, logic.execute("HELP PAID").getFeedbackToUser());
         assertTrue(logic.execute("help").isShowHelp());
-        String invalidHelpMessage = String.format(MESSAGE_INVALID_COMMAND_FORMAT, HelpCommand.MESSAGE_USAGE)
-                + "\nAvailable commands: " + HelpCommand.getAvailableCommands();
-        assertThrows(ParseException.class, invalidHelpMessage, () -> logic.execute("help paid 1"));
-        assertThrows(ParseException.class, invalidHelpMessage, () -> logic.execute("help unknown"));
+        assertTrue(logic.execute("Help").isShowHelp());
+        assertThrows(ParseException.class, HelpCommand.MESSAGE_EXTRA_WORDS, () -> logic.execute("help paid 1"));
+        assertThrows(ParseException.class, "Unknown command: \"unknown\".\nAvailable commands: "
+                + HelpCommand.getAvailableCommands(), () -> logic.execute("help unknown"));
         assertEquals(List.of(visible), model.getFilteredPersonList());
         assertEquals(before, model.getAddressBook());
         assertEquals("Existing data must not be overwritten by help.", Files.readString(data));

@@ -193,6 +193,20 @@ public class JsonAdaptedPersonTest {
         assertThrows(IllegalValueException.class, Tag.MESSAGE_CONSTRAINTS, person::toModelType);
     }
 
+    @Test
+    public void toModelType_legacyCaseVariantTags_mergesDuplicatesAcrossRoundTrip() throws Exception {
+        List<JsonAdaptedTag> legacyTags = List.of(new JsonAdaptedTag("Math"), new JsonAdaptedTag("math"));
+        JsonAdaptedPerson legacyPerson = new JsonAdaptedPerson(VALID_NAME, VALID_PHONE, VALID_EMAIL, VALID_ADDRESS,
+                VALID_GUARDIAN_NAME, VALID_GUARDIAN_PHONE, VALID_OUTSTANDING_FEE, legacyTags);
+
+        Person loaded = legacyPerson.toModelType();
+        assertEquals(1, loaded.getTags().size());
+        assertTrue(loaded.getTags().contains(new Tag("Math")));
+        Person reloaded = new JsonAdaptedPerson(loaded).toModelType();
+        assertEquals(loaded, reloaded);
+        assertEquals(1, reloaded.getTags().size());
+    }
+
     private static JsonAdaptedPerson createPerson(String name, String phone, String email, String address,
             String guardianName, String guardianPhone, String outstandingFee) {
         return new JsonAdaptedPerson(name, phone, email, address, guardianName, guardianPhone, outstandingFee,

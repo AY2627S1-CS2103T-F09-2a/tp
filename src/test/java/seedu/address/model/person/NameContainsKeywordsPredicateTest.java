@@ -54,6 +54,12 @@ public class NameContainsKeywordsPredicateTest {
         // Mixed-case keywords
         predicate = new NameContainsKeywordsPredicate(List.of("aLIce", "bOB"));
         assertTrue(predicate.test(new PersonBuilder().withName("Alice Bob").build()));
+
+        // Name words ending in or wrapped by punctuation
+        predicate = new NameContainsKeywordsPredicate(List.of("Tan"));
+        assertTrue(predicate.test(new PersonBuilder().withName("Wei Ming Tan.").build()));
+        predicate = new NameContainsKeywordsPredicate(List.of("Junior"));
+        assertTrue(predicate.test(new PersonBuilder().withName("Ali (Junior)").build()));
     }
 
     @Test

@@ -38,14 +38,19 @@ alt student found
     alt isConfirmed
         Handler -> Logic : getDeletionTarget("delete 2")
         activate Logic
+        Logic --> Handler : target
         deactivate Logic
 
-        Handler -> Logic : execute("delete 2")
-        activate Logic
-        Logic --> Handler : deleted student's details
-        deactivate Logic
+        alt target equals student
+            Handler -> Logic : execute("delete 2")
+            activate Logic
+            Logic --> Handler : deleted student's details
+            deactivate Logic
 
-        Handler --> MainWindow : deleted student's details
+            Handler --> MainWindow : deleted student's details
+        else else
+            Handler --> MainWindow : throws CommandException\nwith target changed message
+        end
     else else
         Handler --> MainWindow : deletion cancelled message
     end
