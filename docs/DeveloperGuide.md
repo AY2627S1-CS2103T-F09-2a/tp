@@ -209,7 +209,13 @@ The `fees [min/AMOUNT]` command replaces the displayed-list filter with one that
 
 The sequence diagram below shows a successful `fees min/100` call. Tokenization, predicate evaluation and result construction are summarized in notes rather than shown as separate lifelines.
 
-![Sequence diagram for minimum outstanding-fee filtering](images/FeesSequenceDiagram.png)
+The essential sequence is: `LogicManager#execute` parses the input through `AddressBookParser` and
+`FeesCommandParser`; `FeesCommand#execute` installs the fee predicate with `Model#updateFilteredPersonList`,
+reads the filtered list size, and returns the result. `LogicManager` does not save this read-only command.
+For small screens, open the [full-size fee sequence diagram](images/FeesSequenceDiagram.png) to read its notes
+and message labels without shrinking them to the page width.
+
+[![Sequence diagram for minimum outstanding-fee filtering](images/FeesSequenceDiagram.png)](images/FeesSequenceDiagram.png)
 
 Diagram source: [FeesSequenceDiagram.puml](diagrams/FeesSequenceDiagram.puml).
 
@@ -362,7 +368,13 @@ The `findguardian KEYWORD [MORE_KEYWORDS]...` command lists students whose guard
 
 The sequence diagram below shows a successful `findguardian mei 9234-5678` call.
 
-![Sequence diagram for guardian search](images/FindGuardianSequenceDiagram.png)
+The essential sequence is: `LogicManager#execute` asks `AddressBookParser` and `FindGuardianCommandParser`
+to parse the keywords; `FindGuardianCommand#execute` installs the guardian predicate through
+`Model#updateFilteredPersonList` and reports the filtered list size. `LogicManager` does not save the search.
+For small screens, open the [full-size guardian-search sequence diagram](images/FindGuardianSequenceDiagram.png)
+to read its notes and message labels without shrinking them to the page width.
+
+[![Sequence diagram for guardian search](images/FindGuardianSequenceDiagram.png)](images/FindGuardianSequenceDiagram.png)
 
 Diagram source: [FindGuardianSequenceDiagram.puml](diagrams/FindGuardianSequenceDiagram.puml).
 
@@ -997,14 +1009,15 @@ testers are expected to do more *exploratory* testing.
 
    1. Download the JAR file and copy it into an empty folder.
 
-   1. Double-click the JAR file.<br>
+   1. In a terminal, run `java -version` and check that it reports Java 25 or later. In the folder containing
+      `addressbook.jar`, run `java -jar addressbook.jar`.<br>
       Expected: The GUI opens with a set of sample contacts. The window size may not be optimal.
 
 1. Saving window preferences
 
    1. Resize the window to an optimal size. Move the window to a different location. Close the window.
 
-   1. Relaunch the app by double-clicking the JAR file.<br>
+   1. In the same folder, run `java -jar addressbook.jar` again.<br>
        Expected: The most recent window size and location are retained.
 
 ### Adding and finding students
@@ -1304,12 +1317,17 @@ filtered-index payment, invalid-input and persistence regression tests.
 
 ### Guardian search and persisted fee updates
 
-1. In a disposable folder, add two students sharing a guardian, with different positive outstanding fees.
-1. Run a student-name search that hides both, then `findguardian GUARDIAN_NAME`.<br>
-   Expected: Both siblings appear once, in stored order. `help findguardian` explains the search without changing it.
-1. Run `paid 1`, then `fees min/100` and `feesummary`.<br>
-   Expected: Only the chosen displayed student's fee is cleared. The minimum filter and all-student total reflect that change.
-1. Restart the app.<br>
-   Expected: The payment and guardian details persist. `findguardian GUARDIAN_PHONE` returns both students.
+1. In a fresh **disposable** application folder, enter `clear` to remove the sample students, then enter
+   `add n/Asha Rai g/Mei Tan gp/92345678 f/150` and `add n/Bina Rai g/Mei Tan gp/92345678 f/25`.<br>
+   Expected: Only these two students are stored with the same guardian; Asha owes S$150.00 and Bina owes S$25.00.
+1. Enter `find Nobody`, then `findguardian Mei`.<br>
+   Expected: The first search hides both students. The guardian search shows Asha at index 1 and Bina at index 2.
+   `help findguardian` explains the search without changing the displayed list.
+1. Enter `paid 1`, then `fees min/100`, then `feesummary`.<br>
+   Expected: Asha's fee is cleared. The minimum-fee search shows no students; the summary reports that, across all
+   stored students, one student owes a total of S$25.00. Neither command changes Bina's fee.
+1. Restart the app, then enter `findguardian 92345678`.<br>
+   Expected: Both students are displayed in stored order with their guardian details intact. Asha has no
+   outstanding fee and Bina still owes S$25.00. `feesummary` still reports one student owing S$25.00.
 1. Try `findguardian`, `findguardian g/NAME`, and `help findguardian extra`.<br>
    Expected: Invalid-input feedback; records and the current filter remain unchanged.
