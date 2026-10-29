@@ -43,6 +43,21 @@ public class JsonUserPrefsStorageTest {
         assertThrows(DataLoadingException.class, () -> readUserPrefs("NotJsonFormatUserPrefs.json"));
     }
 
+    @Test
+    public void readUserPrefs_nullRoot_exceptionThrown() {
+        assertThrows(DataLoadingException.class, () -> readUserPrefs("NullRootUserPrefs.json"));
+    }
+
+    @Test
+    public void readUserPrefs_contentAfterPrefs_exceptionThrown() {
+        assertThrows(DataLoadingException.class, () -> readUserPrefs("ContentAfterUserPrefs.json"));
+    }
+
+    @Test
+    public void readUserPrefs_duplicateField_exceptionThrown() {
+        assertThrows(DataLoadingException.class, () -> readUserPrefs("DuplicateFieldUserPrefs.json"));
+    }
+
     private Path addToTestDataPathIfNotNull(String userPrefsFileInTestDataFolder) {
         return userPrefsFileInTestDataFolder != null
                 ? TEST_DATA_FOLDER.resolve(userPrefsFileInTestDataFolder)
@@ -59,6 +74,16 @@ public class JsonUserPrefsStorageTest {
     @Test
     public void readUserPrefs_valuesMissingFromFile_defaultValuesUsed() throws DataLoadingException {
         UserPrefs actual = readUserPrefs("EmptyUserPrefs.json").get();
+        assertEquals(new UserPrefs(), actual);
+    }
+
+    @Test
+    public void readUserPrefs_nullNestedGuiSettings_defaultValuesUsed() throws DataLoadingException {
+        // A hand-edited or partially written preferences.json can store "guiSettings": null.
+        // Reading it must repair the value instead of passing a null nested object to MainApp.
+        UserPrefs actual = readUserPrefs("NullGuiSettingsUserPref.json").get();
+
+        assertEquals(new GuiSettings(), actual.getGuiSettings());
         assertEquals(new UserPrefs(), actual);
     }
 

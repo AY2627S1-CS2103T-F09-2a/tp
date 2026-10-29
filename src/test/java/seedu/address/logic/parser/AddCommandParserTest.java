@@ -172,6 +172,15 @@ public class AddCommandParserTest {
         assertParseFailure(parser, NAME_DESC_BOB + GUARDIAN_NAME_DESC_BOB,
                 String.format(MESSAGE_MISSING_PARAMETER, PREFIX_GUARDIAN_PHONE) + "\n" + AddCommand.MESSAGE_USAGE);
 
+        // several prefixes missing, all named at once
+        assertParseFailure(parser, NAME_DESC_BOB,
+                String.format(MESSAGE_MISSING_PARAMETER, PREFIX_GUARDIAN_NAME + ", " + PREFIX_GUARDIAN_PHONE)
+                        + "\n" + AddCommand.MESSAGE_USAGE);
+        assertParseFailure(parser, PHONE_DESC_BOB,
+                String.format(MESSAGE_MISSING_PARAMETER,
+                        PREFIX_NAME + ", " + PREFIX_GUARDIAN_NAME + ", " + PREFIX_GUARDIAN_PHONE)
+                        + "\n" + AddCommand.MESSAGE_USAGE);
+
         // all prefixes missing
         assertParseFailure(parser, " " + VALID_NAME_BOB, MESSAGE_INVALID_FORMAT);
     }
@@ -183,6 +192,14 @@ public class AddCommandParserTest {
                     .withAddress(address).withTags().build();
             assertParseSuccess(parser, REQUIRED_DESC_BOB + " a/" + address, new AddCommand(expectedPerson));
         }
+    }
+
+    @Test
+    public void parse_patronymicNames_success() {
+        Person expectedPerson = new PersonBuilder(BOB).withoutContactDetails().withoutOutstandingFee()
+                .withName("Ravi S/O Raj").withGuardianName("Raj D/O Kumar").withTags().build();
+        assertParseSuccess(parser, " n/Ravi S/O Raj g/Raj D/O Kumar" + GUARDIAN_PHONE_DESC_BOB,
+                new AddCommand(expectedPerson));
     }
 
     @Test
@@ -220,8 +237,8 @@ public class AddCommandParserTest {
         assertParseFailure(parser, NAME_DESC_BOB + GUARDIAN_NAME_DESC_BOB + INVALID_GUARDIAN_PHONE_DESC,
                 GuardianPhone.MESSAGE_CONSTRAINTS);
 
-        // guardian phone with country code
-        assertParseFailure(parser, NAME_DESC_BOB + GUARDIAN_NAME_DESC_BOB + " gp/+65 9123 4567",
+        // guardian phone with a country code other than +65
+        assertParseFailure(parser, NAME_DESC_BOB + GUARDIAN_NAME_DESC_BOB + " gp/+60 9123 4567",
                 GuardianPhone.MESSAGE_CONSTRAINTS);
 
         // invalid phone

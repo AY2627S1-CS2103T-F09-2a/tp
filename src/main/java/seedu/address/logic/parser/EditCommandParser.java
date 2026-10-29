@@ -16,6 +16,7 @@ import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Logger;
+import java.util.stream.Stream;
 
 import seedu.address.commons.core.LogsCenter;
 import seedu.address.commons.core.index.Index;
@@ -29,6 +30,12 @@ import seedu.address.model.tag.Tag;
  */
 public class EditCommandParser implements Parser<EditCommand> {
 
+    public static final String MESSAGE_CLEAR_TAGS_WITH_TAGS = "t/ on its own clears all tags, so it cannot be "
+            + "combined with other tags. Use t/ alone to clear the tags, or give only the tags to keep.";
+    public static final String MESSAGE_REPEATED_CLEAR_TAGS = "t/ on its own clears all tags, so give it only once.";
+    public static final String MESSAGE_FEE_NOT_EDITABLE = "Outstanding fees cannot be changed with edit. "
+            + "Use setoutstanding INDEX AMOUNT or paid INDEX instead.";
+
     private static final Logger logger = LogsCenter.getLogger(EditCommandParser.class);
 
     /**
@@ -38,14 +45,18 @@ public class EditCommandParser implements Parser<EditCommand> {
      */
     public EditCommand parse(String args) throws ParseException {
         requireNonNull(args);
-        ArgumentMultimap argMultimap = ArgumentTokenizer.tokenize(args, PREFIX_NAME, PREFIX_PHONE, PREFIX_EMAIL,
-                PREFIX_ADDRESS, PREFIX_TAG, PREFIX_GUARDIAN_NAME, PREFIX_GUARDIAN_PHONE, PREFIX_OUTSTANDING_FEE);
+        Prefix[] prefixes = {PREFIX_NAME, PREFIX_PHONE, PREFIX_EMAIL, PREFIX_ADDRESS, PREFIX_TAG,
+            PREFIX_GUARDIAN_NAME, PREFIX_GUARDIAN_PHONE, PREFIX_OUTSTANDING_FEE};
+        ArgumentMultimap argMultimap = ArgumentTokenizer.tokenize(args, prefixes);
 
         Index index = ParserUtil.parseIndex(argMultimap.getPreamble(),
                 String.format(MESSAGE_INVALID_COMMAND_FORMAT, EditCommand.MESSAGE_USAGE));
 
         // Outstanding fees cannot be edited via edit; reject the prefix rather than absorbing it into another value.
         if (argMultimap.getValue(PREFIX_OUTSTANDING_FEE).isPresent()) {
+            throw new ParseException(MESSAGE_FEE_NOT_EDITABLE);
+        }
+        if (hasUnknownPrefix(argMultimap, prefixes)) {
             throw new ParseException(String.format(MESSAGE_INVALID_COMMAND_FORMAT, EditCommand.MESSAGE_USAGE));
         }
 
@@ -57,14 +68,30 @@ public class EditCommandParser implements Parser<EditCommand> {
         if (argMultimap.getValue(PREFIX_NAME).isPresent()) {
             editPersonDescriptor.setName(ParserUtil.parseName(argMultimap.getValue(PREFIX_NAME).get()));
         }
-        if (argMultimap.getValue(PREFIX_PHONE).isPresent()) {
-            editPersonDescriptor.setPhone(ParserUtil.parsePhone(argMultimap.getValue(PREFIX_PHONE).get()));
+        // An optional contact prefix with no value, such as p/, removes that field.
+        Optional<String> phone = argMultimap.getValue(PREFIX_PHONE);
+        if (phone.isPresent()) {
+            if (phone.get().isBlank()) {
+                editPersonDescriptor.clearPhone();
+            } else {
+                editPersonDescriptor.setPhone(ParserUtil.parsePhone(phone.get()));
+            }
         }
-        if (argMultimap.getValue(PREFIX_EMAIL).isPresent()) {
-            editPersonDescriptor.setEmail(ParserUtil.parseEmail(argMultimap.getValue(PREFIX_EMAIL).get()));
+        Optional<String> email = argMultimap.getValue(PREFIX_EMAIL);
+        if (email.isPresent()) {
+            if (email.get().isBlank()) {
+                editPersonDescriptor.clearEmail();
+            } else {
+                editPersonDescriptor.setEmail(ParserUtil.parseEmail(email.get()));
+            }
         }
-        if (argMultimap.getValue(PREFIX_ADDRESS).isPresent()) {
-            editPersonDescriptor.setAddress(ParserUtil.parseAddress(argMultimap.getValue(PREFIX_ADDRESS).get()));
+        Optional<String> address = argMultimap.getValue(PREFIX_ADDRESS);
+        if (address.isPresent()) {
+            if (address.get().isBlank()) {
+                editPersonDescriptor.clearAddress();
+            } else {
+                editPersonDescriptor.setAddress(ParserUtil.parseAddress(address.get()));
+            }
         }
         if (argMultimap.getValue(PREFIX_GUARDIAN_NAME).isPresent()) {
             editPersonDescriptor.setGuardianName(
@@ -85,6 +112,17 @@ public class EditCommandParser implements Parser<EditCommand> {
     }
 
     /**
+     * Returns true if a value other than the address contains a prefix-like token that {@code edit} does not
+     * accept, such as {@code x/}. Addresses may contain such text, for example {@code c/o} or {@code Blk A/B}.
+     */
+    private static boolean hasUnknownPrefix(ArgumentMultimap argMultimap, Prefix... prefixes) {
+        return Stream.of(prefixes)
+                .filter(prefix -> !prefix.equals(PREFIX_ADDRESS))
+                .flatMap(prefix -> argMultimap.getAllValues(prefix).stream())
+                .anyMatch(ParserUtil::containsPrefixLikeToken);
+    }
+
+    /**
      * Parses {@code Collection<String> tags} into a {@code Set<Tag>} if {@code tags} is non-empty.
      * If {@code tags} contains only one element which is an empty string, it will be parsed into a
      * {@code Set<Tag>} containing zero tags.
@@ -95,8 +133,14 @@ public class EditCommandParser implements Parser<EditCommand> {
         if (tags.isEmpty()) {
             return Optional.empty();
         }
-        Collection<String> tagSet = tags.size() == 1 && tags.contains("") ? Collections.emptySet() : tags;
-        return Optional.of(ParserUtil.parseTags(tagSet));
+        if (!tags.contains("")) {
+            return Optional.of(ParserUtil.parseTags(tags));
+        }
+        if (tags.size() == 1) {
+            return Optional.of(Collections.emptySet());
+        }
+        boolean onlyClears = tags.stream().allMatch(String::isEmpty);
+        throw new ParseException(onlyClears ? MESSAGE_REPEATED_CLEAR_TAGS : MESSAGE_CLEAR_TAGS_WITH_TAGS);
     }
 
 }

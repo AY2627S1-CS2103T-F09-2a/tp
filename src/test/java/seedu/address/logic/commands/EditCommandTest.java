@@ -2,6 +2,7 @@ package seedu.address.logic.commands;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.logic.commands.CommandTestUtil.DESC_AMY;
 import static seedu.address.logic.commands.CommandTestUtil.DESC_BOB;
@@ -15,6 +16,9 @@ import static seedu.address.logic.commands.CommandTestUtil.assertCommandSuccess;
 import static seedu.address.logic.commands.CommandTestUtil.showPersonAtIndex;
 import static seedu.address.testutil.TypicalIndexes.INDEX_FIRST_PERSON;
 import static seedu.address.testutil.TypicalIndexes.INDEX_SECOND_PERSON;
+import static seedu.address.testutil.TypicalPersons.ALICE;
+import static seedu.address.testutil.TypicalPersons.AMY;
+import static seedu.address.testutil.TypicalPersons.BENSON;
 import static seedu.address.testutil.TypicalPersons.getTypicalAddressBook;
 
 import java.nio.file.Path;
@@ -29,6 +33,8 @@ import seedu.address.logic.Logic;
 import seedu.address.logic.LogicManager;
 import seedu.address.logic.Messages;
 import seedu.address.logic.commands.EditCommand.EditPersonDescriptor;
+import seedu.address.logic.parser.EditCommandParser;
+import seedu.address.logic.parser.exceptions.ParseException;
 import seedu.address.model.AddressBook;
 import seedu.address.model.Model;
 import seedu.address.model.ModelManager;
@@ -84,7 +90,11 @@ public class EditCommandTest {
                 .build();
         EditCommand editCommand = new EditCommand(INDEX_FIRST_PERSON, descriptor);
 
-        String expectedMessage = String.format(EditCommand.MESSAGE_EDIT_PERSON_SUCCESS, Messages.format(editedPerson));
+        // The six other students in the initial model share Alice's guardian phone.
+        String expectedMessage = String.format(EditCommand.MESSAGE_EDIT_PERSON_SUCCESS, Messages.format(editedPerson))
+                + "\nNote: 6 other students still have the old guardian phone 91234567: Benson Meier, "
+                + "Carl Kurz, Daniel Meier, Elle Meyer, Fiona Kunz, George Best. "
+                + "Edit them too if the guardian changed number.";
 
         Model expectedModel = new ModelManager(new AddressBook(model.getAddressBook()), new UserPrefs());
         expectedModel.setPerson(originalPerson, editedPerson);
@@ -113,6 +123,51 @@ public class EditCommandTest {
     }
 
     @Test
+    public void execute_guardianPhoneSharedBySibling_namesSibling() {
+        Model siblingModel = new ModelManager(addressBookOf(ALICE, BENSON, AMY), new UserPrefs());
+        Person editedPerson = new PersonBuilder(ALICE).withGuardianPhone(VALID_GUARDIAN_PHONE_BOB).build();
+        EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder()
+                .withGuardianPhone(VALID_GUARDIAN_PHONE_BOB)
+                .build();
+        EditCommand editCommand = new EditCommand(INDEX_FIRST_PERSON, descriptor);
+
+        String expectedMessage = String.format(EditCommand.MESSAGE_EDIT_PERSON_SUCCESS, Messages.format(editedPerson))
+                + "\nNote: 1 other student still has the old guardian phone 91234567: Benson Meier. "
+                + "Edit them too if the guardian changed number.";
+
+        Model expectedModel = new ModelManager(addressBookOf(editedPerson, BENSON, AMY), new UserPrefs());
+        assertCommandSuccess(editCommand, siblingModel, expectedMessage, expectedModel);
+    }
+
+    @Test
+    public void execute_guardianPhoneNotShared_noNote() {
+        Model siblingModel = new ModelManager(addressBookOf(ALICE, BENSON, AMY), new UserPrefs());
+        Person editedPerson = new PersonBuilder(AMY).withGuardianPhone(VALID_GUARDIAN_PHONE_BOB).build();
+        EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder()
+                .withGuardianPhone(VALID_GUARDIAN_PHONE_BOB)
+                .build();
+        EditCommand editCommand = new EditCommand(Index.fromOneBased(3), descriptor);
+
+        String expectedMessage = String.format(EditCommand.MESSAGE_EDIT_PERSON_SUCCESS, Messages.format(editedPerson));
+
+        Model expectedModel = new ModelManager(addressBookOf(ALICE, BENSON, editedPerson), new UserPrefs());
+        assertCommandSuccess(editCommand, siblingModel, expectedMessage, expectedModel);
+    }
+
+    @Test
+    public void execute_guardianPhoneUnchanged_noNote() {
+        Model siblingModel = new ModelManager(addressBookOf(ALICE, BENSON, AMY), new UserPrefs());
+        Person editedPerson = new PersonBuilder(ALICE).withGuardianName("Anne Lim").build();
+        EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder().withGuardianName("Anne Lim").build();
+        EditCommand editCommand = new EditCommand(INDEX_FIRST_PERSON, descriptor);
+
+        String expectedMessage = String.format(EditCommand.MESSAGE_EDIT_PERSON_SUCCESS, Messages.format(editedPerson));
+
+        Model expectedModel = new ModelManager(addressBookOf(editedPerson, BENSON, AMY), new UserPrefs());
+        assertCommandSuccess(editCommand, siblingModel, expectedMessage, expectedModel);
+    }
+
+    @Test
     public void execute_guardianPhoneOnly_success() {
         Person originalPerson = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
         Person editedPerson = new PersonBuilder(originalPerson)
@@ -124,7 +179,11 @@ public class EditCommandTest {
                 .build();
         EditCommand editCommand = new EditCommand(INDEX_FIRST_PERSON, descriptor);
 
-        String expectedMessage = String.format(EditCommand.MESSAGE_EDIT_PERSON_SUCCESS, Messages.format(editedPerson));
+        // The six other students in the initial model share Alice's guardian phone.
+        String expectedMessage = String.format(EditCommand.MESSAGE_EDIT_PERSON_SUCCESS, Messages.format(editedPerson))
+                + "\nNote: 6 other students still have the old guardian phone 91234567: Benson Meier, "
+                + "Carl Kurz, Daniel Meier, Elle Meyer, Fiona Kunz, George Best. "
+                + "Edit them too if the guardian changed number.";
 
         Model expectedModel = new ModelManager(new AddressBook(model.getAddressBook()), new UserPrefs());
         expectedModel.setPerson(originalPerson, editedPerson);
@@ -135,7 +194,11 @@ public class EditCommandTest {
     @Test
     public void execute_sharedGuardianPhoneDifferentStudentName_success() {
         Person firstPerson = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
-        Person secondPerson = model.getFilteredPersonList().get(INDEX_SECOND_PERSON.getZeroBased());
+        // Give the second student a different guardian phone, so that sharing the first's is a real change
+        Person typicalSecondPerson = model.getFilteredPersonList().get(INDEX_SECOND_PERSON.getZeroBased());
+        Person secondPerson = new PersonBuilder(typicalSecondPerson)
+                .withGuardianPhone(VALID_GUARDIAN_PHONE_BOB).build();
+        model.setPerson(typicalSecondPerson, secondPerson);
         Person editedSecondPerson = new PersonBuilder(secondPerson)
                 .withGuardianPhone(firstPerson.getGuardianPhone().getValue())
                 .build();
@@ -238,15 +301,19 @@ public class EditCommandTest {
     }
 
     @Test
-    public void execute_noFieldSpecifiedUnfilteredList_success() {
+    public void execute_noFieldSpecifiedUnfilteredList_failure() {
         EditCommand editCommand = new EditCommand(INDEX_FIRST_PERSON, new EditPersonDescriptor());
-        Person editedPerson = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
 
-        String expectedMessage = String.format(EditCommand.MESSAGE_EDIT_PERSON_SUCCESS, Messages.format(editedPerson));
+        assertCommandFailure(editCommand, model, EditCommand.MESSAGE_NO_CHANGE);
+    }
 
-        Model expectedModel = new ModelManager(new AddressBook(model.getAddressBook()), new UserPrefs());
+    @Test
+    public void execute_sameValuesAsCurrent_failure() {
+        Person firstPerson = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
+        EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder(firstPerson).build();
+        EditCommand editCommand = new EditCommand(INDEX_FIRST_PERSON, descriptor);
 
-        assertCommandSuccess(editCommand, model, expectedMessage, expectedModel);
+        assertCommandFailure(editCommand, model, EditCommand.MESSAGE_NO_CHANGE);
     }
 
     @Test
@@ -379,4 +446,72 @@ public class EditCommandTest {
         assertEquals(expected, editCommand.toString());
     }
 
+    @Test
+    public void execute_emptyOptionalContactPrefix_clearsOnlyThatField() throws Exception {
+        Person original = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
+
+        assertEquals(new PersonBuilder(original).withoutPhone().build(), editFirstPerson(" p/"));
+        model = new ModelManager(getTypicalAddressBook(), new UserPrefs());
+        assertEquals(new PersonBuilder(original).withoutEmail().build(), editFirstPerson(" e/"));
+        model = new ModelManager(getTypicalAddressBook(), new UserPrefs());
+        assertEquals(new PersonBuilder(original).withoutAddress().build(), editFirstPerson(" a/"));
+    }
+
+    @Test
+    public void execute_emptyOptionalContactPrefixes_clearsAllAndPreservesOtherFields() throws Exception {
+        Person original = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
+
+        Person edited = editFirstPerson(" p/ e/ a/ n/Alice Lim");
+
+        assertEquals(new PersonBuilder(original).withoutContactDetails().withName("Alice Lim").build(), edited);
+        assertEquals(original.getOutstandingFee(), edited.getOutstandingFee());
+        assertEquals(original.getTags(), edited.getTags());
+    }
+
+    @Test
+    public void execute_clearThenSetPhone_success() throws Exception {
+        Person original = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
+
+        editFirstPerson(" p/");
+        Person edited = editFirstPerson(" p/81234567");
+
+        assertEquals(new PersonBuilder(original).withPhone("81234567").build(), edited);
+    }
+
+    @Test
+    public void parse_emptyGuardianPrefix_failure() {
+        assertThrows(ParseException.class, () -> new EditCommandParser().parse("1 g/"));
+        assertThrows(ParseException.class, () -> new EditCommandParser().parse("1 gp/"));
+    }
+
+    @Test
+    public void execute_clearPhone_persistsAfterReload(@TempDir Path temporaryFolder) throws Exception {
+        JsonAddressBookStorage addressBookStorage =
+                new JsonAddressBookStorage(temporaryFolder.resolve("addressBook.json"));
+        JsonUserPrefsStorage userPrefsStorage =
+                new JsonUserPrefsStorage(temporaryFolder.resolve("userPrefs.json"));
+        Logic logic = new LogicManager(model, new StorageManager(addressBookStorage, userPrefsStorage));
+        Person original = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
+
+        logic.execute("edit 1 p/");
+
+        Person reloaded = addressBookStorage.readAddressBook().orElseThrow().getPersonList().get(0);
+        assertEquals(new PersonBuilder(original).withoutPhone().build(), reloaded);
+    }
+
+    /**
+     * Parses {@code args} as arguments to {@code edit 1}, executes it on {@code model} and returns the first student.
+     */
+    private Person editFirstPerson(String args) throws Exception {
+        new EditCommandParser().parse(INDEX_FIRST_PERSON.getOneBased() + args).execute(model);
+        return model.getAddressBook().getPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
+    }
+
+    private static AddressBook addressBookOf(Person... persons) {
+        AddressBook addressBook = new AddressBook();
+        for (Person person : persons) {
+            addressBook.addPerson(person);
+        }
+        return addressBook;
+    }
 }

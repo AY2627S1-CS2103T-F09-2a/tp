@@ -356,6 +356,20 @@
     -fx-vgap: 3;
 }
 
+/*
+ * Long tags on a student card. Each tag is at most 230 pixels wide, and a longer tag is cut off with "...".
+ * The tag row is also at least 230 pixels wide:
+ * - Without a minimum, a FlowPane is at least as wide as the full text of its widest tag, because it ignores the
+ *   tag's maximum width, so a long tag pushed the row past the card's edge.
+ * - The card's height is calculated as if the tag row were this minimum width, instead of about 130 pixels, so a
+ *   smaller minimum would add blank space at the bottom of the card. Some blank space remains on wider cards.
+ * The tag row is never narrower than 239 pixels: the student list is at least 300 pixels wide, even with the divider
+ * dragged fully left, and a selected card has a border.
+ */
+#cardPane #tags {
+    -fx-min-width: 230;
+}
+
 #tags .label {
     -fx-text-fill: white;
     -fx-background-color: #3e7b91;
@@ -363,4 +377,5 @@
     -fx-border-radius: 2;
     -fx-background-radius: 2;
     -fx-font-size: 11;
+    -fx-max-width: 230; /* Repeated as PersonCardTagLayoutTest.MAX_TAG_WIDTH, so change both together. */
 }

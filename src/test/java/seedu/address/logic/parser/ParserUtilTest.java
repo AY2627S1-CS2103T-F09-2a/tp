@@ -74,6 +74,19 @@ public class ParserUtilTest {
     }
 
     @Test
+    public void normalizeCommandWord_anyCase_returnsLowerCase() {
+        assertEquals("list", ParserUtil.normalizeCommandWord("list"));
+        assertEquals("list", ParserUtil.normalizeCommandWord("LIST"));
+        assertEquals("findguardian", ParserUtil.normalizeCommandWord("FindGuardian"));
+        assertEquals("lsit.", ParserUtil.normalizeCommandWord("LSIT."));
+    }
+
+    @Test
+    public void normalizeCommandWord_null_throwsNullPointerException() {
+        assertThrows(NullPointerException.class, () -> ParserUtil.normalizeCommandWord(null));
+    }
+
+    @Test
     public void parseName_null_throwsNullPointerException() {
         assertThrows(NullPointerException.class, () -> ParserUtil.parseName((String) null));
     }
@@ -209,5 +222,13 @@ public class ParserUtilTest {
         Set<Tag> expectedTagSet = Set.of(new Tag(VALID_TAG_1), new Tag(VALID_TAG_2));
 
         assertEquals(expectedTagSet, actualTagSet);
+    }
+
+    @Test
+    public void parseTags_tagsDifferingOnlyInCase_keepsFirstTag() throws Exception {
+        Set<Tag> actualTagSet = ParserUtil.parseTags(List.of("Math", "math"));
+
+        assertEquals(1, actualTagSet.size());
+        assertEquals("Math", actualTagSet.iterator().next().tagName);
     }
 }

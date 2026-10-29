@@ -6,14 +6,14 @@ import seedu.address.model.AddressBook;
 import seedu.address.model.Model;
 
 /**
- * Clears the address book.
+ * Clears all students from Poco Book.
  */
 public class ClearCommand extends Command {
 
     public static final String COMMAND_WORD = "clear";
     public static final String MESSAGE_USAGE = COMMAND_WORD
             + ": Deletes all students, including hidden students.\nExample: " + COMMAND_WORD;
-    public static final String MESSAGE_SUCCESS = "Address book has been cleared!";
+    public static final String MESSAGE_SUCCESS = "All students have been cleared from Poco Book.";
 
 
     @Override
