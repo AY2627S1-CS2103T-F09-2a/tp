@@ -46,6 +46,10 @@ Poco Book is a **desktop application for independent tutors to manage students, 
 
 **:information_source: Notes about the command format:**<br>
 
+* Command words can be typed in any letter case.<br>
+  For example, `list`, `List` and `LIST` all list every student, and `DELETE 2` asks for the same confirmation as `delete 2`. Prefixes such as `n/` and `gp/` must still be typed in lower case.<br>
+  If the command word is not recognised, such as `lsit`, Poco Book shows that word, suggests `help COMMAND` and lists the available command words. Nothing is changed.
+
 * Words in `UPPER_CASE` are the parameters to be supplied by the user.<br>
   For example, in `add n/NAME`, replace `NAME` with a value such as `John Doe`.
 
@@ -78,8 +82,8 @@ For example, `help paid` explains how to clear a displayed student’s full outs
 
 Format: `help [COMMAND]`
 
-* Use one exact, lower-case command word: `add`, `clear`, `delete`, `edit`, `exit`, `fees`, `feesummary`, `find`, `findguardian`, `help`, `list`, `paid`, `setoutstanding`, or `view`.
-* `help unknown` and `help paid 1` report an error and list the available command words.
+* Use one command word, in any letter case: `add`, `clear`, `delete`, `edit`, `exit`, `fees`, `feesummary`, `find`, `findguardian`, `help`, `list`, `paid`, `setoutstanding`, or `view`. For example, `help PAID` shows the same instructions as `help paid`.
+* `help lsit` shows `Unknown command: "lsit".` and lists the available command words. `help paid 1` asks you to type only one command word after `help`.
 * Long help instructions wrap in the result area; scroll vertically to read the remaining lines.
 * Help leaves student records, the displayed list and selection unchanged and does not save data.
 * `help clear` and `help exit` show instructions only; they do not clear data or close the app.

@@ -18,8 +18,14 @@ public class HelpCommand extends Command {
     public static final String COMMAND_WORD = "help";
 
     public static final String MESSAGE_USAGE = COMMAND_WORD
-            + ": Opens the help window, or shows help for one command in the result area.\n"
-            + "Parameters: [COMMAND]\nExample: " + COMMAND_WORD + " paid";
+            + ": Opens the help window, or, if COMMAND is given, shows how to use that command in the result area.\n"
+            + "Parameters: [COMMAND]\nExample: " + COMMAND_WORD + " " + PaidCommand.COMMAND_WORD;
+
+    public static final String MESSAGE_HELP_HINT =
+            "Type " + COMMAND_WORD + " COMMAND to see a command's format and an example.";
+
+    public static final String MESSAGE_EXTRA_WORDS = "Type only one command word after " + COMMAND_WORD
+            + ", such as " + COMMAND_WORD + " " + PaidCommand.COMMAND_WORD + ".";
 
     public static final String SHOWING_HELP_MESSAGE = "Opened help window.";
 
@@ -72,6 +78,13 @@ public class HelpCommand extends Command {
      */
     public static String getAvailableCommands() {
         return COMMAND_USAGE.keySet().stream().sorted().collect(Collectors.joining(", "));
+    }
+
+    /**
+     * Returns a line listing the implemented command words, for error messages that help the user find a command.
+     */
+    public static String getAvailableCommandsMessage() {
+        return "Available commands: " + getAvailableCommands();
     }
 
     @Override
