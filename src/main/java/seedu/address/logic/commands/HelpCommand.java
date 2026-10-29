@@ -45,7 +45,9 @@ public class HelpCommand extends Command {
             Map.entry(PaidCommand.COMMAND_WORD, PaidCommand.MESSAGE_USAGE
                     + "\nClears the whole outstanding fee; the student must have a fee to pay."),
             Map.entry(SetOutstandingCommand.COMMAND_WORD, SetOutstandingCommand.MESSAGE_USAGE
-                    + "\n" + SetOutstandingCommand.MESSAGE_INVALID_AMOUNT + " Use 0 to clear the fee."),
+                    + "\n" + SetOutstandingCommand.MESSAGE_INVALID_AMOUNT
+                    + " Use 0 to clear the fee, or +AMOUNT to add to it.\n"
+                    + SetOutstandingCommand.MESSAGE_INVALID_INCREMENT),
             Map.entry(ViewCommand.COMMAND_WORD, ViewCommand.MESSAGE_USAGE));
 
     private final String targetCommand;

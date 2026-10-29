@@ -270,6 +270,34 @@ The sequence diagram below shows these steps for `delete 2`. For simplicity, it 
 
 The `JavaFX UI tests` job in the Java CI workflow sets `POCO_UI_TESTS` and runs `./gradlew test coverage` under `xvfb-run` on a Linux runner, so the JavaFX suite executes in a virtual display on every push instead of being gated off. A follow-up step, [`.github/verify-ui-test-results.py`](../.github/verify-ui-test-results.py), reads the JUnit report and fails the job if any test that the variable gates was skipped rather than executed. That job runs beside the three required cross-platform builds, which keep their own settings, and uploads its coverage to Codecov alongside them so the dialog and window lines are measured in CI.
 
+### Adding a charge to an outstanding fee
+
+A tutor who bills the same student again before the earlier amount is settled needs to add to the recorded fee, not replace it. `setoutstanding INDEX +AMOUNT` performs that addition, so the tutor does not have to work out the new total and cannot drop the earlier charge by mistyping the sum.
+
+#### Implementation
+
+`SetOutstandingCommandParser` treats a leading `+` as the only difference between the two meanings of the command. It strips the sign, validates the remaining digits with `OutstandingFee.VALIDATION_REGEX` and `OutstandingFee#isValidOutstandingFee`, and then builds the command with `SetOutstandingCommand#addToOutstandingFee(Index, OutstandingFee)`. Replacement, addition and clearing therefore share one parser and one command class, so `setoutstanding` keeps a single entry in `AddressBookParser`, in the user guide and in the command summary.
+
+`SetOutstandingCommand` keeps a `boolean` that records which meaning was parsed. For an addition, `execute` reads the current amount from `Person#getOutstandingFee()`, which returns an `Optional`, treats an absent fee as `BigDecimal.ZERO`, adds the parsed amount and rebuilds the `Person` with every other field copied verbatim. Two guards run before the record is written:
+
+* `+0` is rejected at parse time with `MESSAGE_INVALID_INCREMENT`, because adding nothing is either a typo or a no-op that would still cost the tutor a step.
+* If the sum would exceed the `S$99999.99` cap, `execute` throws `CommandException` with `MESSAGE_TOTAL_TOO_LARGE`, which names the amount that was refused and the total it would have produced. The bounds check runs before `new OutstandingFee(...)`; otherwise the value object's own `checkArgument` would throw an `IllegalArgumentException`, which no caller turns into a message for the tutor.
+
+Feedback for an addition reports the transition rather than only the new value — `Added S$50.00 to the outstanding fee for Alex Yeoh: S$120.00 -> S$170.00` — so the tutor can confirm what the previous balance was. Replacement and clearing keep their existing feedback.
+
+#### Design considerations
+
+* **An addition mode on `setoutstanding` instead of a new `charge` command (current choice).** The parser already owns `INDEX AMOUNT`, and the `+` prefix is the same convention the tutor sees on a receipt. One command word, one parser, one success message family and one help entry stay in step, and the change is a few dozen lines inside the existing class instead of a new command, parser, `AddressBookParser` case, help entry and test suite.
+  * Cons: `+AMOUNT` is a second grammar in the same command, so the user guide has to explain both forms, and the two forms have different bounded ranges (`0` clears but `+0` is invalid).
+* **A separate `charge` command.** This keeps every command with exactly one grammar, which is easier to document and to test.
+  * Cons: it duplicates index validation and the copy-then-replace of `Person`, and a tutor who wants to correct an amount still needs `setoutstanding` as well, so the two commands must be read together to understand one field.
+* **Recording a payment history instead of a running total.** Storing each charge as a row would make partial payments and statements possible.
+  * Cons: it changes the storage format, the `Person` model and the fee total calculations in one step, which is a larger change than the iteration allows. The running total stays the single source of truth for v1.5.
+
+#### Testing
+
+`SetOutstandingCommandParserTest` covers `+50`, `+0.01`, `+99999.99` and the `AddressBookParser` route, and rejects `+0`, `+`, `++50`, `+50.001`, `+100000` and `+abc`. `SetOutstandingCommandTest` checks that an addition to an existing fee increases the total and preserves every other field, that an addition to a student with no fee records the added amount, that an addition to exactly `S$99999.99` succeeds, and that an addition beyond the cap is rejected with the record unchanged.
+
 ### Fee summary and full-payment commands
 
 The all-student fee total (`feesummary`) and full-payment recording (`paid`) extend the outstanding-fee feature described under the Logic and Model components. Both commands work on the immutable `OutstandingFee` value object, so no `Person`, `Model` or storage-format change was needed for v1.4.
@@ -795,15 +823,15 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 **Guarantees:**
 
-* Only the specified student's outstanding fee is changed. The new amount replaces the previous fee and is never added to or subtracted from it.
+* Only the specified student's outstanding fee is changed. A plain amount replaces the previous fee, and an amount written as `+AMOUNT` adds to it; no other stored field is changed.
 * If the request is invalid, no student data is changed.
 * If the data is saved successfully, the new outstanding fee, or its absence after a fee is cleared, still applies after Poco Book restarts.
 
 **MSS**
 
 1.  Tutor <u>finds the student by name (UC02)</u>.
-2.  Tutor requests to set the outstanding fee of a specific student in the displayed list to a new amount.
-3.  Poco Book replaces the student's outstanding fee with the new amount, saves the data, and shows the student's new outstanding fee.
+2.  Tutor requests to set the outstanding fee of a specific student in the displayed list to a new amount, or to add an amount to the fee already recorded.
+3.  Poco Book replaces or increases the student's outstanding fee accordingly, saves the data, and shows the resulting amount, together with the previous amount when the tutor added to it.
 
     Use case ends.
 
@@ -823,9 +851,15 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
       Use case resumes at step 2.
 
-* 2b. The amount is missing or invalid (e.g., negative, above S$99999.99, or with more than two decimal places).
+* 2b. The amount is missing or invalid (e.g., negative, above S$99999.99, with more than two decimal places, or `+0` when adding).
 
     * 2b1. Poco Book shows an error message describing valid amounts.
+
+      Use case resumes at step 2.
+
+* 2c. Adding the amount would take the fee above S$99999.99.
+
+    * 2c1. Poco Book shows an error message naming the amount that was refused and the total it would have produced. Nothing is changed.
 
       Use case resumes at step 2.
 
@@ -995,6 +1029,10 @@ testers are expected to do more *exploratory* testing.
 
 1. Enter `view 1`, then `setoutstanding 1 75.50`.<br>
    Expected: Alex remains selected; his card and details pane show S$75.50. His other fields stay unchanged.
+
+1. Enter `setoutstanding 1 +24.50`.<br>
+   Expected: The feedback reads `Added S$24.50 to the outstanding fee for Alex Yeoh: S$75.50 -> S$100.00`, and his card and details pane show S$100.00. Enter `setoutstanding 1 +0` and `setoutstanding 1 +99999.99`.<br>
+   Expected: Both report an error and Alex still owes S$100.00.
 
 1. Enter `setoutstanding 1 0`.<br>
    Expected: Alex leaves the filtered list, Charlotte becomes index 1, and Alex's selection and details pane clear.

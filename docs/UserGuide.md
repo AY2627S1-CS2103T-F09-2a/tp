@@ -159,19 +159,23 @@ The total is the sum of all individual amounts and can therefore be larger than 
 
 Examples: `feesummary` in a book where two students owe S$180.00 and S$75.50 shows `Across all stored students: 2 student(s) owe a total of S$255.50. Displayed list unchanged.`
 
-### Setting or clearing an outstanding fee: `setoutstanding`
+### Setting, adding to, or clearing an outstanding fee: `setoutstanding`
 
-Format: `setoutstanding INDEX AMOUNT`
+Format: `setoutstanding INDEX AMOUNT` or `setoutstanding INDEX +AMOUNT`
 
 * `INDEX` identifies a student in the current displayed list, starting from 1. Signs and leading zeros are rejected.
-* `AMOUNT` replaces the full outstanding fee. Use a value from `0.01` to `99999.99`, with at most two decimal places.
+* `AMOUNT` without a sign replaces the full outstanding fee. Use a value from `0.01` to `99999.99`, with at most two decimal places.
+* `+AMOUNT` adds to the fee that is already recorded, instead of replacing it. Use it when you charge the same student again before the earlier amount is settled, so you do not have to work out the new total yourself. The amount to add must be from `0.01` to `99999.99`, and `+0` is rejected.
+* A student with no outstanding fee counts as owing `S$0.00`, so `setoutstanding 1 +50` on that student records `S$50.00`.
+* If an addition would push the fee above `S$99999.99`, the command is rejected with a message naming the amount that was refused and the total it would have produced. Nothing is changed.
 * Use `0` to clear the fee. A student whose fee is cleared disappears from a `fees` result.
-* Feedback shows `Set outstanding fee for NAME: S$AMOUNT`, with exactly two decimal places, including
+* Feedback for a replacement or a clear shows `Set outstanding fee for NAME: S$AMOUNT`, with exactly two decimal places, including
   `S$0.00` when clearing a fee. Clearing an already-cleared fee succeeds with the same `S$0.00` feedback.
+* Feedback for an addition shows the change, e.g. `Added S$50.00 to the outstanding fee for Alex Yeoh: S$120.00 -> S$170.00`.
 * Other student details and the current filter are preserved. Invalid input leaves records and the list unchanged.
 * Successful changes are saved automatically. If a save error is reported, Poco Book still shows the new fee. The fee is saved the next time Poco Book saves successfully, such as after your next change, and is lost if you close Poco Book before then.
 
-Examples: `setoutstanding 1 150.50`, `setoutstanding 1 0`.
+Examples: `setoutstanding 1 150.50`, `setoutstanding 1 +50`, `setoutstanding 1 0`.
 
 ### Recording a full payment: `paid`
 
@@ -341,7 +345,7 @@ Action | Format, Examples
 **View** | `view INDEX`<br> e.g., `view 1`
 **Fees** | `fees [min/AMOUNT]`<br> e.g., `fees min/100`
 **Fee summary** | `feesummary`
-**Set outstanding fee** | `setoutstanding INDEX AMOUNT`<br> e.g., `setoutstanding 1 150.50`; `setoutstanding 1 0` clears it
+**Set outstanding fee** | `setoutstanding INDEX AMOUNT`<br> e.g., `setoutstanding 1 150.50`; `setoutstanding 1 0` clears it<br>`setoutstanding INDEX +AMOUNT` adds to the fee already recorded<br> e.g., `setoutstanding 1 +50`
 **Record payment** | `paid INDEX`<br> e.g., `paid 1`
 **Help** | `help [COMMAND]`<br> e.g., `help paid`
 **Exit** | `exit`
