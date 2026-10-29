@@ -3,8 +3,6 @@ package seedu.address.model.person;
 import static java.util.Objects.requireNonNull;
 import static seedu.address.commons.util.AppUtil.checkArgument;
 
-import java.text.Normalizer;
-
 /**
  * Represents a guardian's name.
  * Guarantees: immutable; normalized to NFC with single ASCII spaces; valid as declared in
@@ -15,11 +13,8 @@ public final class GuardianName {
     public static final String MESSAGE_CONSTRAINTS =
             "Guardian names must be 1-70 characters long, contain at least one letter, and use only letters, "
             + "numbers, spaces, straight apostrophes ('), ASCII hyphens (-), periods, parentheses, or S/O and D/O "
-            + "as separate words.";
-    public static final String VALIDATION_REGEX = "[\\p{L}\\p{M}0-9 '.()\\-]+";
-
-    private static final int MIN_NAME_LENGTH = 1;
-    private static final int MAX_NAME_LENGTH = 70;
+            + "as separate words between names.";
+    public static final String VALIDATION_REGEX = Name.VALIDATION_REGEX;
 
     private final String fullName;
 
@@ -31,7 +26,7 @@ public final class GuardianName {
     public GuardianName(String name) {
         requireNonNull(name);
         checkArgument(isValidName(name), MESSAGE_CONSTRAINTS);
-        fullName = normalize(name);
+        fullName = Name.normalize(name);
     }
 
     /**
@@ -39,21 +34,8 @@ public final class GuardianName {
      * and at least one letter outside S/O and D/O. Non-ASCII whitespace and control characters are rejected.
      */
     public static boolean isValidName(String test) {
-        requireNonNull(test);
-        String normalized = normalize(test);
-        int length = normalized.codePointCount(0, normalized.length());
-        return length >= MIN_NAME_LENGTH && length <= MAX_NAME_LENGTH
-                && normalized.replaceAll(Name.PATRONYMIC_REGEX, "SO").matches(VALIDATION_REGEX)
-                && normalized.replaceAll(Name.PATRONYMIC_REGEX, "").codePoints().anyMatch(Character::isLetter);
-    }
-
-    /**
-     * Returns the NFC name with surrounding ASCII spaces removed and internal ASCII spaces collapsed.
-     */
-    private static String normalize(String name) {
-        return Normalizer.normalize(name, Normalizer.Form.NFC)
-                .replaceAll("^ +| +$", "")
-                .replaceAll(" +", " ");
+        // A guardian name follows the same rules as a student name.
+        return Name.isValidName(test);
     }
 
     public String getFullName() {

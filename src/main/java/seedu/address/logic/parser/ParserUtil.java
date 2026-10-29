@@ -31,7 +31,7 @@ public class ParserUtil {
      * written as separate words are part of names, not prefixes.
      */
     private static final Pattern PREFIX_LIKE_TOKEN =
-            Pattern.compile("(?<=^|\\s)(?![SsDd]/[Oo](?:\\s|$))([A-Za-z]+/)");
+            Pattern.compile("(?<=^|\\s)(?!" + Name.PATRONYMIC_MARKER + "(?:\\s|$))([A-Za-z]+/)");
 
     /**
      * Parses {@code oneBasedIndex} into an {@code Index} and returns it. Leading and trailing whitespaces will be

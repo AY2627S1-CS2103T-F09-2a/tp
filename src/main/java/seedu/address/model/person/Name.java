@@ -15,10 +15,15 @@ public class Name {
     public static final String MESSAGE_CONSTRAINTS =
             "Names must be 1-70 characters long, contain at least one letter, and use only letters, "
             + "numbers, spaces, straight apostrophes ('), ASCII hyphens (-), periods, parentheses, or S/O and D/O "
-            + "as separate words.";
+            + "as separate words between names.";
     public static final String VALIDATION_REGEX = "[\\p{L}\\p{M}0-9 '.()\\-]+";
-    /** Matches S/O or D/O (son of, daughter of) written as a separate word, in any case. */
-    public static final String PATRONYMIC_REGEX = "(?<=^| )[SsDd]/[Oo](?= |$)";
+    /** S/O or D/O (son of, daughter of), in any case. */
+    public static final String PATRONYMIC_MARKER = "[SsDd]/[Oo]";
+    /** Matches S/O or D/O written as a separate word. */
+    public static final String PATRONYMIC_REGEX = "(?<=^| )" + PATRONYMIC_MARKER + "(?= |$)";
+    /** Matches a normalized name that starts or ends with S/O or D/O, which must come between names. */
+    private static final String EDGE_PATRONYMIC_REGEX =
+            PATRONYMIC_MARKER + "(?: .*)?|.* " + PATRONYMIC_MARKER;
 
     private static final int MIN_NAME_LENGTH = 1;
     private static final int MAX_NAME_LENGTH = 70;
@@ -38,7 +43,8 @@ public class Name {
 
     /**
      * Returns true if the name is valid after normalization, with 1-70 Unicode code points
-     * and at least one letter outside S/O and D/O. Non-ASCII whitespace and control characters are rejected.
+     * and at least one letter outside S/O and D/O, which may appear only between other words.
+     * Non-ASCII whitespace and control characters are rejected.
      */
     public static boolean isValidName(String test) {
         requireNonNull(test);
@@ -46,13 +52,14 @@ public class Name {
         int length = normalized.codePointCount(0, normalized.length());
         return length >= MIN_NAME_LENGTH && length <= MAX_NAME_LENGTH
                 && normalized.replaceAll(PATRONYMIC_REGEX, "SO").matches(VALIDATION_REGEX)
-                && normalized.replaceAll(PATRONYMIC_REGEX, "").codePoints().anyMatch(Character::isLetter);
+                && normalized.replaceAll(PATRONYMIC_REGEX, "").codePoints().anyMatch(Character::isLetter)
+                && !normalized.matches(EDGE_PATRONYMIC_REGEX);
     }
 
     /**
      * Returns the NFC name with surrounding ASCII spaces removed and internal ASCII spaces collapsed.
      */
-    private static String normalize(String name) {
+    static String normalize(String name) {
         return Normalizer.normalize(name, Normalizer.Form.NFC)
                 .replaceAll("^ +| +$", "")
                 .replaceAll(" +", " ");
