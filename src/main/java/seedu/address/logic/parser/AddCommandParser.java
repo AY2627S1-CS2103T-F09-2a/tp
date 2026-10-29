@@ -8,6 +8,7 @@ import static seedu.address.logic.parser.CliSyntax.PREFIX_GUARDIAN_PHONE;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_NAME;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_OUTSTANDING_FEE;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_PHONE;
+import static seedu.address.logic.parser.CliSyntax.PREFIX_TAG;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -15,6 +16,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import seedu.address.logic.commands.AddCommand;
 import seedu.address.logic.parser.exceptions.ParseException;
@@ -26,19 +28,21 @@ import seedu.address.model.person.Name;
 import seedu.address.model.person.OutstandingFee;
 import seedu.address.model.person.Person;
 import seedu.address.model.person.Phone;
+import seedu.address.model.tag.Tag;
 
 /**
  * Parses input arguments and creates a new AddCommand object
  */
 public class AddCommandParser implements Parser<AddCommand> {
 
+    public static final String MESSAGE_EMPTY_TAG = "A tag cannot be empty. Omit t/ to add a student without tags.";
     public static final String MESSAGE_MISSING_PARAMETER = "Missing required parameter(s): %1$s.";
     public static final String MESSAGE_REPEATED_PARAMETER = "The %1$s parameter must not be repeated.";
 
     private static final List<Prefix> REQUIRED_PREFIXES =
             List.of(PREFIX_NAME, PREFIX_GUARDIAN_NAME, PREFIX_GUARDIAN_PHONE);
 
-    /** Every prefix accepted by {@code add}, mapped to the full parameter name used in error messages. */
+    /** Every single-value prefix accepted by {@code add}, mapped to the full parameter name used in error messages. */
     private static final Map<Prefix, String> PARAMETER_NAMES = new LinkedHashMap<>();
 
     static {
@@ -58,7 +62,8 @@ public class AddCommandParser implements Parser<AddCommand> {
      */
     public AddCommand parse(String args) throws ParseException {
         Prefix[] prefixes = PARAMETER_NAMES.keySet().toArray(Prefix[]::new);
-        ArgumentMultimap argMultimap = ArgumentTokenizer.tokenize(args, prefixes);
+        ArgumentMultimap argMultimap = ArgumentTokenizer.tokenize(args,
+                Stream.concat(Stream.of(prefixes), Stream.of(PREFIX_TAG)).toArray(Prefix[]::new));
 
         if (!argMultimap.getPreamble().isEmpty() || hasUnknownPrefix(argMultimap)) {
             throw new ParseException(String.format(MESSAGE_INVALID_COMMAND_FORMAT, AddCommand.MESSAGE_USAGE));
@@ -75,20 +80,23 @@ public class AddCommandParser implements Parser<AddCommand> {
         Address address = parseOptional(argMultimap.getValue(PREFIX_ADDRESS), ParserUtil::parseAddress);
         OutstandingFee outstandingFee =
                 parseOptional(argMultimap.getValue(PREFIX_OUTSTANDING_FEE), ParserUtil::parseOutstandingFee);
+        if (argMultimap.getAllValues(PREFIX_TAG).stream().anyMatch(String::isEmpty)) {
+            throw new ParseException(MESSAGE_EMPTY_TAG);
+        }
+        Set<Tag> tags = ParserUtil.parseTags(argMultimap.getAllValues(PREFIX_TAG));
 
-        Person person = new Person(name, phone, email, address, guardianName, guardianPhone, outstandingFee,
-                Set.of());
+        Person person = new Person(name, phone, email, address, guardianName, guardianPhone, outstandingFee, tags);
 
         return new AddCommand(person);
     }
 
     /**
      * Returns true if a parameter value other than the address contains a prefix-like token that {@code add}
-     * does not accept, such as {@code t/}. Addresses may contain such text, for example {@code c/o} or
+     * does not accept, such as {@code x/}. Addresses may contain such text, for example {@code c/o} or
      * {@code Blk A/B}.
      */
     private static boolean hasUnknownPrefix(ArgumentMultimap argMultimap) {
-        return PARAMETER_NAMES.keySet().stream()
+        return Stream.concat(PARAMETER_NAMES.keySet().stream(), Stream.of(PREFIX_TAG))
                 .filter(prefix -> !prefix.equals(PREFIX_ADDRESS))
                 .flatMap(prefix -> argMultimap.getAllValues(prefix).stream())
                 .anyMatch(ParserUtil::containsPrefixLikeToken);

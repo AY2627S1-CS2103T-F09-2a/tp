@@ -8,6 +8,7 @@ import static seedu.address.logic.parser.CliSyntax.PREFIX_GUARDIAN_PHONE;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_NAME;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_OUTSTANDING_FEE;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_PHONE;
+import static seedu.address.logic.parser.CliSyntax.PREFIX_TAG;
 
 import seedu.address.commons.util.ToStringBuilder;
 import seedu.address.logic.Messages;
@@ -30,7 +31,8 @@ public class AddCommand extends Command {
             + "[" + PREFIX_PHONE + "PHONE] "
             + "[" + PREFIX_EMAIL + "EMAIL] "
             + "[" + PREFIX_ADDRESS + "ADDRESS] "
-            + "[" + PREFIX_OUTSTANDING_FEE + "AMOUNT]\n"
+            + "[" + PREFIX_OUTSTANDING_FEE + "AMOUNT] "
+            + "[" + PREFIX_TAG + "TAG]...\n"
             + "Example: " + COMMAND_WORD + " "
             + PREFIX_NAME + "Riya Kumar "
             + PREFIX_GUARDIAN_NAME + "Anil Kumar "
@@ -38,7 +40,8 @@ public class AddCommand extends Command {
             + PREFIX_PHONE + "98765432 "
             + PREFIX_EMAIL + "riya@example.com "
             + PREFIX_ADDRESS + "12 Clementi Ave 3 "
-            + PREFIX_OUTSTANDING_FEE + "75.50";
+            + PREFIX_OUTSTANDING_FEE + "75.50 "
+            + PREFIX_TAG + "Math";
 
     public static final String MESSAGE_SUCCESS = "New student added:\n%1$s";
     public static final String MESSAGE_DUPLICATE_PERSON = "This student already exists: another student has the "

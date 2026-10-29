@@ -151,12 +151,12 @@ Format: `help [COMMAND]`
 
 Adds a student to Poco Book with their required guardian contact and optional personal contact or outstanding fee details.
 
-Format: `add n/NAME g/GUARDIAN_NAME gp/GUARDIAN_PHONE [p/PHONE] [e/EMAIL] [a/ADDRESS] [f/AMOUNT]`
+Format: `add n/NAME g/GUARDIAN_NAME gp/GUARDIAN_PHONE [p/PHONE] [e/EMAIL] [a/ADDRESS] [f/AMOUNT] [t/TAG]…​`
 
-* `n/NAME`, `g/GUARDIAN_NAME`, and `gp/GUARDIAN_PHONE` are required; `p/PHONE`, `e/EMAIL`, `a/ADDRESS`, and `f/AMOUNT` are optional.
+* `n/NAME`, `g/GUARDIAN_NAME`, and `gp/GUARDIAN_PHONE` are required; `p/PHONE`, `e/EMAIL`, `a/ADDRESS`, `f/AMOUNT`, and `t/TAG` are optional.
 * If any required parameters are missing, the error names all of them, such as `Missing required parameter(s): g/, gp/.`
-* Each prefix may appear at most once in an `add` command.
-* `ADDRESS` may contain text such as `c/o`, `Blk A/B`, or `N/A`. Other parameters must not contain unrecognised prefixes such as `t/`.
+* `t/TAG` may be repeated to give the student several tags. Each tag may contain only ASCII letters and digits, with no spaces or punctuation, as for `edit`. Every other prefix may appear at most once in an `add` command.
+* `ADDRESS` may contain text such as `c/o`, `Blk A/B`, or `N/A`, but a `t/` in it starts a tag. Other parameters must not contain unrecognised prefixes such as `x/`.
 * `NAME` and `GUARDIAN_NAME` must be 1 to 70 characters long and contain at least one letter. They may use letters (including non-English letters such as `é` or `李`), digits, spaces, apostrophes, hyphens, periods and parentheses. Extra spaces are removed before the length is counted.
 * `ADDRESS`, if provided, must be 1 to 150 characters long and fit on one line.
 * `EMAIL`, if provided, must be at most 254 characters long, with at most 64 characters before `@`, and must end in a domain such as `example.com` (the last part must be at least 2 letters).
@@ -171,6 +171,7 @@ Format: `add n/NAME g/GUARDIAN_NAME gp/GUARDIAN_PHONE [p/PHONE] [e/EMAIL] [a/ADD
 Examples:
 * `add n/Alex Tan g/Mei Tan gp/92345678`
 * `add n/Riya Kumar g/Anil Kumar gp/97654321 p/98765432 e/riya@example.com a/12 Clementi Ave 3 f/75.50`
+* `add n/Wei Ling g/Tan Mei gp/91234567 t/Math t/Sec3`: Adds a student with the tags `Math` and `Sec3`.
 * `add n/José O'Neil-Tan g/Maria O'Neil gp/91112222` is accepted: accented letters, apostrophes and hyphens are allowed in names.
 * `add n/Tom & Jerry g/Mei Tan gp/92345678` is rejected because `&` is not allowed in names.
 * `add n/Alex Tan g/Mei Tan gp/92345678 e/alex@example` is rejected because the email has no domain ending such as `.com`.
@@ -433,7 +434,7 @@ reopen just one before editing that folder again; use a backup if changes have a
 
 Action | Format, Examples
 --------|------------------
-**Add** | `add n/NAME g/GUARDIAN_NAME gp/GUARDIAN_PHONE [p/PHONE] [e/EMAIL] [a/ADDRESS] [f/AMOUNT]` <br> e.g., `add n/Riya Kumar g/Anil Kumar gp/97654321 p/98765432 e/riya@example.com a/12 Clementi Ave 3 f/75.50`
+**Add** | `add n/NAME g/GUARDIAN_NAME gp/GUARDIAN_PHONE [p/PHONE] [e/EMAIL] [a/ADDRESS] [f/AMOUNT] [t/TAG]…​` <br> e.g., `add n/Riya Kumar g/Anil Kumar gp/97654321 p/98765432 e/riya@example.com a/12 Clementi Ave 3 f/75.50 t/Math`
 **Clear** | `clear`
 **Delete** | `delete INDEX`, then press Y to confirm or N to cancel<br> e.g., `delete 3`
 **Edit** | `edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [a/ADDRESS] [g/GUARDIAN_NAME] [gp/GUARDIAN_PHONE] [t/TAG]…​`<br> e.g., `edit 2 n/James Lee e/jameslee@example.com`
