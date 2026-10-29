@@ -28,6 +28,16 @@ public class ResultDisplayRowCountTest {
     }
 
     @Test
+    public void rowCountFor_wrappedLines_countsEveryWrappedRow() {
+        // two lines that each wrap onto three rows need six rows
+        assertEquals(6, ResultDisplay.rowCountFor("long\nlong", line -> 3));
+        // only the wrapped line takes extra rows
+        assertEquals(5, ResultDisplay.rowCountFor("short\nlong\nshort", line -> line.equals("long") ? 3 : 1));
+        // wrapped rows are still capped
+        assertEquals(ResultDisplay.MAX_ROWS, ResultDisplay.rowCountFor("long\nlong\nlong\nlong", line -> 4));
+    }
+
+    @Test
     public void rowCountFor_longFeedback_returnsMaximum() {
         assertEquals(ResultDisplay.MAX_ROWS, ResultDisplay.rowCountFor("a\n".repeat(ResultDisplay.MAX_ROWS + 5)));
     }
