@@ -59,13 +59,15 @@ Poco Book is a **desktop application for independent tutors to manage students, 
 * Items followed by `…`​ can appear zero or more times.<br>
   For example, `[t/TAG]…​` may be omitted, or written as `t/friend` or `t/friend t/family`.
 
-* Parameters can be in any order.<br>
+* Parameters with a prefix, such as `n/NAME`, can be in any order.<br>
   For example, if the command specifies `n/NAME p/PHONE`, `p/PHONE n/NAME` is also acceptable.
+  Parameters without a prefix must come before all prefixed parameters (for example, `edit 1 n/Alex`) and stay in the documented order; for example, `setoutstanding 1 75.50` works but `setoutstanding 75.50 1` is rejected.
 
 * For `delete`, `edit`, `view`, and `setoutstanding`, `INDEX` uses ASCII digits without leading zeros, such as `1` or `12`. Leading zeros (`01`), signs (`+1`), decimals, and extra index tokens produce an invalid-command-format message. A positive index larger than `2147483647` produces `The student index provided is invalid.` No record or current list is changed when the index is rejected.
 
-* Extraneous parameters for commands that take no parameters, such as `list`, `exit`, and `clear`, are ignored.<br>
-  For example, `list 123` is interpreted as `list`. `help` accepts an optional command word and rejects unknown targets or extra arguments.
+* Only `list`, `exit`, and `clear` ignore any text typed after the command word.<br>
+  For example, `list 123` is interpreted as `list`, and `clear 123` still deletes all students.
+  `feesummary` takes no parameters and rejects extra text, such as `feesummary 1`. `help` accepts one optional command word and rejects unknown command words or extra text, such as `help paid 1`.
 
 * If you are using a PDF version of this document, be careful when copying and pasting commands that span multiple lines as space characters surrounding line-breaks may be omitted when copied over to the application.
 </div>
