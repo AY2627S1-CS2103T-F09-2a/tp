@@ -19,7 +19,7 @@ public class GuardianPhoneTest {
     public void constructor_invalidPhones_throwsIllegalArgumentException() {
         String[] invalidPhones = {
             "", " ", "123", "000", "9123456", "912345678", "12345678", "31234567", "71234567",
-            "00000000", "+65 9123 4567", "+91234567", "65 9123 4567", "912345678901234", "phone",
+            "00000000", "+60 9123 4567", "+91234567", "65 9123 4567", "912345678901234", "phone",
             "9011p041", "-91234567", "91234567-", "++91234567", "9123+4567", "(91234567)",
             "91234567 ext 4", "9123\t4567", "\t91234567", "91234567\n", "9123\r4567", "9123\u00004567",
             "9123\u00a04567", "９１２３４５６７", "٩١٢٣٤٥٦٧"
@@ -65,9 +65,16 @@ public class GuardianPhoneTest {
     }
 
     @Test
+    public void constructor_countryCode_removedBeforeStorage() {
+        assertEquals("92345678", new GuardianPhone("+65 9234 5678").getValue());
+        assertEquals("92345678", new GuardianPhone("+6592345678").getValue());
+        assertEquals(new GuardianPhone("92345678"), new GuardianPhone("+65-9234-5678"));
+    }
+
+    @Test
     public void constructor_invalidPhone_usesSpecifiedErrorMessage() {
-        String expectedMessage =
-                "Guardian phone numbers must be 8 digits starting with 6, 8, or 9. Spaces and hyphens are allowed.";
+        String expectedMessage = "Guardian phone numbers must be 8 digits starting with 6, 8, or 9, optionally after "
+                + "+65. Spaces and hyphens are allowed.";
         assertThrows(IllegalArgumentException.class, expectedMessage, () -> {
             new GuardianPhone("12345678");
         });

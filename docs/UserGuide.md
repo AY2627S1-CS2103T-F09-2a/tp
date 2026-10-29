@@ -160,7 +160,7 @@ Format: `add n/NAME g/GUARDIAN_NAME gp/GUARDIAN_PHONE [p/PHONE] [e/EMAIL] [a/ADD
 * `NAME` and `GUARDIAN_NAME` must be 1 to 70 characters long and contain at least one letter. They may use letters (including non-English letters such as `é` or `李`), digits, spaces, apostrophes, hyphens, periods and parentheses. Extra spaces are removed before the length is counted.
 * `ADDRESS`, if provided, must be 1 to 150 characters long and fit on one line.
 * `EMAIL`, if provided, must be at most 254 characters long, with at most 64 characters before `@`, and must end in a domain such as `example.com` (the last part must be at least 2 letters).
-* `PHONE` and `GUARDIAN_PHONE` must be 8-digit Singapore numbers starting with `6`, `8`, or `9` (spaces and hyphens between digits are allowed and removed when stored).
+* `PHONE` and `GUARDIAN_PHONE` must be 8-digit Singapore numbers starting with `6`, `8`, or `9`. They may start with the country code `+65`, e.g. `+65 9123 4567`. Spaces, hyphens and the country code are removed when stored.
 * `AMOUNT`, if provided, must be a positive amount between `0.01` and `99999.99` with up to 2 decimal places (and is stored to 2 decimal places).
 * Two students are considered duplicates if they share the same normalized student name (case-insensitive, with consecutive spaces collapsed) and the same normalized guardian phone number. Adding or editing a student into a duplicate is rejected with a message explaining this rule.
 * `NAME` and `GUARDIAN_NAME` may include `S/O` or `D/O` as a separate word, such as `Ravi S/O Raj`. Separate the marker from adjacent text with spaces; for example, use `Tan ( S/O Lim)` rather than `Tan (S/O Lim)`. The marker must come between names, so `S/O Raj`, `Ravi S/O` and `S/O` alone are not valid names. Other slashes are not allowed in names.
@@ -203,7 +203,7 @@ The result states `N student(s) with outstanding fees.` An empty result is succe
 Format: `findguardian KEYWORD [MORE_KEYWORDS]…​`
 
 * Matches whole guardian-name words without regard to case, or an exact guardian phone number.
-* Phone keywords accept hyphens between digits, such as `9234-5678`; a phone containing spaces must be typed without spaces so it remains one keyword.
+* Phone keywords accept hyphens between digits and the country code `+65`, such as `9234-5678` or `+6592345678`; a phone containing spaces must be typed without spaces so it remains one keyword. For example, type `findguardian +6597654321` for the phone `+65 9765 4321`.
 * Multiple keywords use OR matching. Partial name words and partial phone numbers do not match.
 * Searches all stored students, replaces the current filter and preserves stored order. Shared guardians can return multiple students.
 * Matching students are re-indexed from 1. Zero matches is a successful empty result.
