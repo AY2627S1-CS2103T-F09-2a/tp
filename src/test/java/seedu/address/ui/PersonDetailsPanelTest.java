@@ -12,6 +12,7 @@ import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
 import javafx.application.Platform;
 import javafx.geometry.Bounds;
+import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
@@ -58,6 +59,7 @@ public class PersonDetailsPanelTest {
             PersonDetailsPanel panel = new PersonDetailsPanel();
             ScrollPane scrollPane = (ScrollPane) panel.getRoot();
             Stage stage = new Stage();
+            // Roughly the size of the details pane when the main window is at its 750 x 450 minimum.
             stage.setScene(new Scene(scrollPane, 340, 260));
             try {
                 panel.showPerson(new PersonBuilder().withName("W".repeat(70))
@@ -75,7 +77,8 @@ public class PersonDetailsPanelTest {
                 scrollPane.setVvalue(scrollPane.getVmax());
                 scrollPane.layout();
                 Label lastField = (Label) scrollPane.getContent().lookup("#tags");
-                Bounds viewport = scrollPane.localToScene(scrollPane.getBoundsInLocal());
+                Node viewportNode = scrollPane.lookup(".viewport");
+                Bounds viewport = viewportNode.localToScene(viewportNode.getBoundsInLocal());
                 Bounds lastFieldOnScreen = lastField.localToScene(lastField.getBoundsInLocal());
                 assertEquals("Tags: Math", lastField.getText());
                 assertTrue(lastFieldOnScreen.getMaxY() <= viewport.getMaxY(),
