@@ -44,6 +44,11 @@ public class JsonUserPrefsStorageTest {
     }
 
     @Test
+    public void readUserPrefs_nullRoot_exceptionThrown() {
+        assertThrows(DataLoadingException.class, () -> readUserPrefs("NullRootUserPrefs.json"));
+    }
+
+    @Test
     public void readUserPrefs_contentAfterPrefs_exceptionThrown() {
         assertThrows(DataLoadingException.class, () -> readUserPrefs("ContentAfterUserPrefs.json"));
     }

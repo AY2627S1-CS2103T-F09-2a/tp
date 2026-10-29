@@ -71,6 +71,11 @@ public class JsonUtil {
             throw new DataLoadingException(e);
         }
 
+        if (jsonFile == null) {
+            logger.warning("JSON file " + filePath + " holds only null");
+            throw new DataLoadingException(new IOException("JSON file " + filePath + " holds only null"));
+        }
+
         return Optional.of(jsonFile);
     }
 
