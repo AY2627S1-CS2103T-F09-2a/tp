@@ -293,6 +293,12 @@ Clears all students from Poco Book.
 
 Format: `clear`
 
+**Caution:** `clear` immediately removes **every stored student**, including students hidden by a search and
+their guardian contacts and outstanding fees. It does not ask for confirmation or offer undo; extra text after
+`clear` does not limit what it removes. To keep a recoverable copy, close Poco Book and back up
+`data/addressbook.json` before running `clear`, then reopen the app. If no data file exists yet, first make a
+data-changing command so the current records are saved before backing them up.
+
 ### Exiting the program: `exit`
 
 Exits the program.

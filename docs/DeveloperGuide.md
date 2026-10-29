@@ -126,6 +126,14 @@ The details pane wraps its text, so it shows long tags in full. Tag length is no
 
 ### Logic component
 
+**Bulk clear policy:** `clear` removes the entire stored book in one successful command, regardless of the
+current filter or extra arguments. Unlike `delete`, it has no confirmation step or built-in undo. The User
+Guide explicitly warns tutors and explains how to back up the data file beforehand. A confirmation or
+recovery workflow remains a separate design decision: it must cover cancellation, displayed-filter state,
+unpaid fees and restart behavior before changing this command. Protecting the previous data file from a
+*failed write* does not restore records after a *successful* `clear` save (see
+[the save-safety change](https://github.com/AY2627S1-CS2103T-F09-2a/tp/pull/239)).
+
 **API** : [`Logic.java`](https://github.com/AY2627S1-CS2103T-F09-2a/tp/tree/master/src/main/java/seedu/address/logic/Logic.java)
 
 Besides `Logic#execute(String)`, the API has `Logic#getDeletionTarget(String)`, which parses a command without executing it and reports which displayed student a `delete` command would remove. The `UI` uses it to ask the tutor to confirm a deletion first; see [Delete confirmation](#delete-confirmation).
