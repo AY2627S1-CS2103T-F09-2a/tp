@@ -256,7 +256,7 @@ The sequence diagram below shows these steps for `delete 2`. For simplicity, it 
 * All other key presses except Esc, including Enter and Space, are consumed without answering the dialog, so no button or keyboard shortcut in the dialog can act on them. Esc is left to the **Cancel (N)** button. If the tutor presses Enter twice, or starts typing the next command before noticing the dialog, those keys go to the dialog. No command word starts with Y or N, so the start of the next command cannot answer the dialog, although a Y or N typed later would. D was avoided because `delete` starts with D.
 * The **Delete (Y)** and **Cancel (N)** buttons can be clicked, but the keyboard cannot reach them: Tab does not move to them, and Enter and Space do not press them. When a dialog opens, JavaFX gives keyboard focus to its main button. The Delete button is therefore created as a secondary button (`ButtonData.APPLY`) rather than the main one (`ButtonData.OK_DONE`), so that it never starts with focus.
 * If the student still owes a fee, the dialog shows a warning icon and a red banner stating the amount, because deleting the student also deletes the unpaid fee. Pressing Y still deletes the student.
-* The dialog is 520 pixels wide, and long names wrap rather than widening it. With the longest valid names and a fee, it measured 520 by 416 pixels on macOS. A 1280x720 screen at 150% scaling leaves about 853 by 432 pixels above a Windows 11 taskbar.
+* The dialog is 680 pixels wide, and long names wrap rather than widening it. A 1280x720 screen at 150% scaling leaves about 853 by 432 pixels above a Windows 11 taskbar; `DeleteConfirmationDialogTest` checks that the dialog, with the longest valid names and a fee, fits within that area.
 
 #### Design considerations
 
