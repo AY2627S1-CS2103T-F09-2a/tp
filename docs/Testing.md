@@ -49,7 +49,7 @@ Keep `clean` in the Gradle commands. Without it, Gradle may report the tests as 
 This project has three types of tests:
 
 1. *Unit tests* target the lowest-level methods and classes.<br>
-   For example: `seedu.address.commons.StringUtilTest`
+   For example: `seedu.address.commons.util.StringUtilTest`
 1. *Integration tests* check how multiple code units work together; the individual units are assumed to work.<br>
    For example: `seedu.address.storage.StorageManagerTest`
 1. *Hybrid tests* combine unit and integration testing. These tests check both the individual units and how they work together.<br>

@@ -103,7 +103,7 @@ The `UI` component,
 * keeps a reference to the `Logic` component, because the `UI` relies on the `Logic` to execute commands.
 * depends on some classes in the `Model` component because it displays `Person` objects from the model.
 
-For `view INDEX`, `ViewCommand` reads the student at that index in the filtered list and returns the `Person` in `CommandResult` with a feedback message. It does not update the filter or model. `LogicManager` skips the storage write because `ViewCommand.shouldSaveAddressBook()` returns false. `MainWindow` selects that person in `PersonListPanel`; the list selection updates `PersonDetailsPanel`, which shows all stored fields. The details pane unwraps optional student contact fields and shows `Not provided` when a field is absent. It formats an outstanding fee as `S$` followed by two decimal places, or `None` when absent. A failed parse or out-of-range index produces no `CommandResult`, so the current selection and details remain unchanged.
+For `view INDEX`, `ViewCommand` reads the student at that index in the filtered list and returns the `Person` in `CommandResult` with a feedback message. It does not update the filter or model. `LogicManager` skips the storage write because `ViewCommand.shouldSaveAddressBook()` returns false. `MainWindow` selects that person in `PersonListPanel`; the list selection updates `PersonDetailsPanel`, which shows all stored fields. The details pane unwraps optional student contact fields and shows `Not provided` when a field is absent. It formats an outstanding fee as `S$` followed by two decimal places, or `None` when absent. It lists tags, or `Tags: None` when there are none, in the order given by `Messages#sortTagNames(Collection)`: alphabetical order ignoring case, then character code (uppercase first) for names that differ only in case. Names are compared character by character, so length matters only when one name starts with the other, ignoring case, and the shorter name comes first (`bio` before `biology`). Digits are compared as characters too, so `Sec10` comes before `Sec3`. Student cards and the result of commands such as `edit` list tags in the same order. A failed parse or out-of-range index produces no `CommandResult`, so the current selection and details remain unchanged.
 
 For `delete INDEX`, `MainWindow` asks the tutor to confirm before `Logic` executes the command. See [Delete confirmation](#delete-confirmation).
 
@@ -117,7 +117,22 @@ A command can also fail after it has changed the data. For example, if saving to
 
 To find out which records a command replaced, `PersonListPanel` listens to the full student list from `Logic#getPersonList()`. When a command replaces a record, that list reports the old record replaced by the new one. The panel does not use changes to the displayed list, because a search reports one change that removes all of the old results and adds all of the new ones. If the old and new results have the same number of students, pairing them by position would treat the student now at the selected index as the selected student's new record. For example, `find David`, `view 1`, `find Irfan` would then select Irfan. A search does not change the full list, so it never moves the selection to a different student. It keeps the selected student if the results include them, and clears the selection otherwise.
 
+`PersonCard` shows each tag as a label in a `FlowPane`. A long tag is cut off with `...` so that it stays inside the card. `DarkTheme.css` sets two widths of 230 pixels:
+
+* Each tag label is at most 230 pixels wide. The tag row is never narrower than 239 pixels: the student list is at least 300 pixels wide, even with the divider dragged fully left, and a selected card has a border.
+* The tag row is at least 230 pixels wide. Without a minimum, a `FlowPane` is at least as wide as the full text of its widest tag, because `FlowPane#computeMinWidth` uses each tag's preferred width and ignores its maximum width, so a long tag pushed the row past the edge of the card. The card's height is calculated as if the tag row were 230 pixels wide, because the card's `GridPane` column has a preferred width of 150 pixels, which would otherwise give a narrower row. A card whose tags fit in fewer rows when the card is wider therefore has some blank space, for example in a wide window. A smaller minimum would add blank rows even on the narrowest cards.
+
+The details pane wraps its text, so it shows long tags in full. Tag length is not limited: a card now fits a tag of any length, and data files from earlier versions may already contain longer tags, which would fail to load if the limit were checked when loading.
+
 ### Logic component
+
+**Bulk clear policy:** `clear` removes the entire stored book in one successful command, regardless of the
+current filter or extra arguments. Unlike `delete`, it has no confirmation step or built-in undo. The User
+Guide explicitly warns tutors and explains how to back up the data file beforehand. A confirmation or
+recovery workflow remains a separate design decision: it must cover cancellation, displayed-filter state,
+unpaid fees and restart behavior before changing this command. Protecting the previous data file from a
+*failed write* does not restore records after a *successful* `clear` save (see
+[the save-safety change](https://github.com/AY2627S1-CS2103T-F09-2a/tp/pull/239)).
 
 **API** : [`Logic.java`](https://github.com/AY2627S1-CS2103T-F09-2a/tp/tree/master/src/main/java/seedu/address/logic/Logic.java)
 
@@ -138,8 +153,8 @@ How the `Logic` component works:
 
 1. When `Logic` is called upon to execute a command, the command is passed to an `AddressBookParser` object, which in turn creates a parser that matches the command (e.g., `DeleteCommandParser`) and uses it to parse the command.
 1. This results in a `Command` object (more precisely, an object of one of its subclasses e.g., `DeleteCommand`) which is executed by the `LogicManager`.
-1. The command can communicate with the `Model` when it is executed (e.g. to delete a person).<br>
-   Note that although this is shown as a single step in the diagram above for simplicity, the code can require several interactions between the command object and the `Model` to complete the operation.
+1. The command can communicate with the `Model` when it is executed (e.g. to delete a student).<br>
+   In the diagram above, `DeleteCommand` gets the displayed list from the `Model` and uses `DeleteCommand#getTarget(List)` to find the student `p` at index 1 of that list. It then passes `p` itself, not the index, to `Model#deletePerson(Person)`. If the index is beyond the end of the list, `getTarget` returns an empty `Optional` instead, and `DeleteCommand` throws a `CommandException` without deleting anything. Other commands may need different or more interactions with the `Model`.
 1. The result of the command execution is encapsulated as a `CommandResult` object which is returned from `Logic`.
 
 Here are the other classes in `Logic` (omitted from the class diagram above) that are used for parsing a user command:
@@ -154,7 +169,8 @@ How the parsing works:
 ### Model component
 **API** : [`Model.java`](https://github.com/AY2627S1-CS2103T-F09-2a/tp/tree/master/src/main/java/seedu/address/model/Model.java)
 
-<img src="images/ModelClassDiagram.png" width="450" />
+<a href="images/ModelClassDiagram.png"><img src="images/ModelClassDiagram.png" width="450"
+    alt="Model class diagram with separate all and filtered Person associations" /></a>
 
 
 The `Model` component,
@@ -179,8 +195,16 @@ The `Model` component,
 
 The `Storage` component,
 * can save both address book data and user preference data in JSON format, and read them back into corresponding objects. Reading rejects a file with content after its first JSON value or a repeated field name (see [Strict reading of data files](#strict-reading-of-data-files)).
+* can save both address book data and user preference data in JSON format, and read them back into corresponding objects.
+* saves each file by writing a temporary file first and then replacing the old file with it, so a save that fails partway leaves the previous save intact (see [Saving data safely](#saving-data-safely)).
 * is implemented by `StorageManager`, which delegates the actual JSON file access to `JsonAddressBookStorage` and `JsonUserPrefsStorage` (one class per data file).
 * depends on some classes in the `Model` component (because the `Storage` component's job is to save/retrieve objects that belong to the `Model`)
+
+**Supported usage constraint:** Only one running Poco Book instance may use a given home folder at a time.
+Each instance loads its own in-memory copy of `data/addressbook.json`, and `LogicManager` saves that copy
+after a data-changing command. The app does not synchronize instances or detect stale copies: a later save
+from an older instance can silently replace records saved by another instance. Concurrent use of the same
+home folder is outside the supported workflow; users are warned in the User Guide's quick start and FAQ.
 
 ### Common classes
 
@@ -202,7 +226,13 @@ The `fees [min/AMOUNT]` command replaces the displayed-list filter with one that
 
 The sequence diagram below shows a successful `fees min/100` call. Tokenization, predicate evaluation and result construction are summarized in notes rather than shown as separate lifelines.
 
-![Sequence diagram for minimum outstanding-fee filtering](images/FeesSequenceDiagram.png)
+The essential sequence is: `LogicManager#execute` parses the input through `AddressBookParser` and
+`FeesCommandParser`; `FeesCommand#execute` installs the fee predicate with `Model#updateFilteredPersonList`,
+reads the filtered list size, and returns the result. `LogicManager` does not save this read-only command.
+For small screens, open the [full-size fee sequence diagram](images/FeesSequenceDiagram.png) to read its notes
+and message labels without shrinking them to the page width.
+
+[![Sequence diagram for minimum outstanding-fee filtering](images/FeesSequenceDiagram.png)](images/FeesSequenceDiagram.png)
 
 Diagram source: [FeesSequenceDiagram.puml](diagrams/FeesSequenceDiagram.puml).
 
@@ -230,7 +260,7 @@ The activity diagram below shows what happens when the tutor enters `delete INDE
 1. If there is no target, `MainWindow` passes the input to `Logic#execute(String)`, as it did before this feature. This happens when the input is another command, cannot be parsed, or has an index beyond the end of the list. Invalid `delete` commands therefore report the usual errors without opening a dialog.
 1. Otherwise, `MainWindow` calls `DeleteConfirmationHandler#confirmAndDelete(String, Person)` with the target. The handler asks its `DeletionConfirmer` whether to delete the student. In the app, `MainWindow` supplies a confirmer that opens a `DeleteConfirmationDialog` over the main window and waits for the tutor to respond.
 1. If the tutor cancels, the handler returns a `CommandResult` with a cancellation message without calling `Logic#execute(String)`, so nothing is deleted or saved. `MainWindow` then restores the selection as it does after any other successful command.
-1. If the tutor confirms, the handler calls `Logic#getDeletionTarget(String)` again to check that the index still identifies the same student. It then calls `Logic#execute(String)`, which deletes the student and saves the data as before. While the dialog is open, the tutor cannot enter commands, so the displayed list cannot change. The second check is a safeguard in case a future change allows the list to change during confirmation: if a different student now has that index, the handler throws a `CommandException` and deletes nothing.
+1. If the tutor confirms, the handler calls `Logic#getDeletionTarget(String)` again to check that the index still identifies the same student. It then calls `Logic#execute(String)`, which deletes the student and saves the data as before. While the dialog is open, the tutor cannot enter commands, so the displayed list cannot change. The second check is a safeguard in case a future change allows the list to change during confirmation: if a different student now has that index, or the student's details have changed, the handler throws a `CommandException` and deletes nothing.
 
 The sequence diagram below shows these steps for `delete 2`. For simplicity, it leaves out the error that the handler reports if the second check finds a different student.
 
@@ -243,7 +273,7 @@ The sequence diagram below shows these steps for `delete 2`. For simplicity, it 
 * All other key presses except Esc, including Enter and Space, are consumed without answering the dialog, so no button or keyboard shortcut in the dialog can act on them. Esc is left to the **Cancel (N)** button. If the tutor presses Enter twice, or starts typing the next command before noticing the dialog, those keys go to the dialog. No command word starts with Y or N, so the start of the next command cannot answer the dialog, although a Y or N typed later would. D was avoided because `delete` starts with D.
 * The **Delete (Y)** and **Cancel (N)** buttons can be clicked, but the keyboard cannot reach them: Tab does not move to them, and Enter and Space do not press them. When a dialog opens, JavaFX gives keyboard focus to its main button. The Delete button is therefore created as a secondary button (`ButtonData.APPLY`) rather than the main one (`ButtonData.OK_DONE`), so that it never starts with focus.
 * If the student still owes a fee, the dialog shows a warning icon and a red banner stating the amount, because deleting the student also deletes the unpaid fee. Pressing Y still deletes the student.
-* The dialog is 520 pixels wide, and long names wrap rather than widening it. With the longest valid names and a fee, it measured 520 by 416 pixels on macOS. A 1280x720 screen at 150% scaling leaves about 853 by 432 pixels above a Windows 11 taskbar.
+* The dialog is 680 pixels wide, and long names wrap rather than widening it. A 1280x720 screen at 150% scaling leaves about 853 by 432 pixels above a Windows 11 taskbar; `DeleteConfirmationDialogTest` checks that the dialog, with the longest valid names and a fee, fits within that area.
 
 #### Design considerations
 
@@ -251,13 +281,25 @@ The sequence diagram below shows these steps for `delete 2`. For simplicity, it 
 
 * **Alternative 1 (current choice):** Ask in the `UI`, which first calls `Logic#getDeletionTarget(String)`.
   * Pros: `Logic` contains no UI code and never waits for the tutor. The `UI` uses only the `Logic` API, and deletion and saving still use the existing path.
-  * Cons: The `Logic` API gains a method that only `delete` uses. Asking and deleting are separate steps, so the target must be checked again after confirmation. Every command is parsed twice, and a confirmed `delete` three times, but parsing is fast.
+  * Cons: The `Logic` API gains a method that only `delete` uses. Asking and deleting are separate steps, so the target must be checked again after confirmation. Most commands are parsed twice; see the next aspect.
 * **Alternative 2:** Let `DeleteCommand#execute(Model)` call a confirmation callback that the `UI` provides.
   * Pros: Each command is parsed once. Asking and deleting happen in one step, so no second check is needed.
   * Cons: `Logic` would wait on a UI dialog in the middle of a command. The `UI` can only provide the callback after `Logic` is created, so `Logic` would need a setter. The callback would also have to reach each `DeleteCommand`, either through `AddressBookParser` and `DeleteCommandParser`, or by `LogicManager` handing it over after parsing.
 * **Alternative 3:** Let the `UI` parse the input with its own `AddressBookParser`.
   * Pros: The `Logic` API is unchanged.
   * Cons: The `UI` would depend on classes that are internal to `Logic`, breaking the rule that components interact only through each other's APIs.
+
+**Aspect: How often to parse the input**
+
+* **Alternative 1 (current choice):** Each call to `Logic` parses the command text again.
+  * Pros: The `UI` decides whether to ask with the same parser that `Logic#execute(String)` uses, so every input that would delete a student is confirmed first. The `Logic` API takes plain text, and parse errors are reported in one place, by `Logic#execute(String)`.
+  * Cons: Most commands are parsed twice, a cancelled `delete` once and a confirmed `delete` three times. Measured on JDK 25, the extra parsing costs at most about 1 ms per command just after startup, and far less once the JVM has warmed up, well within the 1-second target of [NFR 2](#non-functional-requirements).
+* **Alternative 2:** Parse once. `Logic` returns an opaque prepared command, which the `UI` passes back to `Logic` to find the target and to execute it.
+  * Pros: Each command is parsed once, and the check after confirmation needs no parsing.
+  * Cons: The `Logic` API gains a type and changes two methods, and the `UI` holds the prepared command while the dialog is open. The check after confirmation is still needed. The prepared command must hide the parsed `Command`, or the `UI` would depend on classes internal to `Logic`.
+* **Alternative 3:** Check the command word before parsing, and parse fully only for `delete`.
+  * Pros: Other commands are parsed once, and only `LogicManager` changes.
+  * Cons: `delete` would be recognised in two places. If they drifted apart, for example if the parser accepted an alias, or a command word in upper case, that the check did not, a deletion could run without asking.
 
 **Testing**
 
@@ -333,6 +375,10 @@ The `edit` command supports updating a student's guardian name (`g/`) and guardi
 
 During execution, `EditCommand#execute(Model)` looks up `personToEdit` from `Model#getFilteredPersonList()` and constructs `editedPerson` via `EditCommand#createEditedPerson(personToEdit, editPersonDescriptor)`. Unedited fields fall back to the existing values on `personToEdit`, including `personToEdit.getOutstandingFee()`. Because student identity in `Person#isSamePerson(Person)` is defined by the combination of student `Name` (case-insensitive, whitespace-normalized) and `GuardianPhone`, editing `gp/` (or `n/`) can change a student's identity. Whenever `!personToEdit.isSamePerson(editedPerson)` holds, `EditCommand` checks `Model#hasPerson(editedPerson)` before calling `Model#setPerson(personToEdit, editedPerson)`, throwing a `CommandException` if the updated `(Name, GuardianPhone)` pair would collide with another existing student.
 
+The descriptor distinguishes omitted optional contacts from explicit clearing: an omitted `p/`, `e/` or `a/` leaves that contact unchanged, while an empty value clears it. Guardian fields remain required. A supplied `t/` replaces the tag set; a lone empty `t/` clears all tags. Combining an empty `t/` with a nonempty tag is rejected. The command rejects an unchanged record before replacing it, while case-only changes remain valid updates.
+
+Changing a guardian phone updates only the selected student. The success feedback names any other students who still have the old phone; the tutor must edit those records separately. The details pane is refreshed explicitly after selection retention, including the command-failure path, because a replacement record may compare equal despite a case-only display change.
+
 The sequence diagram below shows the interactions within the `Logic` and `Model` components for `edit 1 g/May Tan gp/98765432`.
 
 ![Sequence diagram for editing guardian contact details](images/GuardianEditSequenceDiagram.png)
@@ -355,7 +401,13 @@ The `findguardian KEYWORD [MORE_KEYWORDS]...` command lists students whose guard
 
 The sequence diagram below shows a successful `findguardian mei 9234-5678` call.
 
-![Sequence diagram for guardian search](images/FindGuardianSequenceDiagram.png)
+The essential sequence is: `LogicManager#execute` asks `AddressBookParser` and `FindGuardianCommandParser`
+to parse the keywords; `FindGuardianCommand#execute` installs the guardian predicate through
+`Model#updateFilteredPersonList` and reports the filtered list size. `LogicManager` does not save the search.
+For small screens, open the [full-size guardian-search sequence diagram](images/FindGuardianSequenceDiagram.png)
+to read its notes and message labels without shrinking them to the page width.
+
+[![Sequence diagram for guardian search](images/FindGuardianSequenceDiagram.png)](images/FindGuardianSequenceDiagram.png)
 
 Diagram source: [FindGuardianSequenceDiagram.puml](diagrams/FindGuardianSequenceDiagram.puml).
 
@@ -393,6 +445,45 @@ The command then reports the size of the filtered list with the shared `N studen
 * **Check for trailing content in `JsonUtil` instead of upgrading Jackson.** Jackson 2.7.4 has no `DeserializationFeature.FAIL_ON_TRAILING_TOKENS`, which was added in Jackson 2.9. `requireEndOfInput` makes the same single `nextToken()` check, without changing the dependency that every JSON read and write uses. If Jackson is upgraded, that feature can replace `requireEndOfInput`.
 * **Apply the same rules to preferences.** One reader for both files keeps their behaviour consistent, and an invalid preferences file only resets the window size and position.
 * **Compare field names exactly, as Jackson matches fields to Java fields.** `name` and `Name` are different fields, so `Name` is not a duplicate; it is ignored like any other unknown field.
+
+### Saving data safely
+
+If a save stops partway, for example because the disk is full, the data file must still hold the last successful save. Otherwise, Poco Book cannot load the file at the next launch, and every saved student is lost.
+
+#### Implementation
+
+`JsonAddressBookStorage` and `JsonUserPrefsStorage` save through `JsonUtil#saveJsonFile(T, Path)`, which converts the data to JSON and passes it to `FileUtil#writeToFile(Path, String)`. That method never writes to the data file itself:
+
+1. If the data file exists, it checks that the file is writable, by opening it for writing and closing it without changing it. If the file is read-only, or is a folder, saving fails with the same error as before. The check is needed because on macOS and Linux, step 3 can replace a read-only file, so a read-only data file would otherwise be overwritten.
+1. It writes the JSON to a new temporary file in the same folder, such as `data/addressbook.json.5784445305140543549.tmp`.
+1. It replaces the data file with the temporary file using `Files#move` with `ATOMIC_MOVE`, so the data file always holds either its old or its new content. If the file system cannot replace a file in one step, saving fails. It does not fall back to an ordinary move, because that deletes the data file before moving the new one, so a failure would lose both.
+1. If any step fails, it deletes the temporary file where possible and throws the `IOException`. `LogicManager` reports it as a save error, as before.
+
+Saving now also needs permission to create files in the data folder. If Poco Book cannot create files there, saving fails even if the data file itself is writable.
+
+On macOS and Linux, the temporary file is given the permissions of the data file it replaces, so saving does not change the permissions of an existing file. A file that does not exist yet gets the permissions of the temporary file, which only its owner can read and write (`rw-------`). This applies to a new `preferences.json`, which holds only the window size and position. A new `data/addressbook.json` still gets the default permissions for new files, such as `rw-r--r--`, because `JsonAddressBookStorage` creates the empty file before saving to it.
+
+Saving does not undo the change in the app's memory: as before, a change that could not be saved stays in the app while it is open. Closing Poco Book does not save student data, so if it is closed before another save succeeds, the change is lost and the next launch loads the last successful save. If a later command saves successfully, that save also writes the earlier change, because each save writes all the data in memory.
+
+Every save creates a temporary file, which normally replaces the data file and so does not remain. If Poco Book stops while saving, for example because of a power cut, the temporary file may be left in the folder. Poco Book loads only the data file, never a leftover temporary file, so it can be deleted.
+
+#### Design considerations
+
+**Aspect: How to save without losing the previous save**
+
+* **Alternative 1 (current choice):** Write a temporary file in the same folder, then replace the data file with it.
+  * Pros: The data file is never partly written. Replacing a file in one step works on Windows, macOS and Linux when both files are in the same folder.
+  * Cons: Poco Book must be allowed to create files in the data folder, not just to change the data file. It also needs the extra check in step 1, because on macOS and Linux the replacement would otherwise overwrite a read-only data file. On Windows, the replacement can also fail if another program, such as an antivirus scanner or a file sync tool, has the data file or the temporary file open at that moment. Poco Book does not retry. The command reports a save error: a permission error if Windows denies access to the file, or a general save error if Windows reports that the file is in use. Either way, the previous save stays intact, and a later successful save also writes the change that could not be saved.
+* **Alternative 2:** Write over the data file directly, as AB3 did.
+  * Pros: Simpler.
+  * Cons: A save that stops partway leaves a partly written file, which cannot be loaded.
+* **Alternative 3:** Copy the data file to a backup before each save.
+  * Pros: A partly written file could be recovered from the backup.
+  * Cons: Poco Book would have to detect a damaged file and restore the backup at startup, and each save would write the data twice.
+
+**Testing**
+
+`FileUtilTest` replaces the step that writes the temporary file with one that writes half the content and then fails, as a full disk would. It checks that the data file keeps its old content and that no temporary file remains. Another replacement writes the whole temporary file and then makes the folder read-only, so that only the replacing fails. The tests also check a read-only file, a read-only folder, a folder in place of the file, a symbolic link and file permissions. A test that needs permissions or symbolic links is skipped where the system does not support them, such as read-only folders on Windows.
 
 ### \[Proposed\] Undo/redo feature
 
@@ -1011,14 +1102,15 @@ testers are expected to do more *exploratory* testing.
 
    1. Download the JAR file and copy it into an empty folder.
 
-   1. Double-click the JAR file.<br>
+   1. In a terminal, run `java -version` and check that it reports Java 25 or later. In the folder containing
+      `addressbook.jar`, run `java -jar addressbook.jar`.<br>
       Expected: The GUI opens with a set of sample contacts. The window size may not be optimal.
 
 1. Saving window preferences
 
    1. Resize the window to an optimal size. Move the window to a different location. Close the window.
 
-   1. Relaunch the app by double-clicking the JAR file.<br>
+   1. In the same folder, run `java -jar addressbook.jar` again.<br>
        Expected: The most recent window size and location are retained.
 
 ### Adding and finding students
@@ -1121,6 +1213,11 @@ testers are expected to do more *exploratory* testing.
    `Outstanding fee: S$75.50`. Enter `fees`, then `setoutstanding 1 0`.<br>
    Expected: Alex disappears from the filtered list, and the selection and details pane clear.
 
+1. Enter `list`, `edit 2 t/biology t/Chemistry t/aMath`, then `view 2`.<br>
+   Expected: The result of `edit`, which you may need to scroll, ends with `Tags: aMath, biology, Chemistry`.
+   Bernice Yu's card shows her tags in alphabetical order, ignoring case: `aMath`, `biology`, `Chemistry`.
+   The details pane shows `Tags: aMath, biology, Chemistry`.
+
 ### Deleting a student
 
 `delete` asks the tutor to confirm in a dialog before it deletes a student. While testing, pay attention to these points:
@@ -1199,6 +1296,30 @@ testers are expected to do more *exploratory* testing.
 1. Run `setoutstanding 1 0`. The feedback should show `Set outstanding fee for Alex Yeoh: S$0.00` and his card
    should have no fee label. Run `fees` to verify that Alex is excluded. Restart the app and run `find Alex` to
    verify that the fee remains cleared.
+
+### Long tags on student cards
+
+1. Start with sample data and resize the window to its minimum size (750 by 450). Enter
+   `edit 1 t/ThisTagIsFarTooLongToFitOnOneStudentCardAtAnyWindowSize t/math`.<br>
+   Expected: Alex Yeoh's card shows the long tag cut off with `...`, inside the card, and `math` as a separate tag.
+   His contact details remain visible.
+
+1. Drag the divider between the student list and the details pane fully to the left.<br>
+   Expected: The long tag is still cut off with `...` and stays inside the card.
+
+1. Enter `view 1`.<br>
+   Expected: The details pane shows the full tag, wrapping onto another line if it does not fit. Scroll down the
+   details pane if the tags are not visible.
+
+1. Close and restart the app, then enter `view 1`.<br>
+   Expected: Alex Yeoh's card still shows the long tag cut off with `...`, and the details pane still shows it in full.
+   Scroll down the details pane if the tags are not visible.
+
+1. Enter `edit 1 t/ThisTagIsFarTooLongToFitOnOneStudentCardAtAnyWindowSizeA t/ThisTagIsFarTooLongToFitOnOneStudentCardAtAnyWindowSizeB`,
+   then `view 1`.<br>
+   Expected: The two tags look the same on Alex Yeoh's card, because they differ only after the point where they are
+   cut off. This is a known limitation of cutting off long tags. The details pane shows both tags in full, the one
+   ending in `A` first. Scroll down the details pane if the tags are not visible.
 
 ### Reading command-specific help
 
@@ -1290,6 +1411,12 @@ testers are expected to do more *exploratory* testing.
    `attrib -r data\addressbook.json`) and restart the app. `fees` still shows Alex owing S$75.50, because the payment
    was not saved.
 
+1. On macOS or Linux, in a disposable application folder with sample data, enter `setoutstanding 1 75.50`. Make the
+   `data` folder read-only (`chmod 555 data`), then enter `setoutstanding 1 80`.<br>
+   Expected: An error says the data could not be saved due to insufficient permissions, and no file ending in `.tmp`
+   is left in the `data` folder. Make the folder writable again (`chmod 755 data`) and restart the app. `fees` still
+   shows Alex owing S$75.50, because the new fee was not saved.
+
 1. Launch the JAR by its absolute path from a different empty working folder.<br>
    Expected: Data, preferences and logs remain beside the JAR; the unrelated working folder remains empty.
 
@@ -1305,12 +1432,44 @@ filtered-index payment, invalid-input and persistence regression tests.
 
 ### Guardian search and persisted fee updates
 
-1. In a disposable folder, add two students sharing a guardian, with different positive outstanding fees.
-1. Run a student-name search that hides both, then `findguardian GUARDIAN_NAME`.<br>
-   Expected: Both siblings appear once, in stored order. `help findguardian` explains the search without changing it.
-1. Run `paid 1`, then `fees min/100` and `feesummary`.<br>
-   Expected: Only the chosen displayed student's fee is cleared. The minimum filter and all-student total reflect that change.
-1. Restart the app.<br>
-   Expected: The payment and guardian details persist. `findguardian GUARDIAN_PHONE` returns both students.
+1. In a fresh **disposable** application folder, enter `clear` to remove the sample students, then enter
+   `add n/Asha Rai g/Mei Tan gp/92345678 f/150` and `add n/Bina Rai g/Mei Tan gp/92345678 f/25`.<br>
+   Expected: Only these two students are stored with the same guardian; Asha owes S$150.00 and Bina owes S$25.00.
+1. Enter `find Nobody`, then `findguardian Mei`.<br>
+   Expected: The first search hides both students. The guardian search shows Asha at index 1 and Bina at index 2.
+   `help findguardian` explains the search without changing the displayed list.
+1. Enter `paid 1`, then `fees min/100`, then `feesummary`.<br>
+   Expected: Asha's fee is cleared. The minimum-fee search shows no students; the summary reports that, across all
+   stored students, one student owes a total of S$25.00. Neither command changes Bina's fee.
+1. Restart the app, then enter `findguardian 92345678`.<br>
+   Expected: Both students are displayed in stored order with their guardian details intact. Asha has no
+   outstanding fee and Bina still owes S$25.00. `feesummary` still reports one student owing S$25.00.
 1. Try `findguardian`, `findguardian g/NAME`, and `help findguardian extra`.<br>
    Expected: Invalid-input feedback; records and the current filter remain unchanged.
+
+### Editing guardian and optional contact details
+
+1. In a disposable folder, run `clear`, then
+   `add n/Style Check One g/May Tan gp/92345678 p/91234567 e/check@example.com a/12 Main Road`, `find One` and `view 1`.<br>
+   Expected: Style Check One is the only listed student and is shown in the details pane.
+
+1. Enter `edit 1 p/`, then `edit 1 p/91234567 e/ a/`.<br>
+   Expected: The first edit clears only the student phone. The second restores the phone and clears email and address.
+   Guardian details and the fee are unchanged.
+
+1. Enter `edit 1 p/123`, `edit 1 g/` and `edit 1 gp/`.<br>
+   Expected: Each edit is rejected and no field changes.
+
+1. Enter `edit 1 t/Math`, `edit 1 t/math`, `edit 1 t/`, then `edit 1 t/ t/Math`.<br>
+   Expected: The card and details pane both show `math` after the second edit. `t/` clears all tags.
+   Combining `t/` with a tag is rejected.
+
+1. Enter `edit 1 g/may tan` twice.<br>
+   Expected: The card and details pane both show the new capitalisation. The repeated edit reports that nothing changed.
+
+1. Enter `add n/Style Check Two g/may tan gp/92345678`, then `find One` and `edit 1 gp/93456789`.<br>
+   Expected: The feedback names Style Check Two as still using the old guardian phone. `find Two` then `view 1` shows
+   Style Check Two still has `92345678`.
+
+1. Enter `list`, then edit Style Check One to `n/Style Check Two gp/92345678` using its displayed index.<br>
+   Expected: The edit is rejected as a duplicate and both records are unchanged.

@@ -213,6 +213,8 @@ public class MainWindow extends UiPart<Stage> {
 
             commandResult.getViewedPerson().ifPresentOrElse(personListPanel::selectPerson, () ->
                     personListPanel.retainSelection(previouslySelected));
+            // The selection listener does not fire when the new record equals the old one, so refresh explicitly.
+            personDetailsPanel.showPerson(personListPanel.getSelectedPerson());
 
             if (commandResult.isShowHelp()) {
                 handleHelp();
@@ -227,6 +229,7 @@ public class MainWindow extends UiPart<Stage> {
             logger.info("An error occurred while executing command: " + commandText);
             resultDisplay.setFeedbackToUser(e.getMessage());
             personListPanel.retainSelectionAfterFailure(previouslySelected);
+            personDetailsPanel.showPerson(personListPanel.getSelectedPerson());
             throw e;
         }
     }

@@ -19,6 +19,10 @@ Poco Book is a **desktop application for independent tutors to manage students, 
 
 1. Copy the file to the folder you want to use as the _home folder_ for Poco Book.
 
+   **Use only one running Poco Book instance per home folder.** Two instances do not synchronize changes to
+   `data/addressbook.json`; even if they save at different times, one can overwrite records saved by the other.
+   Running multiple instances against the same folder is unsupported and may result in lost changes.
+
 1. Open a terminal, `cd` to the folder containing the JAR file, and run `java -jar addressbook.jar`.<br>
    A GUI similar to the one below should appear in a few seconds. Note how the app contains some sample data.<br>
    ![Ui](images/Ui.png)
@@ -36,7 +40,57 @@ Poco Book is a **desktop application for independent tutors to manage students, 
 
    * `exit` : Exits the app.
 
+1. New to Poco Book? Try the [five-minute walkthrough](#five-minute-walkthrough) next.
+
 1. Refer to the [Features](#features) section below for details of each command.
+
+--------------------------------------------------------------------------------------------------------------------
+
+## Five-minute walkthrough
+
+This walkthrough takes you through a typical first session: adding two students, finding a guardian, checking who owes fees, recording a payment, and confirming that Poco Book keeps your changes after a restart. It takes about five minutes.
+
+<div markdown="span" class="alert alert-warning">:exclamation: **Caution:**
+Do this walkthrough in a **new, empty folder**, not the folder where you keep your real student records. Step 1 deletes everything in the address book, which is safe only in a new folder.
+</div>
+
+1. **Start with an empty book.** Copy `addressbook.jar` into a new folder, such as `poco-walkthrough`, and launch it from a terminal in that folder with `java -jar addressbook.jar`. Poco Book starts with six sample students. Type `clear` and press Enter.<br>
+   Poco Book shows `Address book has been cleared!` and the list is empty.
+
+1. **Add two students.** Type each command and press Enter:
+   * `add n/Alpha Tan g/Mei Tan gp/92345678 e/alpha@example.com f/180`
+   * `add n/Beta Lim g/Kumar Lim gp/98765432 p/91234567 f/75.50`
+
+   After each command, Poco Book shows `New student added:` with the student's details. The list now shows `1. Alpha Tan`, owing `S$180.00`, and `2. Beta Lim`, owing `S$75.50`. Student details you did not give show as `Not provided`.
+
+1. **Find a student by their guardian.** Type `findguardian Mei`.<br>
+   Poco Book shows `1 student(s) listed!` and the list shows only Alpha Tan, at index `1`.
+
+1. **View the complete record.** Type `view 1`.<br>
+   Poco Book shows `Viewing student: Alpha Tan`, and the details pane shows all of Alpha's details, including `Guardian name: Mei Tan`, `Guardian phone: 92345678` and `Outstanding fee: S$180.00`.
+
+1. **List who owes fees.** Type `fees`.<br>
+   Poco Book shows `2 student(s) with outstanding fees.` Then type `fees min/100`. Poco Book shows `1 student(s) with outstanding fees.` and only Alpha Tan is listed, because Beta owes less than S$100.00.
+
+1. **Total all fees.** Type `find Beta`, then `feesummary`.<br>
+   The list shows only Beta, but Poco Book shows `Across all stored students: 2 student(s) owe a total of S$255.50. Displayed list unchanged.` `feesummary` always counts **every** stored student, while `find`, `findguardian` and `fees` only change which students are displayed. Each of those three commands replaces the previous filter instead of narrowing it.
+
+1. **Record a payment.** Type `fees` again. Check that index `1` is **Alpha Tan**, then type `paid 1`.<br>
+   Poco Book shows `Marked outstanding fee as paid for Alpha Tan: S$180.00`. Alpha disappears from the `fees` list, so Beta Lim moves up to index `1`.
+
+   <div markdown="span" class="alert alert-primary">:bulb: **Tip:**
+   Indexes always refer to the list currently on screen, and they change when the list changes. Check the name next to an index before every `paid`, `setoutstanding`, `edit` or `delete`.
+   </div>
+
+1. **Check the new total.** Type `feesummary`.<br>
+   Poco Book shows `Across all stored students: 1 student(s) owe a total of S$75.50. Displayed list unchanged.`
+
+1. **Restart and check your data.** Type `exit`. Launch Poco Book again from the same folder with `java -jar addressbook.jar`, then type `list` and `view 1`.<br>
+   Both students are still there. Alpha Tan shows `Outstanding fee: None` and Beta Lim still owes `S$75.50`. Poco Book saved every change automatically.
+
+If Poco Book reports a save error during the walkthrough, your change is still shown but has not been saved yet. Make sure the folder is writable, then make another change; Poco Book saves everything the next time a save succeeds. Changes are lost if you close Poco Book before then.
+
+When you are done, you can delete the walkthrough folder. To keep using Poco Book, launch it from the folder you want to use for your real records. See [Features](#features) for every command.
 
 --------------------------------------------------------------------------------------------------------------------
 
@@ -76,7 +130,9 @@ Poco Book is a **desktop application for independent tutors to manage students, 
 
 Plain `help` opens the existing help window with the online guide link.
 
-![help window opened by plain help](images/helpMessage.png)
+![Help window showing the Poco Book User Guide URL and Copy URL button](images/helpMessage.png)
+
+The image shows the help window's contents (without the operating system's window frame).
 
 Type `help COMMAND` to read a command’s purpose, syntax and example in the result area without leaving the app.
 For example, `help paid` explains how to clear a displayed student’s full outstanding fee; it does not record a payment.
@@ -100,13 +156,22 @@ Format: `add n/NAME g/GUARDIAN_NAME gp/GUARDIAN_PHONE [p/PHONE] [e/EMAIL] [a/ADD
 * `n/NAME`, `g/GUARDIAN_NAME`, and `gp/GUARDIAN_PHONE` are required; `p/PHONE`, `e/EMAIL`, `a/ADDRESS`, and `f/AMOUNT` are optional.
 * Each prefix may appear at most once in an `add` command.
 * `ADDRESS` may contain text such as `c/o`, `Blk A/B`, or `N/A`. Other parameters must not contain unrecognised prefixes such as `t/`.
+* `NAME` and `GUARDIAN_NAME` must be 1 to 70 characters long and contain at least one letter. They may use letters (including non-English letters such as `é` or `李`), digits, spaces, apostrophes, hyphens, periods and parentheses. Extra spaces are removed before the length is counted.
+* `ADDRESS`, if provided, must be 1 to 150 characters long and fit on one line.
+* `EMAIL`, if provided, must be at most 254 characters long, with at most 64 characters before `@`, and must end in a domain such as `example.com` (the last part must be at least 2 letters).
 * `PHONE` and `GUARDIAN_PHONE` must be 8-digit Singapore numbers starting with `6`, `8`, or `9` (spaces and hyphens between digits are allowed and removed when stored).
 * `AMOUNT`, if provided, must be a positive amount between `0.01` and `99999.99` with up to 2 decimal places (and is stored to 2 decimal places).
 * Two students are considered duplicates if they share the same normalized student name (case-insensitive, with consecutive spaces collapsed) and the same normalized guardian phone number.
+* `NAME` and `GUARDIAN_NAME` may include `S/O` or `D/O` as a separate word, such as `Ravi S/O Raj`. Separate the marker from adjacent text with spaces; for example, use `Tan ( S/O Lim)` rather than `Tan (S/O Lim)`. The marker must come between names, so `S/O Raj`, `Ravi S/O` and `S/O` alone are not valid names. Other slashes are not allowed in names.
+* Names accept only the straight apostrophe (`'`) and the ASCII hyphen (`-`). Curly apostrophes (`’`) and other dashes (`‐`, `–`), which some keyboards and copied text produce, are rejected; retype them as `'` or `-`.
+* In `EMAIL`, the part before `@` may use only ASCII letters (A-Z, a-z), digits, `.`, `_`, `+` and `-`. Addresses with other characters, such as an apostrophe (`o'connor@example.com`), are not supported.
 
 Examples:
 * `add n/Alex Tan g/Mei Tan gp/92345678`
 * `add n/Riya Kumar g/Anil Kumar gp/97654321 p/98765432 e/riya@example.com a/12 Clementi Ave 3 f/75.50`
+* `add n/José O'Neil-Tan g/Maria O'Neil gp/91112222` is accepted: accented letters, apostrophes and hyphens are allowed in names.
+* `add n/Tom & Jerry g/Mei Tan gp/92345678` is rejected because `&` is not allowed in names.
+* `add n/Alex Tan g/Mei Tan gp/92345678 e/alex@example` is rejected because the email has no domain ending such as `.com`.
 
 ### Listing all students: `list`
 
@@ -128,7 +193,7 @@ The result states `N student(s) with outstanding fees.` An empty result is succe
 * `fees min/100` shows students owing at least S$100.00, including exactly S$100.00.
 * The minimum must be from `0` to `99999.99`, with at most two decimal places and no sign or exponent.
 * `fees min/0` still excludes students without an outstanding fee.
-* Missing or invalid amounts, duplicate `min/` prefixes, unknown prefixes and extra arguments are rejected.
+* Missing or invalid amounts, duplicate `min/` prefixes, unknown prefixes and extra arguments are rejected, with a message naming the problem; for example, `fees min/abc` reports `Invalid minimum amount: abc.`
 * The filter remains active when fees change. A student whose fee falls below the minimum disappears from the list.
 * The command does not change or save records. Use `list` to restore all students.
 
@@ -203,6 +268,9 @@ Format: `edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [a/ADDRESS] [g/GUARDIAN_NAME] [
 * Existing values will be updated to the input values.
 * If every given value is the same as the student's current details, the edit is rejected with `No changes made: the student already has these details.` and nothing is saved.
 * When editing tags, all of the student's existing tags are removed; adding tags is not cumulative.
+* A tag contains only ASCII letters (`A`–`Z`, `a`–`z`) and digits (`0`–`9`), with no spaces or punctuation.
+  For example, `t/Math2` is accepted, while `t/数学` and `t/Máth` are rejected. Student and guardian names
+  have separate character rules; their support for multilingual names does not extend to tags.
 * To remove all of a student's tags, enter `t/` without a tag after it.
 * To remove a student's phone, email or address, enter `p/`, `e/` or `a/` with nothing after it. Omitting the prefix keeps the existing value.
 * Use `g/` and/or `gp/` to change guardian details. Omitted fields keep their existing values; guardian fields cannot be blank or cleared. Duplicate guardian prefixes are rejected.
@@ -221,7 +289,7 @@ Finds students whose names contain any of the given keywords.
 
 Format: `find KEYWORD [MORE_KEYWORDS]`
 
-* The search is case-insensitive; for example, `hans` matches `Hans`.
+* The search is case-insensitive; for example, `hans` matches `Hans`. Letters are compared one at a time, so a letter that capitalises to two letters is not matched by them; for example, `STRASSE` does not match `Straße`. The same rule applies when checking for duplicate students.
 * Keyword order does not matter; for example, `Hans Bo` matches `Bo Hans`.
 * The search considers only student names. Guardian details, contact details and fees are not searched.
 * Only full words match; for example, `Han` does not match `Hans`.
@@ -231,7 +299,7 @@ Format: `find KEYWORD [MORE_KEYWORDS]`
 
 Examples:
 * `find John` returns `john` and `John Doe`
-* `find alex david` returns `Alex Yeoh`, `David Li`<br>
+* With the sample data, `find alex david` returns `Alex Yeoh` and `David Li`:<br>
   ![result for 'find alex david'](images/findAlexDavidResult.png)
 
 ### Viewing a student's complete record: `view`
@@ -241,8 +309,9 @@ Shows the selected student's full record beside the displayed list.
 Format: `view INDEX`
 
 * `INDEX` refers to the current displayed list, including results from `find`.
-* The record shows the student's name, phone, email, address, guardian name, guardian phone, outstanding fee, and tags. Missing student contact details show `Not provided` (for example, `Phone: Not provided`). An outstanding fee shows as `Outstanding fee: S$AMOUNT` to two decimal places; if there is none, it shows `Outstanding fee: None`.
+* The record shows the student's name, phone, email, address, guardian name, guardian phone, outstanding fee, and tags. Missing student contact details show `Not provided` (for example, `Phone: Not provided`). An outstanding fee shows as `Outstanding fee: S$AMOUNT` to two decimal places; if there is none, it shows `Outstanding fee: None`. Tags are listed in alphabetical order, ignoring case (for example, `Tags: aMath, biology, Chemistry`). Numbers in tags are not compared by value: tags are compared character by character, so `Sec10` comes before `Sec3`. If there are none, it shows `Tags: None`.
 * The selected list card is highlighted. The result message names the student being viewed.
+* A long tag is cut off with `...` on the student card so that it fits. The record shows the full tag.
 * Viewing does not change the displayed list or saved data. An invalid index leaves the previous selection unchanged.
 * If a later search still includes the selected student, the selection stays on that student. If the search excludes them, the selection and details pane clear.
 * If you update the viewed student with `edit` or `setoutstanding`, the details pane shows the updated record while the student remains in the displayed list. Clearing their fee from a `fees` result clears the selection.
@@ -292,6 +361,12 @@ Clears all students from Poco Book.
 
 Format: `clear`
 
+**Caution:** `clear` immediately removes **every stored student**, including students hidden by a search and
+their guardian contacts and outstanding fees. It does not ask for confirmation or offer undo; extra text after
+`clear` does not limit what it removes. To keep a recoverable copy, close Poco Book and back up
+`data/addressbook.json` before running `clear`, then reopen the app. If no data file exists yet, first make a
+data-changing command so the current records are saved before backing them up.
+
 ### Exiting the program: `exit`
 
 Exits the program.
@@ -301,6 +376,8 @@ Format: `exit`
 ### Saving the data
 
 Poco Book saves student data automatically. You do not need to save manually.
+
+If saving fails, for example because the disk is full, Poco Book shows an error, and the data file still holds the data from the last successful save. If Poco Book closes unexpectedly while saving, a file ending in `.tmp`, such as `addressbook.json.5784445305140543549.tmp`, may be left in the `data` folder or beside the JAR file. Poco Book does not use it, so you can delete it.
 
 ### Editing the data file
 
@@ -322,7 +399,16 @@ _Details coming soon ..._
 ## FAQ
 
 **Q**: How do I transfer my data to another computer?<br>
-**A**: Install the app on the other computer and overwrite the data file it creates with the data file from your previous Poco Book home folder.
+**A**: Copy `data/addressbook.json` from the folder containing your old Poco Book JAR to the same path beside
+the JAR on the new computer. Close Poco Book on both computers first. Create the `data` folder on the new computer
+if it does not exist; a fresh launch displays sample students in memory but does not create the data file until a
+change is saved. If `data/addressbook.json` already exists at the destination, back it up before replacing it.
+Relaunch Poco Book to load the transferred students, guardians, and outstanding fees.
+
+**Q**: Can I edit the same home folder in two open windows?<br>
+**A**: No. Using two running instances with one home folder is unsupported. Each keeps its own copy of the records
+in memory, and saving from an instance with older data can overwrite newer saved changes. Close all instances and
+reopen just one before editing that folder again; use a backup if changes have already been lost.
 
 --------------------------------------------------------------------------------------------------------------------
 
@@ -330,6 +416,7 @@ _Details coming soon ..._
 
 1. **When using multiple screens**, if you move the application to a secondary screen, and later switch to using only the primary screen, the GUI will open off-screen. The remedy is to delete the `preferences.json` file created by the application before running the application again.
 2. **If you minimize the Help Window** and then run the `help` command (or use the `Help` menu, or the keyboard shortcut `F1`) again, the original Help Window will remain minimized, and no new Help Window will appear. The remedy is to manually restore the minimized Help Window.
+3. **Names and emails with less common characters**, such as curly apostrophes (`’`), Unicode dashes or apostrophes in emails, are rejected, and letters such as `ß` are not matched with `SS` in `find` or duplicate checks. The remedy is to type the name with `'` and `-`, use an email without the unsupported characters, and search with the spelling stored in Poco Book.
 
 --------------------------------------------------------------------------------------------------------------------
 

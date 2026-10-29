@@ -7,6 +7,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 import seedu.address.commons.core.index.Index;
 import seedu.address.logic.parser.exceptions.ParseException;
@@ -25,6 +26,13 @@ import seedu.address.model.tag.Tag;
 public class ParserUtil {
 
     public static final String MESSAGE_INVALID_INDEX = "Index must be a positive integer.";
+
+    /**
+     * Matches a token that looks like a prefix: letters followed by '/' at the start of a word. S/O and D/O
+     * written as separate words are part of names, not prefixes.
+     */
+    private static final Pattern PREFIX_LIKE_TOKEN =
+            Pattern.compile("(?<=^|\\s)(?!" + Name.PATRONYMIC_MARKER + "(?:\\s|$))([A-Za-z]+/)");
 
     /**
      * Parses {@code oneBasedIndex} into an {@code Index} and returns it. Leading and trailing whitespaces will be
@@ -197,5 +205,14 @@ public class ParserUtil {
             tagSet.add(parseTag(tagName));
         }
         return tagSet;
+    }
+
+    /**
+     * Returns true if {@code value} contains a word that looks like a command prefix, such as {@code x/}.
+     * Such text usually means the user mistyped a prefix and it was absorbed into this value.
+     */
+    public static boolean containsPrefixLikeToken(String value) {
+        requireNonNull(value);
+        return PREFIX_LIKE_TOKEN.matcher(value).find();
     }
 }
