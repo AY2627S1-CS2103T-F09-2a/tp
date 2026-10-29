@@ -149,6 +149,7 @@ Here are the other classes in `Logic` (omitted from the class diagram above) tha
 How the parsing works:
 * When called upon to parse a user command, the `AddressBookParser` class creates an `XYZCommandParser` (`XYZ` is a placeholder for the specific command name, e.g., `AddCommandParser`). The parser uses the other classes shown above to parse the user command and create an `XYZCommand` object (e.g., `AddCommand`). The `AddressBookParser` returns that object as a `Command` object.
 * All `XYZCommandParser` classes, such as `AddCommandParser` and `DeleteCommandParser`, implement the `Parser` interface so they can be treated similarly where appropriate, for example during testing.
+* `AddressBookParser` matches the command word in any letter case, so `LIST` and `list` create the same command. Only the command word is converted; the arguments reach the `XYZCommandParser` unchanged. See [Command words and unknown commands](#command-words-and-unknown-commands).
 
 ### Model component
 **API** : [`Model.java`](https://github.com/AY2627S1-CS2103T-F09-2a/tp/tree/master/src/main/java/seedu/address/model/Model.java)
@@ -268,6 +269,34 @@ The sequence diagram below shows these steps for `delete 2`. For simplicity, it 
 * The manual tests in [Deleting a student](#deleting-a-student) still check the dialog that a real tutor sees.
 
 The `JavaFX UI tests` job in the Java CI workflow sets `POCO_UI_TESTS` and runs `./gradlew test coverage` under `xvfb-run` on a Linux runner, so the JavaFX suite executes in a virtual display on every push instead of being gated off. A follow-up step, [`.github/verify-ui-test-results.py`](../.github/verify-ui-test-results.py), reads the JUnit report and fails the job if any test that the variable gates was skipped rather than executed. That job runs beside the three required cross-platform builds, which keep their own settings, and uploads its coverage to Codecov alongside them so the dialog and window lines are measured in CI.
+
+### Adding a charge to an outstanding fee
+
+A tutor who bills the same student again before the earlier amount is settled needs to add to the recorded fee, not replace it. `setoutstanding INDEX +AMOUNT` performs that addition, so the tutor does not have to work out the new total and cannot drop the earlier charge by mistyping the sum.
+
+#### Implementation
+
+`SetOutstandingCommandParser` treats a leading `+` as the only difference between the two meanings of the command. It strips the sign, validates the remaining digits with `OutstandingFee.VALIDATION_REGEX` and `OutstandingFee#isValidOutstandingFee`, and then builds the command with `SetOutstandingCommand#addToOutstandingFee(Index, OutstandingFee)`. Replacement, addition and clearing therefore share one parser and one command class, so `setoutstanding` keeps a single entry in `AddressBookParser`, in the user guide and in the command summary.
+
+`SetOutstandingCommand` keeps a `boolean` that records which meaning was parsed. For an addition, `execute` reads the current amount from `Person#getOutstandingFee()`, which returns an `Optional`, treats an absent fee as `BigDecimal.ZERO`, adds the parsed amount and rebuilds the `Person` with every other field copied verbatim. Two guards run before the record is written:
+
+* `+0` is rejected at parse time with `MESSAGE_INVALID_INCREMENT`, because adding nothing is either a typo or a no-op that would still cost the tutor a step.
+* If the sum would exceed the `S$99999.99` cap, `execute` throws `CommandException` with `MESSAGE_TOTAL_TOO_LARGE`, which names the amount that was refused and the total it would have produced. The bounds check runs before `new OutstandingFee(...)`; otherwise the value object's own `checkArgument` would throw an `IllegalArgumentException`, which no caller turns into a message for the tutor.
+
+Feedback for an addition reports the transition rather than only the new value — `Added S$50.00 to the outstanding fee for Alex Yeoh: S$120.00 -> S$170.00` — so the tutor can confirm what the previous balance was. Replacement and clearing keep their existing feedback.
+
+#### Design considerations
+
+* **An addition mode on `setoutstanding` instead of a new `charge` command (current choice).** The parser already owns `INDEX AMOUNT`, and the `+` prefix is the same convention the tutor sees on a receipt. One command word, one parser, one success message family and one help entry stay in step, and the change is a few dozen lines inside the existing class instead of a new command, parser, `AddressBookParser` case, help entry and test suite.
+  * Cons: `+AMOUNT` is a second grammar in the same command, so the user guide has to explain both forms, and the two forms have different bounded ranges (`0` clears but `+0` is invalid).
+* **A separate `charge` command.** This keeps every command with exactly one grammar, which is easier to document and to test.
+  * Cons: it duplicates index validation and the copy-then-replace of `Person`, and a tutor who wants to correct an amount still needs `setoutstanding` as well, so the two commands must be read together to understand one field.
+* **Recording a payment history instead of a running total.** Storing each charge as a row would make partial payments and statements possible.
+  * Cons: it changes the storage format, the `Person` model and the fee total calculations in one step, which is a larger change than the iteration allows. The running total stays the single source of truth for v1.5.
+
+#### Testing
+
+`SetOutstandingCommandParserTest` covers `+50`, `+0.01`, `+99999.99` and the `AddressBookParser` route, and rejects `+0`, `+`, `++50`, `+50.001`, `+100000` and `+abc`. `SetOutstandingCommandTest` checks that an addition to an existing fee increases the total and preserves every other field, that an addition to a student with no fee records the added amount, that an addition to exactly `S$99999.99` succeeds, and that an addition beyond the cap is rejected with the record unchanged.
 
 ### Fee summary and full-payment commands
 
@@ -447,13 +476,35 @@ The following activity diagram summarizes what happens when a user executes a ne
   * Pros: Will use less memory (e.g. for `delete`, just save the person being deleted).
   * Cons: We must ensure that the implementation of each individual command is correct.
 
-_{more aspects and alternatives to be added}_
+Undo/redo is not implemented in v1.5. The walkthrough and activity diagram above describe the inherited SE-EDU AB3 design where individual commands call `Model#commitAddressBook()`. The two aspects below record why an alternative architecture was considered for Poco Book:
+
+**Aspect: Where history is committed:**
+
+* **Alternative 1 (proposed):** `LogicManager#execute` commits once, after a successful execution.
+  * Pros: One place decides when a state is worth recording, so a new command cannot forget to commit, and a command that throws never records a state.
+  * Cons: The history records every saving command, including a `setoutstanding` that restored the previous amount.
+* **Alternative 2 (legacy walkthrough above):** Each `Command` calls `Model#commitAddressBook()` inside `execute`.
+  * Pros: The command decides whether its change is worth an undo step, so a no-op `setoutstanding` could be skipped.
+  * Cons: The rule is spread over every command, and a command that forgets the call silently loses its undo step.
+
+**Aspect: What is kept out of the history:**
+
+* **Alternative 1 (proposed):** Only saving commands are recorded, so `list`, `find`, `fees`, `findguardian` and `feesummary` leave the history untouched and `undo` always reverses a change to the stored records.
+  * Pros: `undo` is never spent on a display-only command, and the number of undo steps matches the number of changes the tutor made.
+  * Cons: `undo` does not restore the previous filter, so the displayed list after an `undo` can differ from the list before the undone command.
+* **Alternative 2:** Record every command, including display-only ones.
+  * Pros: `undo` would restore the exact previous view.
+  * Cons: A tutor who filtered a few times would need several `undo` commands before reaching the change they regret, which is worse for the common case.
 
 ### Command-specific help
 
-`help` continues to open the help window. `HelpCommandParser` accepts one optional, exact command word;
+`help` continues to open the help window. `HelpCommandParser` accepts one optional command word in any letter case;
 `help COMMAND` returns that command's usage in the result area without invoking its parser or action.
-Unknown targets and extra arguments fail with usage instructions and an alphabetical list of available commands.
+An unknown target, such as `help lsit`, fails with the `Messages.MESSAGE_UNKNOWN_COMMAND` line and the alphabetical
+list of available commands, as described in [Command words and unknown commands](#command-words-and-unknown-commands).
+The `help COMMAND` hint is left out because the tutor is already using `help`. More than one word after `help`, such
+as `help paid 1`, fails with `HelpCommand.MESSAGE_EXTRA_WORDS`, which asks for one command word. Neither error
+repeats the `help` usage, which would make the message several lines longer without telling the tutor more.
 
 `HelpCommand` reuses existing `MESSAGE_USAGE` constants for implemented commands, adding index/payment constraints
 where needed. Commands without usage constants have short local entries. The available-command list is derived
@@ -465,9 +516,91 @@ never changes the model or filter and returns `false` from `shouldSaveAddressBoo
 all supported targets, including `clear`, `exit`, `paid` and `list`, against filtered records and an existing data
 file to catch accidental execution, filter replacement or storage writes.
 
+### Command words and unknown commands
+
+#### Implementation
+
+`AddressBookParser#parseCommand(String)` splits the input into a command word and its arguments. Before choosing a
+parser, it converts the command word with `ParserUtil#normalizeCommandWord(String)`, which returns it in lower case
+using `Locale.ROOT`. Every `COMMAND_WORD` constant is lower case, so `LIST`, `List` and `list` all reach the `list`
+case. `Locale.ROOT` keeps the result independent of the computer's language: in a Turkish locale, the default lower
+case of `LIST` is `lıst`, with a dotless `ı`. `HelpCommandParser` converts its target with the same method, so
+`help PAID` shows the same usage as `help paid`. `Logic#getDeletionTarget(String)` uses the same parser, so
+`DELETE 1` opens the deletion confirmation dialog just as `delete 1` does.
+
+Only the command word is converted. The arguments, including prefixes such as `n/` and `find` keywords, are passed to
+the `XYZCommandParser` unchanged.
+
+If no case matches, the parser throws a `ParseException`. Its first line joins `Messages.MESSAGE_UNKNOWN_COMMAND`,
+which quotes the command word as the tutor typed it, and `HelpCommand.MESSAGE_HELP_HINT`, which suggests
+`help COMMAND`. Its second line, `HelpCommand#getAvailableCommandsMessage()`, lists the available command words.
+For example, `lsit` produces:
+
+```
+Unknown command: "lsit". Type help COMMAND to see a command's format and an example.
+Available commands: add, clear, delete, edit, exit, fees, feesummary, find, findguardian, help, list, paid, setoutstanding, view
+```
+
+The list comes from the same entries as command-specific help. `help` with an unknown target shows the same
+message without the `help COMMAND` hint. `AddressBookParserTest` checks that every listed word, in lower and upper
+case, is passed to a command or its parser instead of producing the unknown-command message. So that test fails if
+the message lists a word that the parser does not accept, or if a new `COMMAND_WORD` with a help entry is not lower
+case.
+
+#### Design considerations
+
+**Aspect: Letter case of command words:**
+
+* **Alternative 1 (current choice):** Match command words in any letter case.
+  * Pros: A tutor who has Caps Lock on, or who capitalises the first word out of habit, does not have to retype the
+    command. No two command words differ only in letter case, so no input becomes ambiguous.
+  * Cons: Developers must write every `COMMAND_WORD` constant in lower case. The parser lower-cases the typed word
+    before comparing it, so a constant such as `feeSummary` would never match any input, however the tutor types it.
+* **Alternative 2:** Keep exact, lower-case matching, and only say in the error message that command words are
+  lower case.
+  * Pros: Parsing does not change.
+  * Cons: The tutor still has to retype the command, although the intended command is clear. Requiring a letter case
+    that carries no meaning is an arbitrary rule the tutor must remember.
+
+**Aspect: Letter case of prefixes:**
+
+* **Alternative 1 (current choice):** Keep prefixes such as `n/` and `gp/` exact.
+  * Pros: Upper-case text that looks like a prefix stays part of a value. For example, `a/Blk 5 N/A` keeps `N/A` in
+    the address.
+  * Cons: With Caps Lock on, `ADD N/AMY ...` is rejected with the `add` format message.
+* **Alternative 2:** Match prefixes in any letter case as well.
+  * Pros: A whole command typed with Caps Lock on would work.
+  * Cons: Any value containing a space followed by text such as `N/`, `P/` or `A/` would be split into another
+    parameter, which changes how existing valid input is parsed.
+
+**Aspect: Content of the unknown-command message:**
+
+* **Alternative 1 (current choice):** Quote the typed word, suggest `help COMMAND`, then list every command word.
+  * Pros: The list is short, so the tutor can spot the intended word. Quoting the word shows which part of the input
+    was read as the command word, for example `list.` when a stray character is attached. The list comes last because
+    it wraps in a narrow window: if the result area is too short, only the end of the list needs scrolling, and the
+    quoted word and the `help COMMAND` hint stay visible unless the typed word is very long.
+  * Cons: The message is longer than the old `Unknown command.`, and the tutor may still need to scroll to see the
+    whole list in a narrow window.
+* **Alternative 2:** Also suggest the closest command word, such as "Did you mean `list`?", using edit distance.
+  * Pros: Points straight to the most likely command.
+  * Cons: Needs a distance threshold and rules for ties, and a wrong suggestion can mislead. The full list already
+    contains the intended word, so this was left as a possible later improvement.
+
 ### \[Proposed\] Data archiving
 
-_{Explain here how the data archiving feature will be implemented}_
+Archiving is **not implemented**; this section records the intended design so that a future iteration does not have to rediscover its constraints.
+
+**Goal:** keep the record of a student who has stopped lessons without leaving that student in the working list, and without losing the outstanding fee or the guardian contacts.
+
+**Proposed design:**
+
+* Add an `archived` boolean to `Person`, defaulting to `false`. `JsonAdaptedPerson` writes it as an optional field and treats a missing field as `false`, so an existing `addressbook.json` loads unchanged and no data-file migration is needed.
+* Add `archive INDEX` and `unarchive INDEX`, modelled on `paid`: both validate the displayed index, build a new immutable `Person` with the flag flipped, and call `Model#setPerson`. The flag lives in `Person` rather than in a separate list so that `find`, `fees` and `feesummary` keep working on one in-memory collection.
+* The predicate behind `list` excludes archived students. `find` and `findguardian` search every stored student, and archived matches carry a visible `Archived` label so the tutor can tell them apart. `feesummary` reports the archived total on a second line instead of adding it silently to the active total.
+* `archive` is not destructive, preserving student records unlike `delete` (which removes a specific student permanently) and `clear` (which wipes the entire address book including hidden records); it needs no confirmation dialog as `unarchive` can immediately restore the student.
+
+**Why it was not built in v1.5:** the change reaches the storage format, the model API, the default `list` filter and the fee totals at once. That is a larger change than a v1.5 bug fix, and it would put the pre-release data-format compatibility checks and the fee-total tests at risk while the team is in feature freeze. Recording the design here keeps the v1.5 claim honest: archiving is a proposal, not a delivered feature.
 
 
 --------------------------------------------------------------------------------------------------------------------
@@ -475,7 +608,7 @@ _{Explain here how the data archiving feature will be implemented}_
 ## **Documentation, logging, testing, dev-ops**
 
 * [Documentation guide](Documentation.md)
-* [Testing guide](Testing.md)
+* [Testing guide](Testing.md), including [running the JavaFX UI tests](Testing.md#running-the-javafx-ui-tests)
 * [Logging guide](Logging.md)
 * [DevOps guide](DevOps.md)
 
@@ -711,15 +844,15 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 **Guarantees:**
 
-* Only the specified student's outstanding fee is changed. The new amount replaces the previous fee and is never added to or subtracted from it.
+* Only the specified student's outstanding fee is changed. A plain amount replaces the previous fee, and an amount written as `+AMOUNT` adds to it; no other stored field is changed.
 * If the request is invalid, no student data is changed.
 * If the data is saved successfully, the new outstanding fee, or its absence after a fee is cleared, still applies after Poco Book restarts.
 
 **MSS**
 
 1.  Tutor <u>finds the student by name (UC02)</u>.
-2.  Tutor requests to set the outstanding fee of a specific student in the displayed list to a new amount.
-3.  Poco Book replaces the student's outstanding fee with the new amount, saves the data, and shows the student's new outstanding fee.
+2.  Tutor requests to set the outstanding fee of a specific student in the displayed list to a new amount, or to add an amount to the fee already recorded.
+3.  Poco Book replaces or increases the student's outstanding fee accordingly, saves the data, and shows the resulting amount, together with the previous amount when the tutor added to it.
 
     Use case ends.
 
@@ -739,9 +872,15 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
       Use case resumes at step 2.
 
-* 2b. The amount is missing or invalid (e.g., negative, above S$99999.99, or with more than two decimal places).
+* 2b. The amount is missing or invalid (e.g., negative, above S$99999.99, with more than two decimal places, or `+0` when adding).
 
     * 2b1. Poco Book shows an error message describing valid amounts.
+
+      Use case resumes at step 2.
+
+* 2c. Adding the amount would take the fee above S$99999.99.
+
+    * 2c1. Poco Book shows an error message naming the amount that was refused and the total it would have produced. Nothing is changed.
 
       Use case resumes at step 2.
 
@@ -833,7 +972,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 These are quality targets for the intended Poco Book MVP, not claims that every target has already been achieved.
 
 1. **Portability:** The same executable JAR should launch and support the core student-management workflow on Windows, macOS, and Linux with Java 25 installed, without recompilation for each operating system.
-2. **Performance:** With up to 1,000 student records, at least 95% of valid `add`, `delete`, `find`, `list`, `view`, `fees`, and `setoutstanding` commands should update the result area and displayed list within 1 second on a reference laptop with at least 8 GB RAM and SSD storage. Measure 20 executions per command after startup; exclude deliberate debugger pauses.
+2. **Performance:** With up to 1,000 student records, at least 95% of executions of each of these valid commands — `add`, `edit`, `delete`, `clear`, `find`, `findguardian`, `list`, `view`, `fees`, `setoutstanding`, `paid`, `feesummary` and `help COMMAND` — should update the result area and displayed list within 1 second on a reference laptop with at least 8 GB RAM and SSD storage. Measure 20 executions per command after startup; the target is met when, for each listed command, at least 19 of its 20 executions finish within 1 second; exclude deliberate debugger pauses. This list names every command implemented in v1.5 apart from `exit` and plain `help`, which opens a separate window.
 3. **Usability:** After completing the User Guide's quick-start instructions, a first-time user should be able to add a student, find that student, list outstanding fees, and set or clear an outstanding fee using only the keyboard. Invalid input should produce an explanatory message without terminating the application.
 4. **Offline operation:** All core student-management commands should work without an Internet connection. The MVP should not require a remote account, remote database, or online payment service.
 5. **Reliability:** Following a successful data save and normal shutdown, restarting the application should restore the same student details, guardian contacts, and outstanding-fee values. Invalid commands should not modify student records. If a save fails, the application should report the failure rather than claim that the change is durably saved.
@@ -846,7 +985,7 @@ These are quality targets for the intended Poco Book MVP, not claims that every 
 * **Tutor**: The intended user: an independent small-group tutor who personally manages student records and fee follow-up using typed commands.
 * **Guardian**: A parent or other responsible adult whose contact details are associated with a student record. A guardian is not a separately indexed student record.
 * **Outstanding fee**: The positive amount in Singapore dollars currently recorded as owed for a student. It is not a payment history, invoice, or proof of a financial transaction.
-* **Cleared outstanding fee**: The recorded state after the tutor sets a student's outstanding fee to zero using `setoutstanding INDEX 0`. This updates the record; it does not transfer money or verify a bank payment. Partial payment tracking is outside the MVP.
+* **Cleared outstanding fee**: The recorded state after the tutor records a full payment with `paid INDEX`, or equivalently sets the amount to zero with `setoutstanding INDEX 0`. Both reach the same stored state; `paid INDEX` is the documented way to record a payment, and `setoutstanding INDEX AMOUNT` is used to correct an amount or to clear a fee that was recorded in error. Clearing a fee updates the record; it does not transfer money or verify a bank payment. Partial payment tracking is outside the MVP.
 * **Displayed list**: The ordered student records currently visible in the GUI, including results of `find` or `fees`. Hidden records remain stored even when they are not shown.
 * **Displayed index**: A one-based position in the current displayed list. Indices can change after filtering, deletion, or a fee update; they are not permanent student identifiers.
 * **MVP (Minimum Viable Product)**: The smallest coherent set of features without which the intended tutor cannot perform the essential student-management and outstanding-fee workflow.
@@ -911,6 +1050,10 @@ testers are expected to do more *exploratory* testing.
 
 1. Enter `view 1`, then `setoutstanding 1 75.50`.<br>
    Expected: Alex remains selected; his card and details pane show S$75.50. His other fields stay unchanged.
+
+1. Enter `setoutstanding 1 +24.50`.<br>
+   Expected: The feedback reads `Added S$24.50 to the outstanding fee for Alex Yeoh: S$75.50 -> S$100.00`, and his card and details pane show S$100.00. Enter `setoutstanding 1 +0` and `setoutstanding 1 +99999.99`.<br>
+   Expected: Both report an error and Alex still owes S$100.00.
 
 1. Enter `setoutstanding 1 0`.<br>
    Expected: Alex leaves the filtered list, Charlotte becomes index 1, and Alex's selection and details pane clear.
@@ -1073,11 +1216,37 @@ testers are expected to do more *exploratory* testing.
    1. Enter `help clear`, `help exit` and `help list`.<br>
       Expected: Each shows instructions only. The app stays open, no student is deleted and the filter is unchanged.
 
-   1. Enter `help unknown` and `help paid 1`.<br>
-      Expected: Each reports invalid format, explains `help [COMMAND]` and lists the available command words.
+   1. Enter `help lsit`.<br>
+      Expected: `Unknown command: "lsit".`, followed by the available command words. The filter is unchanged.
+
+   1. Enter `help paid 1`.<br>
+      Expected: `Type only one command word after help, such as help paid.` No payment is recorded.
 
    1. Enter `help`.<br>
       Expected: The existing help window opens with the online guide link. Close the help window to continue.
+
+### Command words in any case and unknown commands
+
+1. Prerequisites: Start a fresh disposable application folder with the supplied sample data of six students.
+
+   1. Enter `find Alex`, then `LIST`.<br>
+      Expected: `Listed all students.` All six students are displayed again, as after `list`.
+
+   1. Enter `Help`, close the help window, then enter `help PAID`.<br>
+      Expected: `Help` opens the help window. `help PAID` shows the same payment instructions as `help paid`.
+
+   1. Enter `DELETE 2`, then press N in the dialog.<br>
+      Expected: The deletion confirmation dialog names Bernice Yu, as it would for `delete 2`. After N, she is
+      still displayed and all six students remain.
+
+   1. Enter `lsit`.<br>
+      Expected: The result area starts with `Unknown command: "lsit". Type help COMMAND to see a command's format
+      and an example.`, followed by the available command words. The command text turns red, and the displayed list
+      is unchanged.
+
+   1. Enter `ADD N/Amy Tan G/Mei Tan GP/91234567`.<br>
+      Expected: The `add` command is recognised, but its prefixes are not, so an invalid-command-format message with
+      the `add` usage is shown and no student is added.
 
 ### Saving data
 
@@ -1126,10 +1295,12 @@ testers are expected to do more *exploratory* testing.
 
 ### Maintaining command-specific help
 
-When registering a new command in `AddressBookParser`, also add its `MESSAGE_USAGE` to
+When registering a new command in `AddressBookParser`, give it a lower-case `COMMAND_WORD`, add its `MESSAGE_USAGE` to
 `HelpCommand.COMMAND_USAGE`, update the UG command list and the `CommandHelpLogicTest` targets,
-and remove that command from `HelpCommandParserTest` invalid targets if present. Verify both the raw command
-and `help COMMAND` through `LogicManager`. `findguardian` is registered with command-specific help and covered by dispatcher-level search,
+and remove that command from the unknown-word inputs in `HelpCommandParserTest` if present. The help entry also adds the word
+to the unknown-command message, so update the example message in
+[Command words and unknown commands](#command-words-and-unknown-commands) too. Verify both the raw command and
+`help COMMAND` through `LogicManager`. `findguardian` is registered with command-specific help and covered by dispatcher-level search,
 filtered-index payment, invalid-input and persistence regression tests.
 
 ### Guardian search and persisted fee updates

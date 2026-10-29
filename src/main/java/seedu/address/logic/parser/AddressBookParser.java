@@ -38,10 +38,12 @@ public class AddressBookParser {
 
     /**
      * Parses user input into command for execution.
+     * The command word is matched in any letter case; the arguments are passed on unchanged.
      *
      * @param userInput full user input string
      * @return the command based on the user input
-     * @throws ParseException if the user input does not conform to the expected format
+     * @throws ParseException if the user input does not conform to the expected format, or if the command word
+     *     is unknown, in which case the message names the word as typed and lists the available command words
      */
     public Command parseCommand(String userInput) throws ParseException {
         final Matcher matcher = BASIC_COMMAND_FORMAT.matcher(userInput.trim());
@@ -57,7 +59,7 @@ public class AddressBookParser {
         // Lower level log messages are used sparingly to minimize noise in the code.
         logger.fine("Command word: " + commandWord + "; Arguments: " + arguments);
 
-        return switch (commandWord) {
+        return switch (ParserUtil.normalizeCommandWord(commandWord)) {
             case AddCommand.COMMAND_WORD -> new AddCommandParser().parse(arguments);
             case EditCommand.COMMAND_WORD -> new EditCommandParser().parse(arguments);
             case DeleteCommand.COMMAND_WORD -> new DeleteCommandParser().parse(arguments);
@@ -74,7 +76,8 @@ public class AddressBookParser {
             case HelpCommand.COMMAND_WORD -> new HelpCommandParser().parse(arguments);
             default -> {
                 logger.finer("This user input caused a ParseException: " + userInput);
-                throw new ParseException(MESSAGE_UNKNOWN_COMMAND);
+                throw new ParseException(String.format(MESSAGE_UNKNOWN_COMMAND, commandWord) + " "
+                        + HelpCommand.MESSAGE_HELP_HINT + "\n" + HelpCommand.getAvailableCommandsMessage());
             }
         };
     }

@@ -46,6 +46,10 @@ Poco Book is a **desktop application for independent tutors to manage students, 
 
 **:information_source: Notes about the command format:**<br>
 
+* Command words can be typed in any letter case.<br>
+  For example, `list`, `List` and `LIST` all list every student, and `DELETE 2` asks for the same confirmation as `delete 2`. Prefixes such as `n/` and `gp/` must still be typed in lower case.<br>
+  If the command word is not recognised, such as `lsit`, Poco Book shows that word, suggests `help COMMAND` and lists the available command words. Nothing is changed.
+
 * Words in `UPPER_CASE` are the parameters to be supplied by the user.<br>
   For example, in `add n/NAME`, replace `NAME` with a value such as `John Doe`.
 
@@ -55,13 +59,15 @@ Poco Book is a **desktop application for independent tutors to manage students, 
 * Items followed by `…`​ can appear zero or more times.<br>
   For example, `[t/TAG]…​` may be omitted, or written as `t/friend` or `t/friend t/family`.
 
-* Parameters can be in any order.<br>
+* Parameters with a prefix, such as `n/NAME`, can be in any order.<br>
   For example, if the command specifies `n/NAME p/PHONE`, `p/PHONE n/NAME` is also acceptable.
+  Parameters without a prefix must come before all prefixed parameters (for example, `edit 1 n/Alex`) and stay in the documented order; for example, `setoutstanding 1 75.50` works but `setoutstanding 75.50 1` is rejected.
 
 * For `delete`, `edit`, `view`, and `setoutstanding`, `INDEX` uses ASCII digits without leading zeros, such as `1` or `12`. Leading zeros (`01`), signs (`+1`), decimals, and extra index tokens produce an invalid-command-format message. A positive index larger than `2147483647` produces `The student index provided is invalid.` No record or current list is changed when the index is rejected.
 
-* Extraneous parameters for commands that take no parameters, such as `list`, `exit`, and `clear`, are ignored.<br>
-  For example, `list 123` is interpreted as `list`. `help` accepts an optional command word and rejects unknown targets or extra arguments.
+* Only `list`, `exit`, and `clear` ignore any text typed after the command word.<br>
+  For example, `list 123` is interpreted as `list`, and `clear 123` still deletes all students.
+  `feesummary` takes no parameters and rejects extra text, such as `feesummary 1`. `help` accepts one optional command word and rejects unknown command words or extra text, such as `help paid 1`.
 
 * If you are using a PDF version of this document, be careful when copying and pasting commands that span multiple lines as space characters surrounding line-breaks may be omitted when copied over to the application.
 </div>
@@ -78,8 +84,8 @@ For example, `help paid` explains how to clear a displayed student’s full outs
 
 Format: `help [COMMAND]`
 
-* Use one exact, lower-case command word: `add`, `clear`, `delete`, `edit`, `exit`, `fees`, `feesummary`, `find`, `findguardian`, `help`, `list`, `paid`, `setoutstanding`, or `view`.
-* `help unknown` and `help paid 1` report an error and list the available command words.
+* Use one command word, in any letter case: `add`, `clear`, `delete`, `edit`, `exit`, `fees`, `feesummary`, `find`, `findguardian`, `help`, `list`, `paid`, `setoutstanding`, or `view`. For example, `help PAID` shows the same instructions as `help paid`.
+* `help lsit` shows `Unknown command: "lsit".` and lists the available command words. `help paid 1` asks you to type only one command word after `help`.
 * Long help instructions wrap in the result area; scroll vertically to read the remaining lines.
 * Help leaves student records, the displayed list and selection unchanged and does not save data.
 * `help clear` and `help exit` show instructions only; they do not clear data or close the app.
@@ -87,7 +93,7 @@ Format: `help [COMMAND]`
 
 ### Adding a student: `add`
 
-Adds a student to the address book with their required guardian contact and optional personal contact or outstanding fee details.
+Adds a student to Poco Book with their required guardian contact and optional personal contact or outstanding fee details.
 
 Format: `add n/NAME g/GUARDIAN_NAME gp/GUARDIAN_PHONE [p/PHONE] [e/EMAIL] [a/ADDRESS] [f/AMOUNT]`
 
@@ -104,7 +110,7 @@ Examples:
 
 ### Listing all students: `list`
 
-Shows a list of all students in the address book.
+Shows a list of all students in Poco Book.
 
 Each student card shows the student's guardian contact as `Guardian: GUARDIAN_NAME (GUARDIAN_PHONE)`, together with any provided student phone, address, email, and tags.
 Students with an outstanding fee also display an `S$AMOUNT outstanding` label on their cards, with the amount shown to two decimal places; students without an outstanding fee do not display this label. The same card details appear in `find` and `fees` results.
@@ -153,19 +159,23 @@ The total is the sum of all individual amounts and can therefore be larger than 
 
 Examples: `feesummary` in a book where two students owe S$180.00 and S$75.50 shows `Across all stored students: 2 student(s) owe a total of S$255.50. Displayed list unchanged.`
 
-### Setting or clearing an outstanding fee: `setoutstanding`
+### Setting, adding to, or clearing an outstanding fee: `setoutstanding`
 
-Format: `setoutstanding INDEX AMOUNT`
+Format: `setoutstanding INDEX AMOUNT` or `setoutstanding INDEX +AMOUNT`
 
 * `INDEX` identifies a student in the current displayed list, starting from 1. Signs and leading zeros are rejected.
-* `AMOUNT` replaces the full outstanding fee. Use a value from `0.01` to `99999.99`, with at most two decimal places.
+* `AMOUNT` without a sign replaces the full outstanding fee. Use a value from `0.01` to `99999.99`, with at most two decimal places.
+* `+AMOUNT` adds to the fee that is already recorded, instead of replacing it. Use it when you charge the same student again before the earlier amount is settled, so you do not have to work out the new total yourself. The amount to add must be from `0.01` to `99999.99`, and `+0` is rejected.
+* A student with no outstanding fee counts as owing `S$0.00`, so `setoutstanding 1 +50` on that student records `S$50.00`.
+* If an addition would push the fee above `S$99999.99`, the command is rejected with a message naming the amount that was refused and the total it would have produced. Nothing is changed.
 * Use `0` to clear the fee. A student whose fee is cleared disappears from a `fees` result.
-* Feedback shows `Set outstanding fee for NAME: S$AMOUNT`, with exactly two decimal places, including
+* Feedback for a replacement or a clear shows `Set outstanding fee for NAME: S$AMOUNT`, with exactly two decimal places, including
   `S$0.00` when clearing a fee. Clearing an already-cleared fee succeeds with the same `S$0.00` feedback.
+* Feedback for an addition shows the change, e.g. `Added S$50.00 to the outstanding fee for Alex Yeoh: S$120.00 -> S$170.00`.
 * Other student details and the current filter are preserved. Invalid input leaves records and the list unchanged.
 * Successful changes are saved automatically. If a save error is reported, Poco Book still shows the new fee. The fee is saved the next time Poco Book saves successfully, such as after your next change, and is lost if you close Poco Book before then.
 
-Examples: `setoutstanding 1 150.50`, `setoutstanding 1 0`.
+Examples: `setoutstanding 1 150.50`, `setoutstanding 1 +50`, `setoutstanding 1 0`.
 
 ### Recording a full payment: `paid`
 
@@ -184,7 +194,7 @@ Examples: `paid 1`, `paid 2`.
 
 ### Editing a student: `edit`
 
-Edits an existing student in the address book.
+Edits an existing student in Poco Book.
 
 Format: `edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [a/ADDRESS] [g/GUARDIAN_NAME] [gp/GUARDIAN_PHONE] [t/TAG]…​`
 
@@ -278,7 +288,7 @@ Examples:
 
 ### Clearing all entries: `clear`
 
-Clears all entries from the address book.
+Clears all students from Poco Book.
 
 Format: `clear`
 
@@ -337,7 +347,7 @@ Action | Format, Examples
 **View** | `view INDEX`<br> e.g., `view 1`
 **Fees** | `fees [min/AMOUNT]`<br> e.g., `fees min/100`
 **Fee summary** | `feesummary`
-**Set outstanding fee** | `setoutstanding INDEX AMOUNT`<br> e.g., `setoutstanding 1 150.50`; `setoutstanding 1 0` clears it
+**Set outstanding fee** | `setoutstanding INDEX AMOUNT`<br> e.g., `setoutstanding 1 150.50`; `setoutstanding 1 0` clears it<br>`setoutstanding INDEX +AMOUNT` adds to the fee already recorded<br> e.g., `setoutstanding 1 +50`
 **Record payment** | `paid INDEX`<br> e.g., `paid 1`
 **Help** | `help [COMMAND]`<br> e.g., `help paid`
 **Exit** | `exit`

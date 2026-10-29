@@ -5,6 +5,7 @@ import static seedu.address.logic.Messages.MESSAGE_INVALID_STUDENT_DISPLAYED_IND
 
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Set;
 
 import seedu.address.commons.core.index.Index;
@@ -53,6 +54,17 @@ public class ParserUtil {
         } catch (NumberFormatException nfe) {
             throw new ParseException(MESSAGE_INVALID_STUDENT_DISPLAYED_INDEX, nfe);
         }
+    }
+
+    /**
+     * Returns {@code commandWord} in lower case so that a command word typed in any letter case, such as
+     * {@code LIST}, matches its lower-case {@code COMMAND_WORD}.
+     * {@code Locale.ROOT} is used so that the result does not depend on the computer's language; in a Turkish
+     * locale, for example, the default lower case of {@code LIST} is not {@code list}.
+     */
+    public static String normalizeCommandWord(String commandWord) {
+        requireNonNull(commandWord);
+        return commandWord.toLowerCase(Locale.ROOT);
     }
 
     /**

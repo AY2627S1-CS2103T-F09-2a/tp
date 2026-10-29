@@ -78,6 +78,16 @@ public class JsonUserPrefsStorageTest {
     }
 
     @Test
+    public void readUserPrefs_nullNestedGuiSettings_defaultValuesUsed() throws DataLoadingException {
+        // A hand-edited or partially written preferences.json can store "guiSettings": null.
+        // Reading it must repair the value instead of passing a null nested object to MainApp.
+        UserPrefs actual = readUserPrefs("NullGuiSettingsUserPref.json").get();
+
+        assertEquals(new GuiSettings(), actual.getGuiSettings());
+        assertEquals(new UserPrefs(), actual);
+    }
+
+    @Test
     public void readUserPrefs_extraValuesInFile_extraValuesIgnored() throws DataLoadingException {
         UserPrefs expected = getTypicalUserPrefs();
         UserPrefs actual = readUserPrefs("ExtraValuesUserPref.json").get();
