@@ -40,7 +40,7 @@ public class ResultDisplayTest {
             String addFeedback = String.format(AddCommand.MESSAGE_SUCCESS,
                     Messages.format(new PersonBuilder().withTags("math").build()));
             resultDisplay.setFeedbackToUser(addFeedback);
-            assertEquals(addFeedback.split("\n").length, textArea.getPrefRowCount());
+            assertEquals(addFeedback.split("\n", -1).length, textArea.getPrefRowCount());
 
             // short feedback keeps the minimum height
             resultDisplay.setFeedbackToUser("Listed all students");
