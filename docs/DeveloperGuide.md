@@ -9,7 +9,21 @@ title: Developer Guide
 
 ## **Acknowledgements**
 
-* _{List the sources of reused or adapted ideas, code, documentation, and third-party libraries here, with links to the originals.}_
+Poco Book is a brownfield project built on the **AddressBook-Level3 (AB3)** codebase that the CS2103T course supplies as the starting point for team projects (<https://github.com/se-edu/addressbook-level3>). The overall architecture, the Gradle build, the JavaFX scaffolding, the storage format and the structure of this Developer Guide follow AB3, which is the expected design reuse for a brownfield project. `build.gradle` lists the exact dependencies.
+
+Third-party libraries:
+
+* [JavaFX](https://openjfx.io/) 17.0.7 (`javafx-base`, `javafx-controls`, `javafx-fxml`, `javafx-graphics`) — the GUI toolkit.
+* [Jackson](https://github.com/FasterXML/jackson) 2.7 (`jackson-databind`, `jackson-datatype-jsr310`) — reading and writing the `addressbook.json` and `preferences.json` files.
+* [JUnit 5](https://junit.org/junit5/) — the test framework used by `src/test`.
+* [Gradle](https://gradle.org/), [Checkstyle](https://checkstyle.org/) and [JaCoCo](https://www.jacoco.org/jacoco/) — build, style checking and coverage reporting.
+
+Documentation and diagrams:
+
+* Diagrams are written in [PlantUML](https://plantuml.com/) and use the colour definitions and layout conventions from the SE-EDU [_PlantUML tutorial_](https://se-education.org/guides/tutorials/plantUml.html).
+* The documentation site uses [Jekyll](https://jekyllrb.com/) with the `_layouts`, `_includes` and `_sass` files carried over from AB3.
+
+**AI assistance.** Members used generative AI coding assistants during the project, for example to draft code and tests, to review documentation and to speed up repetitive editing. Each member reviewed the changes that they merged and remains responsible for the resulting behaviour.
 
 --------------------------------------------------------------------------------------------------------------------
 
@@ -246,7 +260,14 @@ The sequence diagram below shows these steps for `delete 2`. For simplicity, it 
 
 **Testing**
 
-`DeleteConfirmationHandlerTest` replaces the dialog with a confirmer that records each request and returns a fixed answer. It covers confirming, cancelling, deleting from `find` and `fees` results, and a list that changes or empties, or a student whose details change, during confirmation, all without a display. `LogicManagerTest` checks that `Logic#getDeletionTarget(String)` finds the displayed student for a valid `delete` command, and finds no student for other commands or for invalid or malformed indexes. `DeleteConfirmationDialogTest` checks the dialog's content, fee warning, keys, buttons and size with JavaFX. It checks that Enter, Tab, Space, the letters of a typed command, Y with Control, Command (Meta) or Alt, and N with Control each leave the dialog open, and that such key presses cannot reach a keyboard shortcut. It also checks that Shift+Y, and Y for a student who owes a fee, still confirm, and that the longest valid names fit with a fee warning without cut-off text. Like the other JavaFX tests, it runs only when the environment variable `POCO_UI_TESTS` is `true`. The branch in `MainWindow#executeCommand(String)` that connects these parts needs the full main window, so the manual tests in [Deleting a student](#deleting-a-student) check it instead.
+* `DeleteConfirmationHandlerTest` replaces the dialog with a confirmer that records each request and returns a fixed answer. It covers confirming, cancelling, deleting from `find` and `fees` results, and a list that changes or empties, or a student whose details change, during confirmation, all without a display.
+* `LogicManagerTest` checks that `Logic#getDeletionTarget(String)` finds the displayed student for a valid `delete` command, and finds no student for other commands or for invalid or malformed indexes.
+* `DeleteConfirmationDialogTest` checks the dialog's content, fee warning, keys, buttons and size with JavaFX. It checks that Enter, Tab, Space, the letters of a typed command, Y with Control, Command (Meta) or Alt, and N with Control each leave the dialog open, and that such key presses cannot reach a keyboard shortcut. It also checks that Shift+Y, and Y for a student who owes a fee, still confirm, and that the longest valid names fit with a fee warning without cut-off text.
+* `MainWindowDeletionTest` builds the full main window, types each command into the window's own command box, and reads the feedback the window displays. With a confirmer that records each request instead of showing a dialog, it checks that a confirmed `delete` removes the student, that a cancelled one keeps them, and that a command without a deletion target and an index outside the displayed list never reach the handler, which covers the branch in `MainWindow#executeCommand(String)` that connects these parts. Two further tests use the public constructor, so the dialog `MainWindow` shows is opened for real, and answer it with Y and with N.
+* Like the other JavaFX tests, the last two need the environment variable `POCO_UI_TESTS` to be `true`.
+* The manual tests in [Deleting a student](#deleting-a-student) still check the dialog that a real tutor sees.
+
+The `JavaFX UI tests` job in the Java CI workflow sets `POCO_UI_TESTS` and runs `./gradlew test coverage` under `xvfb-run` on a Linux runner, so the JavaFX suite executes in a virtual display on every push instead of being gated off. A follow-up step, [`.github/verify-ui-test-results.py`](../.github/verify-ui-test-results.py), reads the JUnit report and fails the job if any test that the variable gates was skipped rather than executed. That job runs beside the three required cross-platform builds, which keep their own settings, and uploads its coverage to Codecov alongside them so the dialog and window lines are measured in CI.
 
 ### Fee summary and full-payment commands
 
@@ -268,7 +289,9 @@ The corresponding sources are `docs/diagrams/PaidSequenceDiagram.puml`, `FeeSumm
 
 * **Query vs mutation.** Only `paid` mutates and saves; `feesummary` opts out of saving so that a read-only command cannot report a save failure the user cannot act on.
 * **Exact money arithmetic.** Amounts use `BigDecimal` rather than `double`, so totals of many two-decimal fees cannot drift by a cent, and the summary can legitimately exceed the S$99999.99 per-student cap.
-* **Displayed index vs stored index.** Both commands act on the *displayed* list, matching `delete`, `edit`, `view` and `setoutstanding`. This keeps the mental model consistent, at the cost of the user needing to re-run `fees` after a payment because indexes shift.
+* **Displayed list vs complete book.** `paid` takes a one-based index into the *displayed* list, matching `delete`, `edit`, `view` and `setoutstanding`, so the student the tutor sees at that position is the student who is charged. `feesummary` deliberately does not: it totals every stored student, including students hidden by the current `find` or `fees` filter, for the reason given in alternative (a) below.
+* **Scope shown in feedback.** The two commands therefore differ in scope on purpose, and both word their feedback to say which scope they used: `paid` names the student whose fee it cleared (`Marked outstanding fee as paid for Alex Yeoh: S$120.00`), while `feesummary` starts with `Across all stored students` and ends with `Displayed list unchanged`.
+* **Index shift after `paid`.** The cost of the index-based `paid` is that, in a `fees` result, a paid student drops out of the list, so the students below them move up one index and the tutor must re-read the index before the next `paid`.
 * **Alternatives considered.** (a) Making `feesummary` respect the current filter was rejected because a filtered total is easy to misread as the amount still owed overall. (b) Making `paid` accept a partial amount was rejected for v1.4: it needs a payment-history model, which is a larger change than the iteration allows, so `setoutstanding INDEX 0` and `paid INDEX` both clear a whole fee. (c) Reusing `setoutstanding` with amount `0` instead of adding `paid` was considered, but a dedicated command gives clearer feedback (`S$AMOUNT` cleared) and cannot be confused with re-setting a fee.
 
 ### Editing guardian contact details
@@ -525,7 +548,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 * 2a. Poco Book is unable to save the data.
 
-    * 2a1. Poco Book shows an error message that the data could not be saved. The change is kept only until Poco Book is closed.
+    * 2a1. Poco Book shows an error message that the data could not be saved. The change stays in Poco Book and is saved with the next successful save. If Poco Book is closed before then, the change is lost.
 
       Use case ends.
 
@@ -638,7 +661,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 * 5a. Poco Book is unable to save the data.
 
-    * 5a1. Poco Book shows an error message that the data could not be saved. The change is kept only until Poco Book is closed.
+    * 5a1. Poco Book shows an error message that the data could not be saved. The change stays in Poco Book and is saved with the next successful save. If Poco Book is closed before then, the change is lost.
 
       Use case ends.
 
@@ -709,7 +732,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 * 3b. Poco Book is unable to save the data.
 
-    * 3b1. Poco Book shows an error message that the data could not be saved. The change is kept only until Poco Book is closed.
+    * 3b1. Poco Book shows an error message that the data could not be saved. The change stays in Poco Book and is saved with the next successful save. If Poco Book is closed before then, the change is lost.
 
       Use case ends.
 
@@ -780,7 +803,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 * 3a. Poco Book is unable to save the data.
 
-    * 3a1. Poco Book shows an error message that the data could not be saved. The change is kept only until Poco Book is closed.
+    * 3a1. Poco Book shows an error message that the data could not be saved. The change stays in Poco Book and is saved with the next successful save. If Poco Book is closed before then, the change is lost.
 
       Use case ends.
 
@@ -1047,6 +1070,15 @@ testers are expected to do more *exploratory* testing.
 
 1. Relaunch and execute a valid `add` command.<br>
    Expected: The new record is saved as valid JSON, replacing the invalid file. Restore the backup if needed.
+
+1. In a disposable application folder with sample data, enter `setoutstanding 1 75.50` so that `data/addressbook.json`
+   is saved. Make that file read-only (for example, `chmod 444 data/addressbook.json` on macOS or Linux, or
+   `attrib +r data\addressbook.json` on Windows), then enter `paid 1`.<br>
+   Expected: An error says the data could not be saved, and Alex Yeoh no longer shows a fee. Without closing the app,
+   make the file writable again (`chmod 644 data/addressbook.json`, or `attrib -r data\addressbook.json`), then
+   enter `setoutstanding 2 30`. Restart the app and enter `fees`.<br>
+   Expected: `3 student(s) with outstanding fees.` Alex Yeoh is not listed, because saving the fee for Bernice Yu also
+   saved the earlier payment. Bernice Yu owes S$30.00.
 
 1. In a disposable application folder with sample data, enter `setoutstanding 1 75.50` so that `data/addressbook.json`
    is saved. Make that file read-only (for example, `chmod 444 data/addressbook.json` on macOS or Linux, or

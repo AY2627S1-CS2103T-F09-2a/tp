@@ -163,7 +163,7 @@ Format: `setoutstanding INDEX AMOUNT`
 * Feedback shows `Set outstanding fee for NAME: S$AMOUNT`, with exactly two decimal places, including
   `S$0.00` when clearing a fee. Clearing an already-cleared fee succeeds with the same `S$0.00` feedback.
 * Other student details and the current filter are preserved. Invalid input leaves records and the list unchanged.
-* Successful changes use the application's normal saving behaviour. A save error means persistence is not confirmed.
+* Successful changes are saved automatically. If a save error is reported, Poco Book still shows the new fee. The fee is saved the next time Poco Book saves successfully, such as after your next change, and is lost if you close Poco Book before then.
 
 Examples: `setoutstanding 1 150.50`, `setoutstanding 1 0`.
 
@@ -178,7 +178,7 @@ The feedback reads `Marked outstanding fee as paid for NAME: S$AMOUNT`
 * `INDEX` refers to the displayed list, so run `list` or `fees` again if the list has changed since you last looked. Signs, leading zeros, zero, omitted and out-of-range indexes are rejected.
 * A student with no outstanding fee is rejected with `This student has no outstanding fee to mark as paid: NAME`; `setoutstanding INDEX 0` remains available for clearing a fee explicitly.
 * Every other detail of the student, and the active filter, is preserved. A student disappears from a `fees` result once their fee is cleared, and the remaining indexes shift up; in a `find` result the student stays visible if they still match.
-* Rejected input changes neither the data nor the displayed list. A successful payment uses the application's normal saving behaviour, so it survives a restart unless a save error is reported.
+* Rejected input changes neither the data nor the displayed list. A successful payment is saved automatically. If a save error is reported, Poco Book still shows the student as paid. The payment is saved the next time Poco Book saves successfully, such as after your next change, and is lost if you close Poco Book before then.
 
 Examples: `paid 1`, `paid 2`.
 
@@ -191,8 +191,10 @@ Format: `edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [a/ADDRESS] [g/GUARDIAN_NAME] [
 * Edits the student at the specified `INDEX`. The index refers to the index number shown in the displayed student list. The index **must be a positive integer** 1, 2, 3, …​
 * At least one of the optional fields must be provided.
 * Existing values will be updated to the input values.
+* If every given value is the same as the student's current details, the edit is rejected with `No changes made: the student already has these details.` and nothing is saved.
 * When editing tags, all of the student's existing tags are removed; adding tags is not cumulative.
 * To remove all of a student's tags, enter `t/` without a tag after it.
+* To remove a student's phone, email or address, enter `p/`, `e/` or `a/` with nothing after it. Omitting the prefix keeps the existing value.
 * Use `g/` and/or `gp/` to change guardian details. Omitted fields keep their existing values; guardian fields cannot be blank or cleared. Duplicate guardian prefixes are rejected.
 * Outstanding fees cannot be changed with `edit`; `f/` is rejected. Use `setoutstanding` to change a fee.
 * A successful edit returns to the full student list.
@@ -201,6 +203,7 @@ Examples:
 * `edit 1 g/Mei Tan gp/92345678` Updates the guardian contact while preserving other fields.
 * `edit 1 p/91234567 e/johndoe@example.com` Edits the phone number and email address of the 1st student to be `91234567` and `johndoe@example.com` respectively.
 * `edit 2 n/Betsy Crower t/` Edits the name of the 2nd student to be `Betsy Crower` and clears all existing tags.
+* `edit 1 p/ e/` Removes the phone number and email address of the 1st student.
 
 ### Locating students by name: `find`
 
@@ -212,6 +215,7 @@ Format: `find KEYWORD [MORE_KEYWORDS]`
 * Keyword order does not matter; for example, `Hans Bo` matches `Bo Hans`.
 * The search considers only student names. Guardian details, contact details and fees are not searched.
 * Only full words match; for example, `Han` does not match `Hans`.
+* Punctuation at the start or end of a name word is ignored; for example, `Tan` matches `Wei Ming Tan.` and `Junior` matches `Ali (Junior)`.
 * Each keyword must use only characters that can appear in a name, so `find Alex 2` is accepted but `find @@@` shows an error and keeps the current list.
 * Students matching at least one keyword are returned (an `OR` search); for example, `Hans Bo` returns `Hans Gruber` and `Bo Yang`.
 
