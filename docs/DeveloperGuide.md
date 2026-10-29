@@ -195,7 +195,6 @@ The `Model` component,
 
 The `Storage` component,
 * can save both address book data and user preference data in JSON format, and read them back into corresponding objects. Reading rejects a file with content after its first JSON value or a repeated field name (see [Strict reading of data files](#strict-reading-of-data-files)).
-* can save both address book data and user preference data in JSON format, and read them back into corresponding objects.
 * saves each file by writing a temporary file first and then replacing the old file with it, so a save that fails partway leaves the previous save intact (see [Saving data safely](#saving-data-safely)).
 * is implemented by `StorageManager`, which delegates the actual JSON file access to `JsonAddressBookStorage` and `JsonUserPrefsStorage` (one class per data file).
 * depends on some classes in the `Model` component (because the `Storage` component's job is to save/retrieve objects that belong to the `Model`)
