@@ -48,6 +48,19 @@ Poco Book is a **desktop application for independent tutors to manage students, 
 
 ## Five-minute walkthrough
 
+### The main window
+
+![Poco Book main window with its six areas numbered](images/UiOverview.png)
+
+1. **Menu bar:** `File` → `Exit` closes Poco Book, and `Help` → `Help` (or `F1`) opens the help window.
+1. **Command box:** type a command here and press Enter.
+1. **Result display:** shows the result of your last command, or an error message explaining what to fix.
+1. **Student list:** the students currently displayed, each with an index, tags, any outstanding fee, contact details and guardian. Commands such as `view`, `paid` and `delete` use the index shown here.
+1. **Student record:** the full details of the student selected with `view INDEX`.
+1. **Status bar:** the location of the data file Poco Book saves to.
+
+### Walkthrough
+
 This walkthrough takes you through a typical first session: adding two students, finding a guardian, checking who owes fees, recording a payment, and confirming that Poco Book keeps your changes after a restart. It takes about five minutes.
 
 <div markdown="span" class="alert alert-warning">:exclamation: **Caution:**
@@ -77,6 +90,8 @@ Do this walkthrough in a **new, empty folder**, not the folder where you keep yo
 
 1. **Record a payment.** Type `fees` again. Check that index `1` is **Alpha Tan**, then type `paid 1`.<br>
    Poco Book shows `Marked outstanding fee as paid for Alpha Tan: S$180.00`. Alpha disappears from the `fees` list, so Beta Lim moves up to index `1`.
+
+   ![After paid 1: only Beta Lim remains in the fees list](images/walkthroughPaid.png)
 
    <div markdown="span" class="alert alert-primary">:bulb: **Tip:**
    Indexes always refer to the list currently on screen, and they change when the list changes. Check the name next to an index before every `paid`, `setoutstanding`, `edit` or `delete`.
