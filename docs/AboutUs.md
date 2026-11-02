@@ -32,7 +32,7 @@ We are a team based in the [School of Computing, National University of Singapor
 [[github](https://github.com/yiilinzhang)]
 
 * Role: Developer
-* Responsibilities: Finding students by guardian name or phone (`findguardian`); finding students by name (`find`) and deleting students (`delete`); command-entry robustness and data-file loading fixes; tutor sample data; DG target user, value proposition, user stories and the guardian search sequence diagram.
+* Responsibilities: Finding students by guardian name or phone (`findguardian`); finding students by name (`find`) and deleting students (`delete`), with regression tests; command-entry and data-file loading fixes, and their UG/DG documentation; tutor sample data; DG target user, value proposition, user stories and the guardian search sequence diagram; product website and README; PR reviews.
 
 ### Suvan Handa
 
