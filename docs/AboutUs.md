@@ -38,7 +38,7 @@ We are a team based in the [School of Computing, National University of Singapor
 
 <img src="images/suvan1911.png" width="200px">
 
-[[github](https://github.com/suvan1911)]
+[[github](https://github.com/suvan1911)] [[portfolio](team/suvan1911.md)]
 
 * Role: Developer
 * Responsibilities: Outstanding-fee value modelling; persistence of guardian contact and outstanding-fee data; related model and storage tests; project website settings and repository links.
