@@ -83,6 +83,10 @@ public class FeesCommandParser implements Parser<FeesCommand> {
             logger.fine("Rejected fees command: missing minimum amount.");
             throw new ParseException(MESSAGE_MISSING_MINIMUM);
         }
+        if (ParserUtil.hasMoneyFormatting(amount)) {
+            logger.fine("Rejected fees command: minimum amount has currency symbols or commas.");
+            throw new ParseException(OutstandingFee.MESSAGE_PLAIN_AMOUNT);
+        }
         if (!amount.matches(OutstandingFee.VALIDATION_REGEX)) {
             logger.fine("Rejected fees command: invalid minimum amount format.");
             throw new ParseException(String.format(MESSAGE_INVALID_MINIMUM, amount));

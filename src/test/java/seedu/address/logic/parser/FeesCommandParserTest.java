@@ -13,6 +13,7 @@ import java.math.BigDecimal;
 import org.junit.jupiter.api.Test;
 
 import seedu.address.logic.commands.FeesCommand;
+import seedu.address.model.person.OutstandingFee;
 
 public class FeesCommandParserTest {
 
@@ -47,8 +48,15 @@ public class FeesCommandParserTest {
     @Test
     public void parse_invalidMinimum_throwsParseException() {
         for (String amount : new String[]{"-1", "-0", "+1", "100000", "99999.999", "0.001",
-            "1e2", "1E2", "NaN", "Infinity", ".50", "1.", "1,000", "abc", "100min/200"}) {
+            "1e2", "1E2", "NaN", "Infinity", ".50", "1.", "abc", "100min/200"}) {
             assertParseFailure(parser, " min/" + amount, String.format(MESSAGE_INVALID_MINIMUM, amount));
+        }
+    }
+
+    @Test
+    public void parse_moneyFormattedMinimum_throwsPlainAmountHint() {
+        for (String amount : new String[]{"$50", "S$50", "1,000"}) {
+            assertParseFailure(parser, " min/" + amount, OutstandingFee.MESSAGE_PLAIN_AMOUNT);
         }
     }
 
