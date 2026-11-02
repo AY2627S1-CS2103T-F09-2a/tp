@@ -96,7 +96,8 @@ public class EmailTest {
     public void messageConstraints_describesSupportedCharacters() {
         assertEquals("Emails must be one valid address such as student@example.com, without spaces. "
                 + "The part before @ may use only ASCII letters (A-Z, a-z), digits, periods, underscores, "
-                + "plus signs and hyphens.",
+                + "plus signs and hyphens. The part after @ must be a domain ending in at least 2 letters, "
+                + "such as example.com.",
                 Email.MESSAGE_CONSTRAINTS);
     }
 }
