@@ -28,7 +28,23 @@ Documentation and diagrams:
 * Diagrams are written in [PlantUML](https://plantuml.com/) and use the colour definitions and layout conventions from the SE-EDU [_PlantUML tutorial_](https://se-education.org/guides/tutorials/plantUml.html).
 * The documentation site uses [Jekyll](https://jekyllrb.com/) with the `_layouts`, `_includes` and `_sass` files carried over from AB3.
 
-**AI assistance.** Members used generative AI coding assistants during the project, for example to draft code and tests, to review documentation and to speed up repetitive editing. Each member reviewed the changes that they merged and remains responsible for the resulting behaviour.
+**Use of AI tools.** We used generative AI tools throughout the project, as the course policy on AI-assisted work allows. Our use was widespread rather than limited to a few classes, so we declare it here instead of in code comments. Every AI-assisted change went through the same PR process as other changes: a member read and edited the output, ran `./gradlew test` and Checkstyle, and checked behaviour on the released JAR. The member who merged a change is responsible for it.
+
+Notable uses of AI:
+
+* **Writing code, tests and documentation.** Claude Code (Anthropic Claude models) and OpenAI Codex drafted parser and command code, unit and integration tests, and User Guide and Developer Guide text, which members then revised. About 50 commits carry a `Co-Authored-By: Claude` trailer, mostly from @shiverin and @EL-NAIT. Examples include the outstanding-fee commands (`fees`, `setoutstanding`, `feesummary`, `paid`), command-specific `help`, strict JSON loading, and the delete-confirmation dialog.
+* **Preliminary PR reviews.** Two GitHub Actions workflows run the open-source [PR-Agent](https://github.com/qodo-ai/pr-agent), pinned to a fixed commit, against an LLM endpoint. They post review comments on each PR before a human review:
+  * `ai-review.yml`, set up by @suvan1911.
+  * `shizhen-review.yml`, set up by @shiverin. Its companion `shizhen-fix.yml` proposes fixes only for the PR author's own PRs, after a review has passed.
+
+  A member reviewer still approved every PR. The AI comments were treated as suggestions.
+* **Alpha and beta testing.** @shiverin used Claude Code and Codex to plan boundary and invalid-input test cases and to run them against the release JAR. Each reported `alpha-bug` and beta bug was reproduced by hand before filing. The issues say that they were AI-assisted.
+* **Project management.** AI tools helped draft the weekly task issues, release checklists and release notes. Members checked the dates and requirements against the course website.
+* **@Suki899.** Used Claude Code and OpenAI Codex to draft the `add` and `edit` guardian code, parser error messages, tests, the `add` and `edit` User Guide sections, the guardian-edit Developer Guide section, the v1.6 User Guide accuracy pass and a project portfolio page. Beta testing used the same tools to run boundary and invalid-input cases on the v1.5 JAR; each reported bug was reproduced on that JAR before filing.
+* **@EL-NAIT.** Used Claude Code and OpenAI Codex to draft code, tests, and User Guide and Developer Guide wording, for example for `view`, the delete confirmation, safe saving, strict JSON loading and the JavaFX UI test setup. AI also drafted the PlantUML sources of their Developer Guide diagrams: the delete-confirmation diagrams, `UiPartClassDiagram`, and the v1.6 diagram updates in #312. They reviewed and tested every change before it was merged.
+* **@yiilinzhang.** Used Claude Code to draft code and tests, User Guide and Developer Guide text, the product website and README updates, and PR review comments. Also used it to run additional test harnesses that supplemented their own testing when diagnosing bugs. They reviewed and tested everything before it was merged.
+
+No AI-generated images or icons are used in the app.
 
 --------------------------------------------------------------------------------------------------------------------
 
