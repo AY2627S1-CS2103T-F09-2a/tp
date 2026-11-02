@@ -14,11 +14,11 @@ Given below are my contributions to the project.
 
 * **New Feature**: Adding students with guardian contact and an optional fee (`add`).
   ([#63](https://github.com/AY2627S1-CS2103T-F09-2a/tp/pull/63), [#79](https://github.com/AY2627S1-CS2103T-F09-2a/tp/pull/79), [#190](https://github.com/AY2627S1-CS2103T-F09-2a/tp/pull/190))
-  * What it does: records a student together with the guardian's name and phone, which are required, and an optional
+  * What it does: records a student with the guardian's name and phone (both required), plus the student's optional
     phone, email, address, tags and outstanding fee. A tutor can save everything they need from one enrolment message.
   * Highlights: replaced AB3's model of a contact with the student–guardian record the rest of the product builds on.
-    Added the `GuardianName` and `GuardianPhone` value objects, with Unicode-normalised names, a 70-character limit
-    and case-insensitive comparison. A student is identified by name plus guardian phone, so siblings can share a
+    Added the `GuardianName` and `GuardianPhone` value objects: guardian names are Unicode-normalised, limited to
+    70 characters and compared ignoring case, and guardian phones must be 8 digits. A student is identified by name plus guardian phone, so siblings can share a
     guardian while true duplicates are still caught.
 
 * **New Feature**: Editing guardian details and clearing optional fields (`edit`).
