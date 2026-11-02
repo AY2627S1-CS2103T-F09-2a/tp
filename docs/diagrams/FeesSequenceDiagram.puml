@@ -17,19 +17,33 @@ end box
 activate Logic
 Logic -> Parser : parseCommand("fees min/100")
 activate Parser
+
 create FeesParser
-Parser -> FeesParser : new FeesCommandParser()
+Parser -> FeesParser : FeesCommandParser()
+activate FeesParser
+FeesParser --> Parser
+deactivate FeesParser
+
 Parser -> FeesParser : parse(" min/100")
 activate FeesParser
-note over FeesParser
+note right of FeesParser
 Validate exactly one min/ argument,
 decimal syntax and range.
 minimumAmount = BigDecimal("100")
 end note
+
 create Fees
-FeesParser -> Fees : new FeesCommand(minimumAmount)
+FeesParser -> Fees : FeesCommand(minimumAmount)
+activate Fees
+Fees --> FeesParser
+deactivate Fees
+
 FeesParser --> Parser : c
 deactivate FeesParser
+'Hidden arrow to position the destroy marker below the end of the activation bar.
+FeesParser -[hidden]-> Parser
+destroy FeesParser
+
 Parser --> Logic : c
 deactivate Parser
 
@@ -37,7 +51,7 @@ Logic -> Fees : execute(m)
 activate Fees
 Fees -> Model : updateFilteredPersonList(predicate)
 activate Model
-note over Model
+note right of Model
 Replace the active filter over all students.
 Match only a present fee >= minimumAmount.
 Keep stored order and the live predicate.
@@ -48,20 +62,14 @@ Fees -> Model : getFilteredPersonList()
 activate Model
 Model --> Fees : filtered students
 deactivate Model
-note over Fees
+note right of Fees
 Count matches with size().
-Create CommandResult with
+Create CommandResult r with
 "N student(s) with outstanding fees."
 end note
-Fees --> Logic : commandResult
+Fees --> Logic : r
 deactivate Fees
-Logic -> Fees : shouldSaveAddressBook()
-activate Fees
-Fees --> Logic : false
-deactivate Fees
-note over Logic
-Skip saving: stored records are unchanged.
-end note
-[<-- Logic : commandResult
+
+[<-- Logic : r
 deactivate Logic
 @enduml

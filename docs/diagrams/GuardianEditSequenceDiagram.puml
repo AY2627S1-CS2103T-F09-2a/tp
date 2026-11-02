@@ -8,11 +8,17 @@ participant ":AddressBookParser" as AddressBookParser LOGIC_COLOR
 participant ":EditCommandParser" as EditCommandParser LOGIC_COLOR
 participant "d:EditPersonDescriptor" as EditPersonDescriptor LOGIC_COLOR
 participant "e:EditCommand" as EditCommand LOGIC_COLOR
+'A participant without a colon is the class itself, which receives the static method call.
+participant "<<class>>\nEditCommand" as EditClass LOGIC_COLOR
 participant "r:CommandResult" as CommandResult LOGIC_COLOR
 end box
 
 box Model MODEL_COLOR_T1
 participant "m:Model" as Model MODEL_COLOR
+end box
+
+box Storage STORAGE_COLOR_T1
+participant ":Storage" as Storage STORAGE_COLOR
 end box
 
 [-> LogicManager : execute("edit 1 g/May Tan gp/98765432")
@@ -22,7 +28,7 @@ LogicManager -> AddressBookParser : parseCommand("edit 1 g/May Tan gp/98765432")
 activate AddressBookParser
 
 create EditCommandParser
-AddressBookParser -> EditCommandParser
+AddressBookParser -> EditCommandParser : EditCommandParser()
 activate EditCommandParser
 
 EditCommandParser --> AddressBookParser
@@ -32,7 +38,7 @@ AddressBookParser -> EditCommandParser : parse(" 1 g/May Tan gp/98765432")
 activate EditCommandParser
 
 create EditPersonDescriptor
-EditCommandParser -> EditPersonDescriptor
+EditCommandParser -> EditPersonDescriptor : EditPersonDescriptor()
 activate EditPersonDescriptor
 
 EditPersonDescriptor --> EditCommandParser : d
@@ -49,7 +55,7 @@ EditPersonDescriptor --> EditCommandParser
 deactivate EditPersonDescriptor
 
 create EditCommand
-EditCommandParser -> EditCommand : EditCommand(1, d)
+EditCommandParser -> EditCommand : EditCommand(index, d)
 activate EditCommand
 
 EditCommand --> EditCommandParser : e
@@ -73,11 +79,11 @@ activate Model
 Model --> EditCommand : lastShownList
 deactivate Model
 
-EditCommand -> EditCommand : createEditedPerson(personToEdit, d)
-activate EditCommand
+EditCommand -> EditClass : createEditedPerson(personToEdit, d)
+activate EditClass
 
-EditCommand --> EditCommand : editedPerson
-deactivate EditCommand
+EditClass --> EditCommand : editedPerson
+deactivate EditClass
 
 EditCommand -> Model : hasPerson(editedPerson)
 activate Model
@@ -97,8 +103,14 @@ activate Model
 Model --> EditCommand
 deactivate Model
 
+EditCommand -> Model : getAddressBook()
+activate Model
+
+Model --> EditCommand : address book
+deactivate Model
+
 create CommandResult
-EditCommand -> CommandResult
+EditCommand -> CommandResult : CommandResult(feedback)
 activate CommandResult
 
 CommandResult --> EditCommand : r
@@ -106,6 +118,18 @@ deactivate CommandResult
 
 EditCommand --> LogicManager : r
 deactivate EditCommand
+
+LogicManager -> EditCommand : shouldSaveAddressBook()
+activate EditCommand
+
+EditCommand --> LogicManager : true
+deactivate EditCommand
+
+LogicManager -> Storage : saveAddressBook(m.getAddressBook())
+activate Storage
+
+Storage --> LogicManager
+deactivate Storage
 
 [<-- LogicManager : r
 deactivate LogicManager
