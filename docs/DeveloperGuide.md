@@ -20,7 +20,7 @@ Third-party libraries, as declared in `build.gradle` (versions are the ones Grad
 Build and quality tools:
 
 * [Gradle](https://gradle.org/) 9.6.1 (through the Gradle wrapper) and the [Shadow](https://gradleup.com/shadow/) Gradle plugin 9.5.1 (`com.gradleup.shadow`), which packages the app and its libraries into one JAR.
-* [Checkstyle](https://checkstyle.org/) 14.1.0 and [JaCoCo](https://www.jacoco.org/jacoco/) 0.8.14 — style checking and coverage reporting.
+* [Checkstyle](https://checkstyle.org/) 14.1.0 and [JaCoCo](https://www.jacoco.org/jacoco/) 0.8.14 — style checking and coverage reporting. `build.gradle` does not set a JaCoCo version, so Gradle 9.6.1 uses its default, 0.8.14.
 * [GitHub Actions](https://github.com/features/actions) runs the CI builds, and [Codecov](https://about.codecov.io/) shows the coverage reports.
 
 Documentation and diagrams:
