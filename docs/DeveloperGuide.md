@@ -35,7 +35,8 @@ Notable uses of AI:
   A member reviewer still approved every PR. The AI comments were treated as suggestions.
 * **Alpha and beta testing.** @shiverin used Claude Code and Codex to plan boundary and invalid-input test cases and to run them against the release JAR. Each reported `alpha-bug` and beta bug was reproduced by hand before filing. The issues say that they were AI-assisted.
 * **Project management.** AI tools helped draft the weekly task issues, release checklists and release notes. Members checked the dates and requirements against the course website.
-* **Other members.** _[@Suki899, @yiilinzhang, @EL-NAIT, @suvan1911: add a line for any tool you used that is not covered above, e.g. ChatGPT for wording, GitHub Copilot for autocompletion, or AI-generated images or icons. If you used none, reply "none" on the PR.]_
+* **@Suki899.** Used Claude Code and OpenAI Codex to draft the `add` and `edit` guardian code, parser error messages, tests, the `add` and `edit` User Guide sections, the guardian-edit Developer Guide section, the v1.6 User Guide accuracy pass and a project portfolio page. Beta testing used the same tools to run boundary and invalid-input cases on the v1.5 JAR; each reported bug was reproduced on that JAR before filing.
+* **Other members.** _[@yiilinzhang, @EL-NAIT, @suvan1911: add a line for any tool you used that is not covered above, e.g. ChatGPT for wording, GitHub Copilot for autocompletion, or AI-generated images or icons. If you used none, reply "none" on the PR.]_
 
 No AI-generated images or icons are used in the app. _[team: confirm]_
 
