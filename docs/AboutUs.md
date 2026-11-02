@@ -47,7 +47,7 @@ We are a team based in the [School of Computing, National University of Singapor
 
 <img src="images/shiverin.png" width="200px">
 
-[[github](https://github.com/shiverin)]
+[[github](https://github.com/shiverin)] [[portfolio](team/shiverin.md)]
 
 * Role: Developer
 * Responsibilities: Outstanding-fee filtering (`fees`), setting or clearing outstanding fees (`setoutstanding`), fee summary (`feesummary`) and full payments (`paid`); command-specific help; release preparation; Developer Guide non-functional requirements and glossary.
