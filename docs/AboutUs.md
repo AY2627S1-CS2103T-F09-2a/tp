@@ -20,7 +20,7 @@ We are a team based in the [School of Computing, National University of Singapor
 
 <img src="images/suki899.png" width="200px">
 
-[[github](https://github.com/Suki899)]
+[[github](https://github.com/Suki899)] [[portfolio](team/suki899.md)]
 
 * Role: Developer
 * Responsibilities: Adding students with guardian and fee information (`add`); guardian contact fields; README and UI mock-up.
