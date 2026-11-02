@@ -38,9 +38,8 @@ Notable uses of AI:
 * **@Suki899.** Used Claude Code and OpenAI Codex to draft the `add` and `edit` guardian code, parser error messages, tests, the `add` and `edit` User Guide sections, the guardian-edit Developer Guide section, the v1.6 User Guide accuracy pass and a project portfolio page. Beta testing used the same tools to run boundary and invalid-input cases on the v1.5 JAR; each reported bug was reproduced on that JAR before filing.
 * **@EL-NAIT.** Used Claude Code and OpenAI Codex to draft code, tests, and User Guide and Developer Guide wording, for example for `view`, the delete confirmation, safe saving, strict JSON loading and the JavaFX UI test setup. AI also drafted the PlantUML sources of their Developer Guide diagrams: the delete-confirmation diagrams, `UiPartClassDiagram`, and the v1.6 diagram updates in #312. They reviewed and tested every change before it was merged.
 * **@yiilinzhang.** Used Claude Code to draft code and tests, User Guide and Developer Guide text, the product website and README updates, and PR review comments. Also used it to run additional test harnesses that supplemented their own testing when diagnosing bugs. They reviewed and tested everything before it was merged.
-* **Other members.** _[@suvan1911: add a line for any tool you used that is not covered above, e.g. ChatGPT for wording, GitHub Copilot for autocompletion, or AI-generated images or icons. If you used none, reply "none" on the PR.]_
 
-No AI-generated images or icons are used in the app. _[team: confirm]_
+No AI-generated images or icons are used in the app.
 
 --------------------------------------------------------------------------------------------------------------------
 
