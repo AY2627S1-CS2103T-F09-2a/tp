@@ -317,7 +317,7 @@ Finds students whose names contain any of the given keywords.
 Format: `find KEYWORD [MORE_KEYWORDS]`
 
 * The search is case-insensitive; for example, `hans` matches `Hans`. Letters are compared one at a time, so a letter that capitalises to two letters is not matched by them; for example, `STRASSE` does not match `Straße`. The same rule applies when checking for duplicate students.
-* Accented letters must be typed exactly; for example, `jose` does not match `José`, but `José` does. Copy the name from the student card if your keyboard cannot type the accent.
+* Accented letters must be typed exactly; for example, `jose` does not match `José`, but `josé` does. Copy the name from the student card if your keyboard cannot type the accent.
 * Keyword order does not matter; for example, `Hans Bo` matches `Bo Hans`.
 * The search considers only student names. Guardian details, contact details and fees are not searched.
 * Only full words match; for example, `Han` does not match `Hans`.
