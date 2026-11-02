@@ -1522,3 +1522,50 @@ filtered-index payment, invalid-input and persistence regression tests.
 
 1. Enter `list`, then edit Style Check One to `n/Style Check Two gp/92345678` using its displayed index.<br>
    Expected: The edit is rejected as a duplicate and both records are unchanged.
+
+--------------------------------------------------------------------------------------------------------------------
+
+## **Appendix: Planned Enhancements**
+
+Team size: 5
+
+These are known flaws in the current version, with the specific fix we plan for each. They are listed so that
+users and testers know about them. None of them corrupts the saved data file; item 8 describes the one case
+where an unsaved change can be lost.
+
+1. **Name the unrecognised prefix in `add` and `edit` errors.** Currently, `add n/Kid g/Mei gp/92345678 x/foo`
+   reports only `Invalid command format!` with the usage, so users must guess what is wrong. We plan to report the
+   offending prefix, e.g. `Unknown prefix: x/. Valid prefixes for add are n/, g/, gp/, p/, e/, a/, f/ and t/.`,
+   as `fees` already does for unknown prefixes.
+
+1. **Make `find` ignore accents.** Currently, `find jose` does not find `José O'Neil-Tan`; only `find José` does.
+   We plan to compare names after removing accents (Unicode NFD normalisation without combining marks), so that
+   `jose` and `José` match each other. The same comparison will be used for duplicate detection.
+
+1. **Allow `S/O` and `D/O` as `find` keywords.** Currently, `find ravi s/o` is rejected with
+   `Invalid command format!` even though names may contain `S/O` or `D/O`. We plan to accept `S/O` and `D/O` as
+   keywords, matching them as name words, and to reject other slash keywords with
+   `Keywords may contain only characters allowed in names.`
+
+1. **Give specific index errors.** Currently, `delete 0`, `delete -1` and `delete 01` report only
+   `Invalid command format!`. We plan to report
+   `INDEX must be a positive whole number without a sign or leading zeros, e.g. delete 1.` for every index-based
+   command (`delete`, `view`, `edit`, `paid`, `setoutstanding`).
+
+1. **Explain tag errors fully.** Currently, `add n/Kid g/Mei gp/92345678 t/two words` reports
+   `Tag names should be alphanumeric`, which does not say which tag is wrong or that spaces are not allowed. We plan
+   to report `Tag "two words" is invalid: tags may contain only ASCII letters and digits, with no spaces or
+   punctuation.`
+
+1. **Tell the user when tags that differ only in case are merged.** Currently,
+   `add n/Kid g/Mei gp/92345678 t/Math t/math` silently stores only `Math`. We plan to add
+   `Note: t/math was treated as the same tag as t/Math.` to the success message.
+
+1. **Show long tags in full on hover.** Currently, a long tag is cut off with `...` on the student card, so two long
+   tags that differ only at the end look the same. We plan to show the full tag in a tooltip when the pointer rests on
+   it. The details pane already shows the full tag.
+
+1. **Keep warning until unsaved changes are saved.** Currently, if a save fails, the change is still shown after the
+   one-off error message, and it is lost if the app is closed before the next successful save (as the UG states for
+   `setoutstanding` and `paid`). We plan to show a persistent `Unsaved changes: the data file could not be written.` banner until
+   a save succeeds, and to ask for confirmation when `exit` is entered while changes are unsaved.
