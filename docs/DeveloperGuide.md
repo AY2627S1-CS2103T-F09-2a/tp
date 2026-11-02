@@ -1514,7 +1514,8 @@ filtered-index payment, invalid-input and persistence regression tests.
 Team size: 5
 
 These are known flaws in the current version, with the specific fix we plan for each. They are listed so that
-users and testers know about them. None of them causes data loss.
+users and testers know about them. None of them corrupts the saved data file; item 8 describes the one case
+where an unsaved change can be lost.
 
 1. **Name the unrecognised prefix in `add` and `edit` errors.** Currently, `add n/Kid g/Mei gp/92345678 x/foo`
    reports only `Invalid command format!` with the usage, so users must guess what is wrong. We plan to report the
