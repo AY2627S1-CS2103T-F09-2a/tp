@@ -32,7 +32,7 @@ Poco Book is a **desktop application for independent tutors to manage students, 
 
    * `list` : Lists all students.
 
-   * `add n/John Doe g/Jane Doe gp/98765432 e/johnd@example.com a/John street, block 123, #01-01` : Adds a student named `John Doe`, with guardian `Jane Doe`, to Poco Book.
+   * `add n/Riya Kumar g/Anil Kumar gp/97654321 e/riya@example.com a/12 Clementi Ave 3` : Adds a student named `Riya Kumar`, with guardian `Anil Kumar`, to Poco Book.
 
    * `delete 3` : Deletes the 3rd student shown in the current list, after you press Y to confirm.
 
@@ -68,7 +68,7 @@ Do this walkthrough in a **new, empty folder**, not the folder where you keep yo
 </div>
 
 1. **Start with an empty book.** Copy `addressbook.jar` into a new folder, such as `poco-walkthrough`, and launch it from a terminal in that folder with `java -jar addressbook.jar`. Poco Book starts with six sample students. Type `clear` and press Enter.<br>
-   Poco Book shows `Address book has been cleared!` and the list is empty.
+   Poco Book shows `All students have been cleared from Poco Book.` and the list is empty.
 
 1. **Add two students.** Type each command and press Enter:
    * `add n/Alpha Tan g/Mei Tan gp/92345678 e/alpha@example.com f/180`
@@ -120,13 +120,13 @@ When you are done, you can delete the walkthrough folder. To keep using Poco Boo
   If the command word is not recognised, such as `lsit`, Poco Book shows that word, suggests `help COMMAND` and lists the available command words. Nothing is changed.
 
 * Words in `UPPER_CASE` are the parameters to be supplied by the user.<br>
-  For example, in `add n/NAME`, replace `NAME` with a value such as `John Doe`.
+  For example, in `add n/NAME`, replace `NAME` with a value such as `Alex Tan`.
 
 * Items in square brackets are optional.<br>
-  For example, `n/NAME [t/TAG]` can be used as `n/John Doe t/friend` or as `n/John Doe`.
+  For example, `n/NAME [t/TAG]` can be used as `n/Alex Tan t/Math` or as `n/Alex Tan`.
 
 * Items followed by `…`​ can appear zero or more times.<br>
-  For example, `[t/TAG]…​` may be omitted, or written as `t/friend` or `t/friend t/family`.
+  For example, `[t/TAG]…​` may be omitted, or written as `t/Math` or `t/Math t/Sec3`.
 
 * Parameters with a prefix, such as `n/NAME`, can be in any order.<br>
   For example, if the command specifies `n/NAME p/PHONE`, `p/PHONE n/NAME` is also acceptable.
@@ -251,7 +251,7 @@ Examples: `feesummary` in a book where two students owe S$180.00 and S$75.50 sho
 Format: `setoutstanding INDEX AMOUNT` or `setoutstanding INDEX +AMOUNT`
 
 * `INDEX` identifies a student in the current displayed list, starting from 1. Signs and leading zeros are rejected.
-* `AMOUNT` without a sign replaces the full outstanding fee. Use a value from `0.01` to `99999.99`, with at most two decimal places.
+* `AMOUNT` without a sign replaces the full outstanding fee. Use a value from `0` to `99999.99`, with at most two decimal places; `0` clears the fee.
   Type a plain number without `S$`, `$`, commas or `f/`, e.g. `50` or `+50` rather than `S$50`.
 * `+AMOUNT` adds to the fee that is already recorded, instead of replacing it. Use it when you charge the same student again before the earlier amount is settled, so you do not have to work out the new total yourself. The amount to add must be from `0.01` to `99999.99`, and `+0` is rejected.
 * A student with no outstanding fee counts as owing `S$0.00`, so `setoutstanding 1 +50` on that student records `S$50.00`.
@@ -306,7 +306,7 @@ Format: `edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [a/ADDRESS] [g/GUARDIAN_NAME] [
 
 Examples:
 * `edit 1 g/Mei Tan gp/92345678` Updates the guardian contact while preserving other fields.
-* `edit 1 p/91234567 e/johndoe@example.com` Edits the phone number and email address of the 1st student to be `91234567` and `johndoe@example.com` respectively.
+* `edit 1 p/91234567 e/alex.yeoh@example.com` Edits the phone number and email address of the 1st student to be `91234567` and `alex.yeoh@example.com` respectively.
 * `edit 2 n/Betsy Crower t/` Edits the name of the 2nd student to be `Betsy Crower` and clears all existing tags.
 * `edit 1 p/ e/` Removes the phone number and email address of the 1st student.
 
@@ -314,7 +314,7 @@ Examples:
 
 Finds students whose names contain any of the given keywords.
 
-Format: `find KEYWORD [MORE_KEYWORDS]`
+Format: `find KEYWORD [MORE_KEYWORDS]…​`
 
 * The search is case-insensitive; for example, `hans` matches `Hans`. Letters are compared one at a time, so a letter that capitalises to two letters is not matched by them; for example, `STRASSE` does not match `Straße`. The same rule applies when checking for duplicate students.
 * Accents in a keyword must match the name exactly, although case does not; for example, `find jose` does not find a student named `José`, but `find josé` does. Copy the name from the student card if your keyboard cannot type the accent.
@@ -326,7 +326,7 @@ Format: `find KEYWORD [MORE_KEYWORDS]`
 * Students matching at least one keyword are returned (an `OR` search); for example, `Hans Bo` returns `Hans Gruber` and `Bo Yang`.
 
 Examples:
-* `find John` returns `john` and `John Doe`
+* With the sample data, `find yeoh` returns `Alex Yeoh`.
 * With the sample data, `find alex david` returns `Alex Yeoh` and `David Li`:<br>
   ![result for 'find alex david'](images/findAlexDavidResult.png)
 
@@ -449,6 +449,9 @@ reopen just one before editing that folder again; use a backup if changes have a
 
 1. **If you minimize the Help Window** and then run the `help` command (or use the `Help` menu, or the keyboard shortcut `F1`) again, the original Help Window will remain minimized, and no new Help Window will appear. The remedy is to manually restore the minimized Help Window.
 2. **Names and emails with less common characters**, such as curly apostrophes (`’`), Unicode dashes or apostrophes in emails, are rejected, and letters such as `ß` are not matched with `SS` in `find` or duplicate checks. The remedy is to type the name with `'` and `-`, use an email without the unsupported characters, and search with the spelling stored in Poco Book.
+3. **Double-clicking the JAR file** may not start Poco Book, or may start it with a different home folder, so your data is saved somewhere unexpected. The remedy is to launch it from a terminal in the JAR's folder with `java -jar addressbook.jar`.
+4. **Running Poco Book from a write-protected folder** (for example, a system folder or a read-only drive) means your changes cannot be saved, and Poco Book reports a save error after each change. The remedy is to close Poco Book, move the JAR to a folder you can write to, such as one in your home folder, and launch it from there.
+5. **On macOS, if Poco Book is in full-screen mode**, the Help window may open in its own full-screen space instead of over the main window. The remedy is to switch back to the main window (for example, with a three-finger swipe), or to exit full-screen mode before opening help.
 
 --------------------------------------------------------------------------------------------------------------------
 
@@ -459,8 +462,8 @@ Action | Format, Examples
 **Add** | `add n/NAME g/GUARDIAN_NAME gp/GUARDIAN_PHONE [p/PHONE] [e/EMAIL] [a/ADDRESS] [f/AMOUNT] [t/TAG]…​` <br> e.g., `add n/Riya Kumar g/Anil Kumar gp/97654321 p/98765432 e/riya@example.com a/12 Clementi Ave 3 f/75.50 t/Math`
 **Clear** | `clear`
 **Delete** | `delete INDEX`, then press Y to confirm or N to cancel<br> e.g., `delete 3`
-**Edit** | `edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [a/ADDRESS] [g/GUARDIAN_NAME] [gp/GUARDIAN_PHONE] [t/TAG]…​`<br> e.g., `edit 2 n/James Lee e/jameslee@example.com`
-**Find** | `find KEYWORD [MORE_KEYWORDS]`<br> e.g., `find James Jake`
+**Edit** | `edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [a/ADDRESS] [g/GUARDIAN_NAME] [gp/GUARDIAN_PHONE] [t/TAG]…​`<br> e.g., `edit 2 n/Betsy Crower e/betsy@example.com`
+**Find** | `find KEYWORD [MORE_KEYWORDS]…​`<br> e.g., `find alex david`
 **Find by guardian** | `findguardian KEYWORD [MORE_KEYWORDS]…​`<br> e.g., `findguardian Mei 92345678`
 **List** | `list`
 **View** | `view INDEX`<br> e.g., `view 1`
