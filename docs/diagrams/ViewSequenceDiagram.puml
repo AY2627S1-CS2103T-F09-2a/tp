@@ -1,0 +1,106 @@
+@startuml
+!include style.puml
+skinparam ArrowFontStyle plain
+
+box UI UI_COLOR_T1
+participant ":MainWindow" as MainWindow UI_COLOR
+participant ":PersonListPanel" as ListPanel UI_COLOR
+participant ":PersonDetailsPanel" as DetailsPanel UI_COLOR
+end box
+
+box Logic LOGIC_COLOR_T1
+participant ":LogicManager" as Logic LOGIC_COLOR
+participant ":AddressBookParser" as Parser LOGIC_COLOR
+participant ":ViewCommandParser" as ViewParser LOGIC_COLOR
+participant "c:ViewCommand" as View LOGIC_COLOR
+participant "r:CommandResult" as Result LOGIC_COLOR
+end box
+
+box Model MODEL_COLOR_T1
+participant "m:Model" as Model MODEL_COLOR
+end box
+
+[-> MainWindow : executeCommand("view 1")
+activate MainWindow
+
+MainWindow -> Logic : execute("view 1")
+activate Logic
+Logic -> Parser : parseCommand("view 1")
+activate Parser
+
+create ViewParser
+Parser -> ViewParser : ViewCommandParser()
+activate ViewParser
+ViewParser --> Parser
+deactivate ViewParser
+
+Parser -> ViewParser : parse(" 1")
+activate ViewParser
+create View
+ViewParser -> View : ViewCommand(index)
+activate View
+View --> ViewParser
+deactivate View
+ViewParser --> Parser : c
+deactivate ViewParser
+'Hidden arrow to position the destroy marker below the end of the activation bar.
+ViewParser -[hidden]-> Parser
+destroy ViewParser
+
+Parser --> Logic : c
+deactivate Parser
+
+Logic -> View : execute(m)
+activate View
+View -> Model : getFilteredPersonList()
+activate Model
+Model --> View : displayed students
+deactivate Model
+note right of View
+Reject an index outside the displayed list.
+p = displayed students.get(0)
+The filter and the records are unchanged.
+end note
+
+create Result
+View -> Result : CommandResult(feedback, p)
+activate Result
+Result --> View
+deactivate Result
+View --> Logic : r
+deactivate View
+
+Logic --> MainWindow : r
+deactivate Logic
+
+note right of MainWindow
+Shows r's feedback
+in the ResultDisplay.
+end note
+MainWindow -> Result : getViewedPerson()
+activate Result
+Result --> MainWindow : p
+deactivate Result
+
+MainWindow -> ListPanel : selectPerson(p)
+activate ListPanel
+note right of ListPanel
+Highlights p in the list
+and scrolls to it.
+end note
+ListPanel --> MainWindow
+deactivate ListPanel
+
+MainWindow -> ListPanel : getSelectedPerson()
+activate ListPanel
+ListPanel --> MainWindow : p
+deactivate ListPanel
+
+MainWindow -> DetailsPanel : showPerson(p)
+activate DetailsPanel
+DetailsPanel --> MainWindow
+deactivate DetailsPanel
+
+[<-- MainWindow : r
+deactivate MainWindow
+@enduml

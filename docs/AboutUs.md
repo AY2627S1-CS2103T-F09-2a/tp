@@ -20,7 +20,7 @@ We are a team based in the [School of Computing, National University of Singapor
 
 <img src="images/suki899.png" width="200px">
 
-[[github](https://github.com/Suki899)]
+[[github](https://github.com/Suki899)] [[portfolio](team/suki899.md)]
 
 * Role: Developer
 * Responsibilities: Adding students with guardian, tag and fee information (`add`); editing student and guardian details (`edit`); guardian contact fields and input validation messages; README and UI mock-up.
@@ -38,7 +38,7 @@ We are a team based in the [School of Computing, National University of Singapor
 
 <img src="images/suvan1911.png" width="200px">
 
-[[github](https://github.com/suvan1911)]
+[[github](https://github.com/suvan1911)] [[portfolio](team/suvan1911.md)]
 
 * Role: Developer
 * Responsibilities: Outstanding-fee value modelling; minimum-fee filtering (`fees min/`); persistence of guardian contact and outstanding-fee data; window size recovery; related model and storage tests; project website settings and repository links.
