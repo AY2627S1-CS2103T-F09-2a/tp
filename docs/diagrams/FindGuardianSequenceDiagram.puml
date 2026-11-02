@@ -18,21 +18,40 @@ end box
 activate Logic
 Logic -> Parser : parseCommand("findguardian mei 9234-5678")
 activate Parser
+
 create FindGuardianParser
-Parser -> FindGuardianParser
+Parser -> FindGuardianParser : FindGuardianCommandParser()
+activate FindGuardianParser
+FindGuardianParser --> Parser
+deactivate FindGuardianParser
+
 Parser -> FindGuardianParser : parse(" mei 9234-5678")
 activate FindGuardianParser
 note right of FindGuardianParser
 Trim, normalize to NFC and split on whitespace.
-Reject the input if it is empty or any keyword
-breaks the guardian-name character rules.
+Reject the input if it is empty, or if a keyword
+has a character that guardian names cannot
+contain and is not a valid phone.
 end note
+
 create Predicate
 FindGuardianParser -> Predicate : GuardianContainsKeywordsPredicate(keywords)
+activate Predicate
+Predicate --> FindGuardianParser
+deactivate Predicate
+
 create FindGuardian
 FindGuardianParser -> FindGuardian : FindGuardianCommand(p)
+activate FindGuardian
+FindGuardian --> FindGuardianParser
+deactivate FindGuardian
+
 FindGuardianParser --> Parser : c
 deactivate FindGuardianParser
+'Hidden arrow to position the destroy marker below the end of the activation bar.
+FindGuardianParser -[hidden]-> Parser
+destroy FindGuardianParser
+
 Parser --> Logic : c
 deactivate Parser
 
@@ -41,13 +60,13 @@ activate FindGuardian
 FindGuardian -> Model : updateFilteredPersonList(p)
 activate Model
 
-loop each stored student
+loop each student
     Model -> Predicate : test(student)
     activate Predicate
     Predicate --> Model
     deactivate Predicate
 end
-note over Predicate, Model
+note right of Model
 A student matches if any keyword is a whole
 guardian-name word (ignoring case), or a valid
 phone equal to the guardian phone once
@@ -65,11 +84,6 @@ r:CommandResult reports
 "N student(s) listed!"
 end note
 FindGuardian --> Logic : r
-deactivate FindGuardian
-
-Logic -> FindGuardian : shouldSaveAddressBook()
-activate FindGuardian
-FindGuardian --> Logic : false
 deactivate FindGuardian
 
 [<-- Logic : r
