@@ -51,7 +51,7 @@ Given below are my contributions to the project.
   * User Guide:
     * Wrote the `add` and `edit` sections, including the field limits and supported characters
       ([#79](https://github.com/AY2627S1-CS2103T-F09-2a/tp/pull/79), [#201](https://github.com/AY2627S1-CS2103T-F09-2a/tp/pull/201), [#202](https://github.com/AY2627S1-CS2103T-F09-2a/tp/pull/202), [#203](https://github.com/AY2627S1-CS2103T-F09-2a/tp/pull/203)).
-    * Did the v1.6 accuracy pass against the v1.5 JAR ([#295](https://github.com/AY2627S1-CS2103T-F09-2a/tp/issues/295)).
+    * Did the v1.6 accuracy pass against the v1.5 JAR ([#309](https://github.com/AY2627S1-CS2103T-F09-2a/tp/pull/309)).
   * Developer Guide:
     * Wrote the "Editing guardian contact details" implementation section with its sequence diagram, and the
       matching manual tests ([#136](https://github.com/AY2627S1-CS2103T-F09-2a/tp/pull/136), [#283](https://github.com/AY2627S1-CS2103T-F09-2a/tp/pull/283)).
