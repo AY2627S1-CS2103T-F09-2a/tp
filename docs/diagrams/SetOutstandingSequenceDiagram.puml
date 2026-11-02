@@ -1,0 +1,108 @@
+@startuml
+!include style.puml
+skinparam ArrowFontStyle plain
+
+box Logic LOGIC_COLOR_T1
+participant ":LogicManager" as Logic LOGIC_COLOR
+participant ":AddressBookParser" as Parser LOGIC_COLOR
+participant ":SetOutstandingCommandParser" as SetParser LOGIC_COLOR
+'A participant without a colon is the class itself, which receives the static factory call.
+participant "<<class>>\nSetOutstandingCommand" as SetClass LOGIC_COLOR
+participant "c:SetOutstandingCommand" as Set LOGIC_COLOR
+end box
+
+box Model MODEL_COLOR_T1
+participant "m:Model" as Model MODEL_COLOR
+end box
+
+box Storage STORAGE_COLOR_T1
+participant ":Storage" as Storage STORAGE_COLOR
+end box
+
+[-> Logic : execute("setoutstanding 1 +50")
+activate Logic
+Logic -> Parser : parseCommand("setoutstanding 1 +50")
+activate Parser
+
+create SetParser
+Parser -> SetParser : SetOutstandingCommandParser()
+activate SetParser
+SetParser --> Parser
+deactivate SetParser
+
+Parser -> SetParser : parse(" 1 +50")
+activate SetParser
+note right of SetParser
+index = 1; the leading + means add 50.
+end note
+
+SetParser -> SetClass : addToOutstandingFee(index, fee)
+activate SetClass
+create Set
+SetClass -> Set : SetOutstandingCommand(index, fee, true)
+activate Set
+Set --> SetClass
+deactivate Set
+SetClass --> SetParser : c
+deactivate SetClass
+
+SetParser --> Parser : c
+deactivate SetParser
+'Hidden arrow to position the destroy marker below the end of the activation bar.
+SetParser -[hidden]-> Parser
+destroy SetParser
+
+Parser --> Logic : c
+deactivate Parser
+
+Logic -> Set : execute(m)
+activate Set
+Set -> Model : getFilteredPersonList()
+activate Model
+Model --> Set : displayed students
+deactivate Model
+note right of Set
+Reject an index outside the displayed list.
+student = displayed students.get(0)
+previousFee = student's fee, or null if none
+end note
+
+Set -> Set : addTo(previousFee)
+activate Set
+note right of Set
+total = previous amount (0 if none) + 50.
+Throw a CommandException if the total
+exceeds 99999.99, before any record is changed.
+end note
+Set --> Set : updatedFee
+deactivate Set
+
+note right of Set
+updated = copy of student with every
+other field unchanged and updatedFee.
+end note
+Set -> Model : setPerson(student, updated)
+activate Model
+Model --> Set
+deactivate Model
+
+note right of Set
+r = CommandResult showing the amount
+added and the old and new totals.
+end note
+Set --> Logic : r
+deactivate Set
+
+Logic -> Set : shouldSaveAddressBook()
+activate Set
+Set --> Logic : true
+deactivate Set
+
+Logic -> Storage : saveAddressBook(m.getAddressBook())
+activate Storage
+Storage --> Logic
+deactivate Storage
+
+[<-- Logic : r
+deactivate Logic
+@enduml

@@ -9,14 +9,19 @@ title: Developer Guide
 
 ## **Acknowledgements**
 
-Poco Book is a brownfield project built on the **AddressBook-Level3 (AB3)** codebase that the CS2103T course supplies as the starting point for team projects (<https://github.com/se-edu/addressbook-level3>). The overall architecture, the Gradle build, the JavaFX scaffolding, the storage format and the structure of this Developer Guide follow AB3, which is the expected design reuse for a brownfield project. `build.gradle` lists the exact dependencies.
+Poco Book is a brownfield project built on the **AddressBook-Level3 (AB3)** codebase that the CS2103T course supplies as the starting point for team projects (<https://github.com/se-edu/addressbook-level3>, MIT License). The overall architecture, the Gradle build, the JavaFX scaffolding, the storage format and the structure of this Developer Guide follow AB3, which is the expected design reuse for a brownfield project. The application icon and the other images in `src/main/resources/images` also come from AB3.
 
-Third-party libraries:
+Third-party libraries, as declared in `build.gradle` (versions are the ones Gradle resolves):
 
-* [JavaFX](https://openjfx.io/) 17.0.7 (`javafx-base`, `javafx-controls`, `javafx-fxml`, `javafx-graphics`) — the GUI toolkit.
-* [Jackson](https://github.com/FasterXML/jackson) 2.7 (`jackson-databind`, `jackson-datatype-jsr310`) — reading and writing the `addressbook.json` and `preferences.json` files.
-* [JUnit 5](https://junit.org/junit5/) — the test framework used by `src/test`.
-* [Gradle](https://gradle.org/), [Checkstyle](https://checkstyle.org/) and [JaCoCo](https://www.jacoco.org/jacoco/) — build, style checking and coverage reporting.
+* [JavaFX](https://openjfx.io/) 17.0.7 (`javafx-base`, `javafx-controls`, `javafx-fxml`, `javafx-graphics`; GPL v2 with the Classpath Exception) — the GUI toolkit, packaged into the JAR.
+* [Jackson](https://github.com/FasterXML/jackson) 2.7.4 (`jackson-databind` and `jackson-datatype-jsr310`, which bring in `jackson-core` 2.7.4 and `jackson-annotations` 2.7.0; Apache License 2.0) — reading and writing `data/addressbook.json` and `preferences.json`, packaged into the JAR. `build.gradle` asks for `jackson-databind` 2.7.0, but `jackson-datatype-jsr310` 2.7.4 needs 2.7.4, so Gradle uses 2.7.4.
+* [JUnit 5](https://junit.org/junit5/) 5.14.4 (`junit-jupiter-api`, `junit-jupiter-engine`) and JUnit Platform Launcher 1.14.4 (Eclipse Public License 2.0) — the test framework used by `src/test`. These are not packaged into the JAR.
+
+Build and quality tools:
+
+* [Gradle](https://gradle.org/) 9.6.1 (through the Gradle wrapper) and the [Shadow](https://gradleup.com/shadow/) Gradle plugin 9.5.1 (`com.gradleup.shadow`), which packages the app and its libraries into one JAR.
+* [Checkstyle](https://checkstyle.org/) 14.1.0 and [JaCoCo](https://www.jacoco.org/jacoco/) 0.8.14 — style checking and coverage reporting. `build.gradle` does not set a JaCoCo version, so Gradle 9.6.1 uses its default, 0.8.14.
+* [GitHub Actions](https://github.com/features/actions) runs the CI builds, and [Codecov](https://about.codecov.io/) shows the coverage reports.
 
 Documentation and diagrams:
 
@@ -103,7 +108,24 @@ The `UI` component,
 * keeps a reference to the `Logic` component, because the `UI` relies on the `Logic` to execute commands.
 * depends on some classes in the `Model` component because it displays `Person` objects from the model.
 
-For `view INDEX`, `ViewCommand` reads the student at that index in the filtered list and returns the `Person` in `CommandResult` with a feedback message. It does not update the filter or model. `LogicManager` skips the storage write because `ViewCommand.shouldSaveAddressBook()` returns false. `MainWindow` selects that person in `PersonListPanel`; the list selection updates `PersonDetailsPanel`, which shows all stored fields. The details pane unwraps optional student contact fields and shows `Not provided` when a field is absent. It formats an outstanding fee as `S$` followed by two decimal places, or `None` when absent. It lists tags, or `Tags: None` when there are none, in the order given by `Messages#sortTagNames(Collection)`: alphabetical order ignoring case, then character code (uppercase first) for names that differ only in case. Names are compared character by character, so length matters only when one name starts with the other, ignoring case, and the shorter name comes first (`bio` before `biology`). Digits are compared as characters too, so `Sec10` comes before `Sec3`. Student cards and the result of commands such as `edit` list tags in the same order. A failed parse or out-of-range index produces no `CommandResult`, so the current selection and details remain unchanged.
+For `view INDEX`, `ViewCommand` reads the student at that index in the filtered list and returns the `Person` in `CommandResult` with a feedback message. It does not update the filter or model. `MainWindow` reads the student with `CommandResult#getViewedPerson()` and passes them to `PersonListPanel#selectPerson(Person)`. It then calls `PersonDetailsPanel#showPerson(Person)` with the selected student, so the details pane shows all stored fields. `MainWindow` makes this call after every command, because the listener it adds to the list selection does not run when the new selected record is `equals` to the old one. For example, `edit` can change only the letter case of a guardian name or a tag, and the edited record is then `equals` to the old one, so without this call the pane would still show the old letter case.
+
+The sequence diagram below shows these calls for `view 1`. It leaves out calls that do not change what `view` does. The main ones are:
+
+* The first call to `PersonListPanel#getSelectedPerson()`, which `MainWindow` makes before every command to note the selected student. `MainWindow` uses that student to restore the selection after a successful command other than `view`, or after a failed command.
+* `Logic#getDeletionTarget(String)`, which `MainWindow` also calls before every command. It finds no student, because `view` is not a `delete` command, so no confirmation is asked. See [Delete confirmation](#delete-confirmation).
+* `ViewCommand#shouldSaveAddressBook()`, which returns `false`, so `LogicManager` saves nothing.
+* The selection listener's own call to `PersonDetailsPanel#showPerson(Person)`, which it makes during `selectPerson` when the selected student changes. The explicit `showPerson(p)` call that the diagram shows has the same effect.
+
+[![Sequence diagram for viewing a student](images/ViewSequenceDiagram.png)](images/ViewSequenceDiagram.png)
+
+Diagram source: [ViewSequenceDiagram.puml](diagrams/ViewSequenceDiagram.puml). Open the [full-size diagram](images/ViewSequenceDiagram.png) to read its labels on a small screen.
+
+The diagram labels the value that `CommandResult#getViewedPerson()` returns as `p`. The method actually returns `p` inside an `Optional`. `ViewCommand` is the only command that creates its `CommandResult` with a student, so for every other command the `Optional` is empty, and `MainWindow` calls `PersonListPanel#retainSelection` instead of `selectPerson`.
+
+`ViewCommand` returns the student in the `CommandResult` instead of storing a "viewed student" in `Model`. Which student is selected is display state, so it stays in the `UI`, and `view` changes neither the stored records nor the displayed list and its indexes. The alternative, a viewed student kept in `Model`, would make `Model` keep track of what the `UI` shows, and every command that removes or replaces a student would also have to update it.
+
+The details pane unwraps optional student contact fields and shows `Not provided` when a field is absent. It formats an outstanding fee as `S$` followed by two decimal places, or `None` when absent. It lists tags, or `Tags: None` when there are none, in the order given by `Messages#sortTagNames(Collection)`: alphabetical order ignoring case, then character code (uppercase first) for names that differ only in case. Names are compared character by character, so length matters only when one name starts with the other, ignoring case, and the shorter name comes first (`bio` before `biology`). Digits are compared as characters too, so `Sec10` comes before `Sec3`. Student cards and the result of commands such as `edit` list tags in the same order. A failed parse or out-of-range index produces no `CommandResult`, so the current selection and details remain unchanged.
 
 For `delete INDEX`, `MainWindow` asks the tutor to confirm before `Logic` executes the command. See [Delete confirmation](#delete-confirmation).
 
@@ -142,20 +164,23 @@ Here's a (partial) class diagram of the `Logic` component:
 
 <img src="images/LogicClassDiagram.png" width="550"/>
 
-The sequence diagram below illustrates the interactions within the `Logic` component, taking `execute("delete 1")` API call as an example.
+The sequence diagram below illustrates the interactions within the `Logic` component, and its calls to `Model` and `Storage`, taking `execute("delete 1")` API call as an example.
 
-![Interactions Inside the Logic Component for the `delete 1` Command](images/DeleteSequenceDiagram.png)
+[![Interactions Inside the Logic Component for the `delete 1` Command](images/DeleteSequenceDiagram.png)](images/DeleteSequenceDiagram.png)
 
-<div markdown="span" class="alert alert-info">:information_source: **Note:** The lifeline for `DeleteCommandParser` should end at the destroy marker (X), but due to a limitation of PlantUML, it continues to the end of the diagram.
-</div>
+Open the [full-size diagram](images/DeleteSequenceDiagram.png) to read its labels on a small screen.
 
 How the `Logic` component works:
 
-1. When `Logic` is called upon to execute a command, the command is passed to an `AddressBookParser` object, which in turn creates a parser that matches the command (e.g., `DeleteCommandParser`) and uses it to parse the command.
+1. When `Logic` is called upon to execute a command, the command is passed to an `AddressBookParser` object, which in turn creates a parser that matches the command (e.g., `DeleteCommandParser`) and uses it to parse the command.<br>
+   `AddressBookParser` splits the input into the command word and its arguments. The arguments keep the space that follows the command word, which is why the diagram shows `parse(" 1")`. `ArgumentTokenizer` finds a prefix only when a space comes before it, so this space lets it find a prefix that comes straight after the command word, such as `n/` in `add n/...`.<br>
+   Each parser is created for one command, and `AddressBookParser` does not keep it after the parser returns the command. The destroy marker (X) shows the point at which the parser is ready to be garbage-collected.
 1. This results in a `Command` object (more precisely, an object of one of its subclasses e.g., `DeleteCommand`) which is executed by the `LogicManager`.
 1. The command can communicate with the `Model` when it is executed (e.g. to delete a student).<br>
-   In the diagram above, `DeleteCommand` gets the displayed list from the `Model` and uses `DeleteCommand#getTarget(List)` to find the student `p` at index 1 of that list. It then passes `p` itself, not the index, to `Model#deletePerson(Person)`. If the index is beyond the end of the list, `getTarget` returns an empty `Optional` instead, and `DeleteCommand` throws a `CommandException` without deleting anything. Other commands may need different or more interactions with the `Model`.
-1. The result of the command execution is encapsulated as a `CommandResult` object which is returned from `Logic`.
+   In the diagram above, `DeleteCommand` gets the displayed list from the `Model` and uses `DeleteCommand#getTarget(List)` to find the student `p` at index 1 of that list. `getTarget` returns `p` inside an `Optional`, which the diagram labels `p`. `DeleteCommand` then passes `p` itself, not the index, to `Model#deletePerson(Person)`. If the index is beyond the end of the list, `getTarget` returns an empty `Optional` instead, and `DeleteCommand` throws a `CommandException` without deleting anything. Other commands may need different or more interactions with the `Model`.
+1. The result of the command execution is encapsulated as a `CommandResult` object.
+1. If the command succeeds, `LogicManager` calls `Command#shouldSaveAddressBook()` and saves only if it returns `true`. Commands that change the stored students, such as `DeleteCommand`, keep the default `true`, so `LogicManager` always saves the address book through `Storage` after they succeed. Display-only commands, such as `view`, `findguardian` and `fees`, override it to always return `false`, so nothing is written. Each command always returns the same value. For a command that returns `true`, the sequence diagrams of implemented commands in this guide label the return arrow `true`, and the save follows without an `opt` frame, because it always runs. For a command that returns `false`, they leave out the `shouldSaveAddressBook()` call, because nothing follows it. If saving fails, `LogicManager` throws a `CommandException` with the save error instead of returning the result.
+1. `Logic` then returns the `CommandResult`.
 
 Here are the other classes in `Logic` (omitted from the class diagram above) that are used for parsing a user command:
 
@@ -195,7 +220,7 @@ The User Guide states the behaviour for each of these commands, so a tutor knows
 
 <div markdown="span" class="alert alert-info">:information_source: **Note:** The alternative, arguably more object-oriented, design below keeps a unique list of tags in `AddressBook`, and each `Person` references tags from that list. This lets `AddressBook` maintain one `Tag` object per unique tag instead of each `Person` holding its own `Tag` objects.<br>
 
-<img src="images/BetterModelClassDiagram.png" width="450" />
+<img src="images/BetterModelClassDiagram.png" width="700" />
 
 </div>
 
@@ -269,7 +294,7 @@ and message labels without shrinking them to the page width.
 
 Diagram source: [FeesSequenceDiagram.puml](diagrams/FeesSequenceDiagram.puml).
 
-`FeesCommand#execute` calls `Model#updateFilteredPersonList` with a predicate. For a positive minimum, it selects only students with a present outstanding fee whose `BigDecimal` value compares greater than or equal to the minimum. Plain `fees` and `fees min/0` use `PREDICATE_HAS_OUTSTANDING_FEE`; students without a fee remain excluded. The command counts the resulting list and returns the existing `N student(s) with outstanding fees.` feedback. `LogicManager` skips saving because `FeesCommand#shouldSaveAddressBook()` returns `false`.
+`FeesCommand#execute` calls `Model#updateFilteredPersonList` with a predicate. For a positive minimum, it selects only students with a present outstanding fee whose `BigDecimal` value compares greater than or equal to the minimum. Plain `fees` and `fees min/0` use `PREDICATE_HAS_OUTSTANDING_FEE`; students without a fee remain excluded. The command counts the resulting list and returns the existing `N student(s) with outstanding fees.` feedback. `LogicManager` skips saving because `FeesCommand#shouldSaveAddressBook()` always returns `false`, so the diagram leaves out that check.
 
 `ModelManager` installs the predicate on its existing `FilteredList`, rather than taking a snapshot. Subsequent fee replacements are therefore re-evaluated against the same minimum: after `fees min/100`, changing a displayed student's fee to `99.99` removes that student from the results, while changing it to exactly `100` retains them. Commands accepting an index continue to use the current displayed list; `list` restores all students.
 
@@ -351,7 +376,7 @@ A tutor who bills the same student again before the earlier amount is settled ne
 
 #### Implementation
 
-`SetOutstandingCommandParser` treats a leading `+` as the only difference between the two meanings of the command. It strips the sign, validates the remaining digits with `OutstandingFee.VALIDATION_REGEX` and `OutstandingFee#isValidOutstandingFee`, and then builds the command with `SetOutstandingCommand#addToOutstandingFee(Index, OutstandingFee)`. Replacement, addition and clearing therefore share one parser and one command class, so `setoutstanding` keeps a single entry in `AddressBookParser`, in the user guide and in the command summary.
+`SetOutstandingCommandParser` treats a leading `+` as the only difference between the two meanings of the command. It strips the sign, rejects currency notation such as `S$50` or `1,000` with `ParserUtil#hasMoneyFormatting(String)`, validates the remaining digits with `OutstandingFee.VALIDATION_REGEX` and `OutstandingFee#isValidOutstandingFee`, and then builds an addition with the static factory method `SetOutstandingCommand#addToOutstandingFee(Index, OutstandingFee)`. A replacement or clearing uses the public constructor `SetOutstandingCommand(Index, OutstandingFee)` instead, where a `null` fee clears the amount. Replacement, addition and clearing therefore share one parser and one command class, so `setoutstanding` keeps a single entry in `AddressBookParser`, in the user guide and in the command summary.
 
 `SetOutstandingCommand` keeps a `boolean` that records which meaning was parsed. For an addition, `execute` reads the current amount from `Person#getOutstandingFee()`, which returns an `Optional`, treats an absent fee as `BigDecimal.ZERO`, adds the parsed amount and rebuilds the `Person` with every other field copied verbatim. Two guards run before the record is written:
 
@@ -360,6 +385,12 @@ A tutor who bills the same student again before the earlier amount is settled ne
 
 Feedback for an addition reports the transition rather than only the new value — `Added S$50.00 to the outstanding fee for Alex Yeoh: S$120.00 -> S$170.00` — so the tutor can confirm what the previous balance was. Replacement and clearing keep their existing feedback.
 
+The sequence diagram below shows a successful `setoutstanding 1 +50`. `addToOutstandingFee` is a static method, so the class itself, shown as `<<class>> SetOutstandingCommand`, receives the call and creates the command. It calls the private constructor `SetOutstandingCommand(index, fee, true)`, whose third argument is the `boolean` that marks the command as an addition. A plain `setoutstanding 1 50` uses the public two-argument constructor instead, which sets it to `false`. The parser cannot add the amounts, because it has no access to `Model`: the current fee is known only when `execute` reads the displayed student. So the addition and the cap check happen in `SetOutstandingCommand#execute(Model)`. `SetOutstandingCommand` keeps the default `shouldSaveAddressBook()` of `true`, so the diagram labels that return arrow `true` and `LogicManager` saves the new total.
+
+[![Sequence diagram for adding to an outstanding fee](images/SetOutstandingSequenceDiagram.png)](images/SetOutstandingSequenceDiagram.png)
+
+Diagram source: [SetOutstandingSequenceDiagram.puml](diagrams/SetOutstandingSequenceDiagram.puml). Open the [full-size diagram](images/SetOutstandingSequenceDiagram.png) to read its notes on a small screen.
+
 #### Design considerations
 
 * **An addition mode on `setoutstanding` instead of a new `charge` command (current choice).** The parser already owns `INDEX AMOUNT`, and the `+` prefix is the same convention the tutor sees on a receipt. One command word, one parser, one success message family and one help entry stay in step, and the change is a few dozen lines inside the existing class instead of a new command, parser, `AddressBookParser` case, help entry and test suite.
@@ -367,7 +398,7 @@ Feedback for an addition reports the transition rather than only the new value �
 * **A separate `charge` command.** This keeps every command with exactly one grammar, which is easier to document and to test.
   * Cons: it duplicates index validation and the copy-then-replace of `Person`, and a tutor who wants to correct an amount still needs `setoutstanding` as well, so the two commands must be read together to understand one field.
 * **Recording a payment history instead of a running total.** Storing each charge as a row would make partial payments and statements possible.
-  * Cons: it changes the storage format, the `Person` model and the fee total calculations in one step, which is a larger change than the iteration allows. The running total stays the single source of truth for v1.5.
+  * Cons: it changes the storage format, the `Person` model and the fee total calculations in one step, which is a larger change than the iteration allows. The running total remains the single source of truth.
 
 #### Testing
 
@@ -379,13 +410,17 @@ The all-student fee total (`feesummary`) and full-payment recording (`paid`) ext
 
 #### Implementation
 
-`FeeSummaryCommand` walks every person in the **complete** address book via `Model#getAddressBook()#getPersonList()` rather than the filtered list, keeps a running `BigDecimal` total and a count of students whose fee is present, and formats the result with `toPlainString()` so two decimal places are always shown. The feedback explicitly says "Across all stored students" and "Displayed list unchanged" to make that scope visible in the app. Iterating the unfiltered book is what makes the total independent of the current `find`/`fees` filter. The command also overrides `Command#shouldSaveAddressBook()` to return `false`, so `LogicManager` does not write to storage for a pure query. `FeeSummaryCommandParser` rejects any argument with `MESSAGE_INVALID_COMMAND_FORMAT`, which keeps `feesummary 1` from being silently accepted.
+`FeeSummaryCommand` walks every student in the **complete** address book via `Model#getAddressBook()#getPersonList()` rather than the filtered list, keeps a running `BigDecimal` total and a count of students whose fee is present, and formats the result with `toPlainString()` so two decimal places are always shown. The feedback explicitly says "Across all stored students" and "Displayed list unchanged" to make that scope visible in the app. Iterating the unfiltered book is what makes the total independent of the current `find`/`fees` filter. The command also overrides `Command#shouldSaveAddressBook()` to return `false`, so `LogicManager` does not write to storage for a pure query. `FeeSummaryCommandParser` rejects any argument with `MESSAGE_INVALID_COMMAND_FORMAT`, which keeps `feesummary 1` from being silently accepted.
 
-`PaidCommand` holds an `Index` that was validated by `ParserUtil#parseIndex` at parse time. During execution it (i) rejects an index outside the displayed list, (ii) looks up the target `Person` in that displayed list, and (iii) fails with a user-facing `CommandException` when the fee is absent (`Person#getOutstandingFee()` returns an `Optional`). Only after those checks does it construct a replacement `Person` with every other field copied verbatim — name, optional phone/email/address, guardian name and phone, and tags — and call `Model#setPerson(...)`. Because the `Person` is immutable, this copy-then-replace step is what preserves the fields the command does not touch, and because `setPerson` goes through the updated address book, the active filter and the GUI selection are refreshed by the usual `FilteredList`/`ObservableList` listeners.
+`PaidCommand` holds an `Index` that was validated by `ParserUtil#parseIndex` at parse time. During execution it (i) rejects an index outside the displayed list, (ii) looks up the target `Person` in that displayed list, and (iii) fails with a user-facing `CommandException` when the fee is absent (`Person#getOutstandingFee()` returns an `Optional`). Only after those checks does it construct a replacement `Person` with every other field copied verbatim — name, optional phone/email/address, guardian name and phone, and tags — and call `Model#setPerson(...)`. Because the `Person` is immutable, this copy-then-replace step is what preserves the fields the command does not touch, and because `setPerson` replaces the record in the address book, the `FilteredList` applies the active filter to the new record by itself. `MainWindow` then restores the selection with `PersonListPanel#retainSelection`, as described under [UI component](#ui-component).
 
 The sequence of interactions for a successful payment is shown below.
 
-![Sequence diagram for recording a full payment](images/PaidSequenceDiagram.png)
+[![Sequence diagram for recording a full payment](images/PaidSequenceDiagram.png)](images/PaidSequenceDiagram.png)
+
+Open the [full-size diagram](images/PaidSequenceDiagram.png) to read its labels on a small screen.
+
+`PaidCommand` keeps the default `shouldSaveAddressBook()` of `true`, so the diagram labels that return arrow `true`, and `LogicManager` always saves after a successful payment. If that save fails, `LogicManager` throws a `CommandException` after the fee has already been cleared in memory, so the change stays only in the running app, as described in [Saving data safely](#saving-data-safely).
 
 The corresponding sources are `docs/diagrams/PaidSequenceDiagram.puml`, `FeeSummaryCommand`, `PaidCommand`, `FeeSummaryCommandParser`, `PaidCommandParser` and the `AddressBookParser` cases that register `feesummary` and `paid`.
 
@@ -412,9 +447,21 @@ The descriptor distinguishes omitted optional contacts from explicit clearing: a
 
 Changing a guardian phone updates only the selected student. The success feedback names any other students who still have the old phone; the tutor must edit those records separately. The details pane is refreshed explicitly after selection retention, including the command-failure path, because a replacement record may compare equal despite a case-only display change.
 
-The sequence diagram below shows the interactions within the `Logic` and `Model` components for `edit 1 g/May Tan gp/98765432`.
+The sequence diagram below shows the interactions within the `Logic`, `Model` and `Storage` components for `edit 1 g/May Tan gp/98765432`.
 
-![Sequence diagram for editing guardian contact details](images/GuardianEditSequenceDiagram.png)
+[![Sequence diagram for editing guardian contact details](images/GuardianEditSequenceDiagram.png)](images/GuardianEditSequenceDiagram.png)
+
+Open the [full-size diagram](images/GuardianEditSequenceDiagram.png) to read its labels on a small screen.
+
+Some details of the diagram:
+
+* `createEditedPerson` is a private static method, so the class itself, shown as `<<class>> EditCommand`, receives the call.
+* `edit` never adds a student. `setPerson(personToEdit, editedPerson)` puts the edited record at the same position in the list, so the list keeps its size.
+* Before replacing the record, `EditCommand` makes two checks:
+  * It rejects an edit that changes nothing (`Person#hasIdenticalDetails(Person)`).
+  * It makes sure the edited record does not duplicate another student. Poco Book tells students apart by name, ignoring case, and guardian phone (`Person#isSamePerson(Person)`). The new guardian phone means `editedPerson` no longer matches `personToEdit` on that pair, so `EditCommand` calls `hasPerson(editedPerson)` to check that no other student already has this name and guardian phone. For example, if two students are both named Alex Yeoh, with guardian phones 91111111 and 98765432, changing the first one's guardian phone to 98765432 is rejected. An edit that keeps the same name, ignoring case, and the same guardian phone cannot create a duplicate, so it skips `hasPerson`.
+* After `setPerson`, `EditCommand` calls `Model#getAddressBook()` because the guardian phone changed. It reads the complete student list, not the displayed one, and the success message names the other students who still have the old guardian phone, so the tutor can update them too. The edited student already has the new phone at that point, so they are not named. If the guardian phone does not change, this call is skipped.
+* `EditCommand` keeps the default `shouldSaveAddressBook()` of `true`, so the return arrow shows `true` and `LogicManager` always saves the edit.
 
 The corresponding sources are `docs/diagrams/GuardianEditSequenceDiagram.puml`, `EditCommand`, `EditCommand.EditPersonDescriptor` and `EditCommandParser`.
 
@@ -449,7 +496,7 @@ Diagram source: [FindGuardianSequenceDiagram.puml](diagrams/FindGuardianSequence
 * equals a whole word of the guardian name, ignoring case (`StringUtil#containsWordIgnoreCase`), or
 * is a valid `GuardianPhone` that equals the stored guardian phone after its spaces, hyphens and `+65` country code are removed, so `9234-5678` and `+6592345678` match a guardian stored as `92345678`.
 
-The command then reports the size of the filtered list with the shared `N student(s) listed!` message. `FindGuardianCommand#shouldSaveAddressBook()` returns `false`, so `LogicManager` does not write to storage.
+The command then reports the size of the filtered list with the shared `N student(s) listed!` message. `FindGuardianCommand#shouldSaveAddressBook()` always returns `false`, so `LogicManager` does not write to storage. The diagram therefore leaves out that check.
 
 #### Design considerations
 
@@ -536,11 +583,11 @@ Step 1. The user launches the application for the first time. The `VersionedAddr
 
 ![UndoRedoState0](images/UndoRedoState0.png)
 
-Step 2. The user executes `delete 5` command to delete the 5th person in the address book. The `delete` command calls `Model#commitAddressBook()`, causing the modified state of the address book after the `delete 5` command executes to be saved in the `addressBookStateList`, and the `currentStatePointer` is shifted to the newly inserted address book state.
+Step 2. The user executes `delete 5` command to delete the 5th student in the displayed list. The `delete` command calls `Model#commitAddressBook()`, causing the modified state of the address book after the `delete 5` command executes to be saved in the `addressBookStateList`, and the `currentStatePointer` is shifted to the newly inserted address book state.
 
 ![UndoRedoState1](images/UndoRedoState1.png)
 
-Step 3. The user executes `add n/David …​` to add a new person. The `add` command also calls `Model#commitAddressBook()`, causing another modified address book state to be saved into the `addressBookStateList`.
+Step 3. The user executes `add n/David …​` to add a new student. The `add` command also calls `Model#commitAddressBook()`, causing another modified address book state to be saved into the `addressBookStateList`.
 
 ![UndoRedoState2](images/UndoRedoState2.png)
 
@@ -548,7 +595,7 @@ Step 3. The user executes `add n/David …​` to add a new person. The `add` co
 
 </div>
 
-Step 4. The user now decides that adding the person was a mistake, and decides to undo that action by executing the `undo` command. The `undo` command will call `Model#undoAddressBook()`, which will shift the `currentStatePointer` once to the left, pointing it to the previous address book state, and restores the address book to that state.
+Step 4. The user now decides that adding the student was a mistake, and decides to undo that action by executing the `undo` command. The `undo` command will call `Model#undoAddressBook()`, which will shift the `currentStatePointer` once to the left, pointing it to the previous address book state, and restores the address book to that state.
 
 ![UndoRedoState3](images/UndoRedoState3.png)
 
@@ -560,10 +607,6 @@ than attempting to perform the undo.
 The following sequence diagram shows how an undo operation goes through the `Logic` component:
 
 ![UndoSequenceDiagram](images/UndoSequenceDiagram-Logic.png)
-
-<div markdown="span" class="alert alert-info">:information_source: **Note:** The lifeline for `UndoCommand` should end at the destroy marker (X), but due to a limitation of PlantUML, it continues to the end of the diagram.
-
-</div>
 
 Similarly, how an undo operation goes through the `Model` component is shown below:
 
@@ -591,16 +634,16 @@ The following activity diagram summarizes what happens when a user executes a ne
 
 **Aspect: How undo & redo execute:**
 
-* **Alternative 1 (current choice):** Saves the entire address book.
+* **Alternative 1 (proposed choice):** Saves the entire address book.
   * Pros: Easy to implement.
   * Cons: May have performance issues in terms of memory usage.
 
 * **Alternative 2:** Individual command knows how to undo/redo by
   itself.
-  * Pros: Will use less memory (e.g. for `delete`, just save the person being deleted).
+  * Pros: Will use less memory (e.g. for `delete`, just save the student being deleted).
   * Cons: We must ensure that the implementation of each individual command is correct.
 
-Undo/redo is not implemented in v1.5. The walkthrough and activity diagram above describe the inherited SE-EDU AB3 design where individual commands call `Model#commitAddressBook()`. The two aspects below record why an alternative architecture was considered for Poco Book:
+Undo/redo is not implemented in Poco Book. The walkthrough and activity diagram above describe the inherited SE-EDU AB3 design where individual commands call `Model#commitAddressBook()`. The two aspects below record why an alternative architecture was considered for Poco Book:
 
 **Aspect: Where history is committed:**
 
@@ -724,7 +767,7 @@ Archiving is **not implemented**; this section records the intended design so th
 * The predicate behind `list` excludes archived students. `find` and `findguardian` search every stored student, and archived matches carry a visible `Archived` label so the tutor can tell them apart. `feesummary` reports the archived total on a second line instead of adding it silently to the active total.
 * `archive` is not destructive, preserving student records unlike `delete` (which removes a specific student permanently) and `clear` (which wipes the entire address book including hidden records); it needs no confirmation dialog as `unarchive` can immediately restore the student.
 
-**Why it was not built in v1.5:** the change reaches the storage format, the model API, the default `list` filter and the fee totals at once. That is a larger change than a v1.5 bug fix, and it would put the pre-release data-format compatibility checks and the fee-total tests at risk while the team is in feature freeze. Recording the design here keeps the v1.5 claim honest: archiving is a proposal, not a delivered feature.
+**Why it was not built:** the change reaches the storage format, the model API, the default `list` filter and the fee totals at once. That is larger than the bug fixes allowed after the v1.5 feature freeze, and it would put the data-format compatibility checks and the fee-total tests at risk. Recording the design here keeps the product's claims honest: archiving is a proposal, not a delivered feature.
 
 
 --------------------------------------------------------------------------------------------------------------------
