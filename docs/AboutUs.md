@@ -14,7 +14,7 @@ We are a team based in the [School of Computing, National University of Singapor
 [[github](https://github.com/EL-NAIT)]
 
 * Role: Developer
-* Responsibilities: Viewing a student's complete record (`view`) in a details pane; outstanding-fee labels on student cards; delete confirmation; safe saving and strict data-file reading; JavaFX UI test setup; DG use cases.
+* Responsibilities: Viewing a student's complete record (`view`) in a details pane and keeping the selection after commands; outstanding-fee labels on student cards; delete confirmation; case-insensitive command words; tag sorting and long-tag display; safe saving and strict data-file reading; JavaFX UI test setup; DG use cases.
 
 ### Maneerat Apicha
 
