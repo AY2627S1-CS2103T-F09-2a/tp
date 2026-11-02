@@ -27,7 +27,7 @@ alt student found
 
     Handler -> Confirmer : confirm(student)
     activate Confirmer
-    note over Confirmer
+    note right of Confirmer
     Shows a
     DeleteConfirmationDialog and
     waits for the tutor's answer.

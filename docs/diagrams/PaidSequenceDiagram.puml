@@ -2,15 +2,6 @@
 !include style.puml
 skinparam ArrowFontStyle plain
 
-' Participant titles sit on the pale LOGIC_COLOR_T1 / MODEL_COLOR_T1 / STORAGE_COLOR_T1
-' header boxes. style.puml sets FontColor #FFFFFFF (written there with seven Fs), which renders
-' as white on those boxes, so this
-' diagram overrides it locally to keep the titles readable at the size the DG embeds them.
-' The same fix on the previous diagram is #179.
-skinparam Participant {
-    FontColor #000000
-}
-
 box Logic LOGIC_COLOR_T1
 participant ":LogicManager" as Logic LOGIC_COLOR
 participant ":AddressBookParser" as Parser LOGIC_COLOR
@@ -30,18 +21,32 @@ end box
 activate Logic
 Logic -> Parser : parseCommand("paid 1")
 activate Parser
+
 create PaidParser
-Parser -> PaidParser : new PaidCommandParser()
+Parser -> PaidParser : PaidCommandParser()
+activate PaidParser
+PaidParser --> Parser
+deactivate PaidParser
+
 Parser -> PaidParser : parse(" 1")
 activate PaidParser
-note over PaidParser
+note right of PaidParser
 Parse a positive index without
 leading zeros, signs or extra tokens.
 end note
+
 create Paid
-PaidParser -> Paid : new PaidCommand(Index 1)
+PaidParser -> Paid : PaidCommand(index)
+activate Paid
+Paid --> PaidParser
+deactivate Paid
+
 PaidParser --> Parser : c
 deactivate PaidParser
+'Hidden arrow to position the destroy marker below the end of the activation bar.
+PaidParser -[hidden]-> Parser
+destroy PaidParser
+
 Parser --> Logic : c
 deactivate Parser
 
@@ -51,7 +56,7 @@ Paid -> Model : getFilteredPersonList()
 activate Model
 Model --> Paid : displayed students
 deactivate Model
-note over Paid
+note right of Paid
 Reject an index outside the displayed list.
 student = displayed students.get(0)
 Fail if student has no outstanding fee,
@@ -62,7 +67,7 @@ end note
 
 Paid -> Model : setPerson(student, studentWithoutFee)
 activate Model
-note over Model
+note right of Model
 Keep the active filter: after a fees
 search, the paid student leaves the
 displayed list and later indexes shift up.
@@ -70,6 +75,10 @@ end note
 Model --> Paid
 deactivate Model
 
+note right of Paid
+r = CommandResult naming the
+student and the cleared fee.
+end note
 Paid --> Logic : r
 deactivate Paid
 
@@ -80,12 +89,11 @@ deactivate Paid
 
 Logic -> Storage : saveAddressBook(m.getAddressBook())
 activate Storage
-Storage --> Logic : saved
+Storage --> Logic
 deactivate Storage
-note over Logic, Storage
-Save only when shouldSaveAddressBook() is true.
-A save failure is reported;
-in-memory changes may remain.
+note right of Logic
+If saving fails, LogicManager throws a CommandException,
+and the cleared fee stays only in memory.
 end note
 
 [<-- Logic : r
