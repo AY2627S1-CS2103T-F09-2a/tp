@@ -385,7 +385,7 @@ The sequence diagram below shows these steps for `delete 2`, including the secon
 * Like the other JavaFX tests, the last two need the environment variable `POCO_UI_TESTS` to be `true`.
 * The manual tests in [Deleting a student](#deleting-a-student) still check the dialog that a real tutor sees.
 
-The `JavaFX UI tests` job in the Java CI workflow sets `POCO_UI_TESTS` and runs `./gradlew test coverage` under `xvfb-run` on a Linux runner, so the JavaFX suite executes in a virtual display on every push instead of being gated off. A follow-up step, [`.github/verify-ui-test-results.py`](../.github/verify-ui-test-results.py), reads the JUnit report and fails the job if any test that the variable gates was skipped rather than executed. That job runs beside the three required cross-platform builds, which keep their own settings, and uploads its coverage to Codecov alongside them so the dialog and window lines are measured in CI.
+The `JavaFX UI tests` job in the Java CI workflow sets `POCO_UI_TESTS` and runs `./gradlew test coverage` under `xvfb-run` on a Linux runner, so the JavaFX suite executes in a virtual display on every push instead of being gated off. A follow-up step, [`.github/verify-ui-test-results.py`](https://github.com/AY2627S1-CS2103T-F09-2a/tp/blob/master/.github/verify-ui-test-results.py), reads the JUnit report and fails the job if any test that the variable gates was skipped rather than executed. That job runs beside the three required cross-platform builds, which keep their own settings, and uploads its coverage to Codecov alongside them so the dialog and window lines are measured in CI.
 
 ### Adding a charge to an outstanding fee
 
@@ -1195,9 +1195,9 @@ testers are expected to do more *exploratory* testing.
 
    1. Download the JAR file and copy it into an empty folder.
 
-   1. In a terminal, run `java -version` and check that it reports Java 25 or later. In the folder containing
+   1. In a terminal, run `java -version` and check that it reports Java 25. In the folder containing
       `addressbook.jar`, run `java -jar addressbook.jar`.<br>
-      Expected: The GUI opens with a set of sample contacts. The window size may not be optimal.
+      Expected: The GUI opens with six sample students. The window size may not be optimal.
 
 1. Saving window preferences
 
